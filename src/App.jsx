@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import Icon from './components/Icon.jsx'
-import { EMPRESA } from './data/mock.js'
+import { supabase } from './lib/supabase.js'
+import Login from './pages/Login.jsx'
 import Painel from './pages/Painel.jsx'
 import Produtos from './pages/Produtos.jsx'
 import Producao from './pages/Producao.jsx'
@@ -21,7 +23,33 @@ export const MODULOS = [
 
 const TABBAR = ['/', '/pedidos', '/producao', '/produtos', '/estoque']
 
+const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Operador' }
+
 export default function App() {
+  const [sessao, setSessao] = useState(undefined)
+  const [perfil, setPerfil] = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSessao(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSessao(s))
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!sessao) { setPerfil(null); return }
+    supabase.from('perfis').select('nome,papel,empresas(nome)').eq('id', sessao.user.id).maybeSingle()
+      .then(({ data }) => setPerfil(data))
+  }, [sessao])
+
+  if (sessao === undefined) return null
+  if (!sessao) return <Login />
+
+  const EMPRESA = {
+    nome: perfil?.empresas?.nome || 'DBAESSE',
+    usuario: perfil?.nome || sessao.user.email.split('@')[0],
+    papel: PAPEL[perfil?.papel] || 'Usuário',
+  }
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -44,6 +72,7 @@ export default function App() {
             <b>{EMPRESA.usuario}</b>
             <span>{EMPRESA.papel} · {EMPRESA.nome}</span>
           </div>
+          <button onClick={() => supabase.auth.signOut()}>Sair</button>
         </div>
       </aside>
 
@@ -53,7 +82,7 @@ export default function App() {
           <button className="btn icon-btn" aria-label="Notificações"><Icon name="sino" /></button>
         </div>
         <Routes>
-          <Route path="/" element={<Painel />} />
+          <Route path="/" element={<Painel usuario={EMPRESA.usuario} />} />
           <Route path="/produtos" element={<Produtos />} />
           <Route path="/producao" element={<Producao />} />
           {MODULOS.filter((m) => m.fase).map((m) => (

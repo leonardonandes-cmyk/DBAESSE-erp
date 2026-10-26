@@ -19,7 +19,7 @@ function hoje() {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-export default function Painel() {
+export default function Painel({ usuario }) {
   const [periodo, setPeriodo] = useState('12s')
   const max = Math.max(...VENDAS_SEMANA) * 1.05
 
@@ -28,7 +28,7 @@ export default function Painel() {
       <header className="page-head">
         <div>
           <div className="eyebrow">{hoje()}</div>
-          <h1>{saudacao()}, {EMPRESA.usuario}</h1>
+          <h1>{saudacao()}, {usuario}</h1>
         </div>
         <div className="actions">
           <label className="search">

@@ -234,3 +234,38 @@ tr.selected td { background: #FAF7F3; }
   .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--faint); }
   .tabbar a.active { color: var(--ink); }
 }
+
+/* ---------- Formulários ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.field input, .input {
+  height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+  font-weight: 400; font-size: 14px; color: var(--ink); outline: 0; width: 100%;
+}
+.field input:focus, .input:focus { border-color: var(--ink); }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.form-grid .span-2 { grid-column: span 2; }
+.form-error { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+.preview { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px dashed var(--line); font-size: 13px; color: var(--ink-2); }
+.btn:disabled { opacity: .6; cursor: default; }
+.dados { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; margin: 0; font-size: 14px; }
+.dados dt { color: var(--muted); }
+.dados dd { margin: 0; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+
+/* ---------- Modal ---------- */
+.modal-bg { position: fixed; inset: 0; background: rgba(21,21,21,.35); display: grid; place-items: center; padding: 16px; z-index: 50; overflow-y: auto; }
+.modal { width: 100%; max-width: 640px; background: var(--surface); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 24px 64px rgba(0,0,0,.18); }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.modal-head h2 { margin: 6px 0 0; font-size: 24px; letter-spacing: -.02em; }
+
+/* ---------- Login ---------- */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; width: 100%; }
+.login-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 36px 28px; display: flex; flex-direction: column; gap: 18px; }
+.login-card .brand { margin-bottom: 8px; }
+.user button { margin-left: auto; border: 0; background: transparent; color: var(--muted); font-size: 12px; text-decoration: underline; padding: 4px; }
+
+@media (max-width: 860px) {
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid .span-2 { grid-column: span 2; }
+  .modal { padding: 20px; }
+}
