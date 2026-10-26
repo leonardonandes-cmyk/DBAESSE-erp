@@ -12,7 +12,7 @@ export const STATUS_PEDIDO = {
 export const FLUXO = ['orcamento', 'aprovado', 'producao', 'separacao', 'faturado', 'entregue']
 export const ABERTOS = ['orcamento', 'aprovado', 'producao', 'separacao']
 
-const CAMPOS = 'id,numero,canal,status,previsao,desconto,observacoes,estoque_baixado,criado_em,parceiro_id,parceiros(nome),pedido_itens(quantidade,preco_unit)'
+const CAMPOS = 'id,numero,canal,status,previsao,desconto,observacoes,estoque_baixado,criado_em,parceiro_id,parceiros(nome),pedido_itens(quantidade,preco_unit,sku_id)'
 
 export function totaisPedido(p) {
   const pares = (p.pedido_itens || []).reduce((t, i) => t + i.quantidade, 0)

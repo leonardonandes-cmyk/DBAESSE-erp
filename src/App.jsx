@@ -10,6 +10,9 @@ import Pedidos from './pages/Pedidos.jsx'
 import Estoque from './pages/Estoque.jsx'
 import Clientes from './pages/Clientes.jsx'
 import Financeiro from './pages/Financeiro.jsx'
+import Compras from './pages/Compras.jsx'
+import Relatorios from './pages/Relatorios.jsx'
+import Configuracoes from './pages/Configuracoes.jsx'
 import EmBreve from './pages/EmBreve.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
@@ -20,18 +23,20 @@ export const MODULOS = [
   { to: '/estoque', icon: 'estoque', label: 'Estoque' },
   { to: '/clientes', icon: 'clientes', label: 'Clientes' },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro' },
-  { to: '/producao', icon: 'producao', label: 'Produção', exemplo: true },
-  { to: '/compras', icon: 'compras', label: 'Compras', fase: 8 },
-  { to: '/relatorios', icon: 'relatorios', label: 'Relatórios', fase: 7 },
+  { to: '/producao', icon: 'producao', label: 'Produção' },
+  { to: '/compras', icon: 'compras', label: 'Compras' },
+  { to: '/relatorios', icon: 'relatorios', label: 'Relatórios' },
+  { to: '/configuracoes', icon: 'config', label: 'Configurações' },
 ]
 
-const TABBAR = ['/', '/pedidos', '/produtos', '/estoque', '/clientes']
+const TABBAR = ['/', '/pedidos', '/producao', '/estoque']
 
 const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Operador' }
 
 export default function App() {
   const [sessao, setSessao] = useState(undefined)
   const [perfil, setPerfil] = useState(null)
+  const [mais, setMais] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessao(data.session))
@@ -93,6 +98,9 @@ export default function App() {
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/financeiro" element={<Financeiro />} />
+          <Route path="/compras" element={<Compras />} />
+          <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao />} />
           {MODULOS.filter((m) => m.fase).map((m) => (
             <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />
@@ -108,7 +116,25 @@ export default function App() {
             {m.label}
           </NavLink>
         ))}
+        <button type="button" className={mais ? 'active' : ''} onClick={() => setMais(true)}>
+          <Icon name="menu" size={20} stroke={3} />
+          Mais
+        </button>
       </nav>
+
+      {mais && (
+        <div className="sheet-bg" onClick={() => setMais(false)}>
+          <nav className="sheet" aria-label="Todos os módulos" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-alca" />
+            {MODULOS.map((m) => (
+              <NavLink key={m.to} to={m.to} end={m.to === '/'} onClick={() => setMais(false)}>
+                <Icon name={m.icon} size={20} />
+                <span>{m.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      )}
     </div>
   )
 }

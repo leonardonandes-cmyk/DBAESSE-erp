@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
-import { CARGA_SETORES } from '../data/mock.js'
+import { OP_ABERTAS, etapaAtual, listarOPs, listarSetores, paresOP } from '../lib/producao.js'
 import { listarSaldos } from '../lib/estoque.js'
 import { brl, brlCurto, dataBR, inteiro, numeroPedido } from '../lib/format.js'
 import { listarParceiros } from '../lib/parceiros.js'
@@ -35,14 +35,17 @@ export default function Painel({ usuario }) {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    Promise.all([listarPedidos(), listarSaldos(), listarProdutos(), listarParceiros(), listarTitulos()])
-      .then(([pedidos, saldos, produtos, parceiros, titulos]) => setDados({ pedidos, saldos, produtos, parceiros, titulos }))
+    Promise.all([listarPedidos(), listarSaldos(), listarProdutos(), listarParceiros(), listarTitulos(), listarOPs(), listarSetores()])
+      .then(([pedidos, saldos, produtos, parceiros, titulos, ops, setores]) => setDados({ pedidos, saldos, produtos, parceiros, titulos, ops, setores }))
       .catch((e) => setErro(e.message))
   }, [])
 
   const calc = useMemo(() => {
     if (!dados) return null
-    const { pedidos, saldos, produtos, parceiros, titulos } = dados
+    const { pedidos, saldos, produtos, parceiros, titulos, ops, setores } = dados
+    const opsAbertas = ops.filter((o) => OP_ABERTAS.includes(o.status))
+    const carga = setores.filter((s) => s.ativo).map((s) => ({ setor: s.nome, pares: opsAbertas.filter((o) => etapaAtual(o)?.setor_id === s.id).reduce((t, o) => t + paresOP(o), 0) }))
+    const paresProducao = opsAbertas.reduce((t, o) => t + paresOP(o), 0)
     const vencidos = titulos.filter((t) => !t.pago_em && ['vencido', 'hoje'].includes(situacao(t).id))
     const pagarVenc = vencidos.filter((t) => t.tipo === 'pagar')
     const receberVenc = vencidos.filter((t) => t.tipo === 'receber')
@@ -95,6 +98,9 @@ export default function Painel({ usuario }) {
       alertas,
       recentes: pedidos.slice(0, 6),
       atrasados: atrasados.length,
+      carga,
+      paresProducao,
+      opsAbertas: opsAbertas.length,
     }
   }, [dados])
 
@@ -180,15 +186,19 @@ export default function Painel({ usuario }) {
       <section className="grid-3">
         <div className="card">
           <div className="card-head">
-            <h2>Produção agora</h2>
-            <span className="pill neutral">Exemplo · fase 5</span>
+            <div><h2>Produção agora</h2><div className="card-sub">{calc ? `${inteiro(calc.paresProducao)} pares em ${calc.opsAbertas} OPs` : ' '}</div></div>
+            <Link to="/producao" className="link">Ver ordens</Link>
           </div>
-          {CARGA_SETORES.map((s) => (
-            <div className="meter-row" key={s.setor} style={{ opacity: 0.55 }}>
-              <div><b style={{ fontWeight: 600 }}>{s.setor}</b><span style={{ color: 'var(--muted)' }}>{s.pares.toLocaleString('pt-BR')} pares</span></div>
-              <div className="meter"><i style={{ width: `${s.ocupacao}%` }} /></div>
-            </div>
-          ))}
+          {calc && calc.opsAbertas === 0 && <p className="card-sub" style={{ margin: 0 }}>Nenhuma OP em aberto. <Link to="/producao" className="link">Criar ordem</Link></p>}
+          {calc && calc.opsAbertas > 0 && (() => {
+            const max = Math.max(1, ...calc.carga.map((c) => c.pares))
+            return calc.carga.map((s) => (
+              <div className="meter-row" key={s.setor}>
+                <div><b style={{ fontWeight: 600 }}>{s.setor}</b><span style={{ color: 'var(--muted)' }}>{inteiro(s.pares)} pares</span></div>
+                <div className="meter"><i style={{ width: `${(s.pares / max) * 100}%` }} /></div>
+              </div>
+            ))
+          })()}
         </div>
 
         <div className="card span-2">
