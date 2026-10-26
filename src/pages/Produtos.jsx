@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import NovoModelo from '../components/NovoModelo.jsx'
 import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
@@ -200,7 +200,17 @@ export default function Produtos() {
                     <dd className="card-sub">Para alterar, clique em Editar modelo. O preço de atacado entra sozinho nos pedidos.</dd>
                   </dl>
                 ) : (
-                  <p className="card-sub" style={{ margin: 0 }}>A ficha técnica (materiais e consumo) entra na fase 8.</p>
+                  sel.ficha ? (
+                    <dl className="dados">
+                      {[['cabedal', 'Cabedal'], ['solado', 'Solado'], ['salto', 'Salto'], ['forma', 'Forma'], ['peso_kg', 'Peso (kg)'], ['caixa', 'Caixa'], ['medidas', 'Medidas (palmilha)']]
+                        .filter(([k]) => sel.ficha[k] != null)
+                        .map(([k, l]) => <Fragment key={k}><dt>{l}</dt><dd>{String(sel.ficha[k]).replace('.', ',')}</dd></Fragment>)}
+                      <dt />
+                      <dd className="card-sub">Consumo de materiais por par entra na fase 8 (Compras + ficha técnica).</dd>
+                    </dl>
+                  ) : (
+                    <p className="card-sub" style={{ margin: 0 }}>Sem ficha cadastrada. O consumo de materiais entra na fase 8.</p>
+                  )
                 )}
 
                 <div className="actions">
