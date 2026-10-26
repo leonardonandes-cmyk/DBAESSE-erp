@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
-import { brl, dataBR, numeroPedido } from '../lib/format.js'
+import TituloForm from './TituloForm.jsx'
+import { titulosDoPedido } from '../lib/financeiro.js'
+import { brl, dataBR, hojeISO, numeroPedido } from '../lib/format.js'
 import { FLUXO, STATUS_PEDIDO, atrasado, carregarItens, mudarStatus, salvarDadosPedido, totaisPedido } from '../lib/pedidos.js'
 
-export default function PedidoDetalhe({ pedido, produtos, cores, onFechar, onMudou }) {
+export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou }) {
   const [itens, setItens] = useState(null)
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [dados, setDados] = useState({ previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', desconto: pedido.desconto || 0 })
   const [editando, setEditando] = useState(false)
+  const [titulos, setTitulos] = useState(null)
+  const [gerar, setGerar] = useState(false)
+
+  useEffect(() => { titulosDoPedido(pedido.id).then(setTitulos).catch(() => setTitulos([])) }, [pedido.id, pedido.status])
 
   useEffect(() => { carregarItens(pedido.id).then(setItens).catch((e) => setErro(e.message)) }, [pedido.id])
 
@@ -112,6 +118,20 @@ export default function PedidoDetalhe({ pedido, produtos, cores, onFechar, onMud
           </dl>
         )}
 
+        {['faturado', 'entregue'].includes(pedido.status) && titulos && (
+          titulos.length ? (
+            <div className="preview">
+              <b>Contas a receber:</b>{' '}
+              {titulos.map((t) => <span key={t.id} style={{ marginRight: 12, whiteSpace: 'nowrap' }}>{t.parcela || 'única'} · {dataBR(t.vencimento)} · {brl(t.valor)}{t.pago_em ? ' ✓' : ''}</span>)}
+            </div>
+          ) : (
+            <div className="preview" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <span>Este pedido ainda não tem contas a receber lançadas no Financeiro.</span>
+              <button type="button" className="btn btn-sm" onClick={() => setGerar(true)}>Gerar contas a receber</button>
+            </div>
+          )
+        )}
+
         {erro && <p className="form-error" role="alert">{erro}</p>}
 
         <div className="pedido-rodape">
@@ -138,7 +158,17 @@ export default function PedidoDetalhe({ pedido, produtos, cores, onFechar, onMud
             )}
           </div>
         </div>
-      </div>
+            </div>
+      {gerar && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <TituloForm parceiros={parceiros}
+            padrao={{ tipo: 'receber', descricao: `Pedido ${numeroPedido(pedido.numero)}`, parceiro_id: pedido.parceiro_id, valorTotal: total.toFixed(2),
+              categoria: pedido.canal === 'Revenda' ? 'Venda revenda' : pedido.canal === 'Drop' ? 'Venda drop' : pedido.canal === 'Atacado' ? 'Venda atacado' : ['Shopee', 'TikTok Shop', 'Mercado Livre'].includes(pedido.canal) ? 'Marketplace' : 'Venda varejo',
+              primeiroVencimento: hojeISO(), pedido_id: pedido.id }}
+            onFechar={() => setGerar(false)}
+            onSalvo={() => { setGerar(false); titulosDoPedido(pedido.id).then(setTitulos) }} />
+        </div>
+      )}
     </div>
   )
 }

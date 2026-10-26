@@ -9,6 +9,7 @@ import Producao from './pages/Producao.jsx'
 import Pedidos from './pages/Pedidos.jsx'
 import Estoque from './pages/Estoque.jsx'
 import Clientes from './pages/Clientes.jsx'
+import Financeiro from './pages/Financeiro.jsx'
 import EmBreve from './pages/EmBreve.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
@@ -18,9 +19,9 @@ export const MODULOS = [
   { to: '/produtos', icon: 'produtos', label: 'Produtos' },
   { to: '/estoque', icon: 'estoque', label: 'Estoque' },
   { to: '/clientes', icon: 'clientes', label: 'Clientes' },
+  { to: '/financeiro', icon: 'financeiro', label: 'Financeiro' },
   { to: '/producao', icon: 'producao', label: 'Produção', exemplo: true },
   { to: '/compras', icon: 'compras', label: 'Compras', fase: 8 },
-  { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', fase: 6 },
   { to: '/relatorios', icon: 'relatorios', label: 'Relatórios', fase: 7 },
 ]
 
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/pedidos" element={<Pedidos />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/clientes" element={<Clientes />} />
+          <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/producao" element={<Producao />} />
           {MODULOS.filter((m) => m.fase).map((m) => (
             <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />

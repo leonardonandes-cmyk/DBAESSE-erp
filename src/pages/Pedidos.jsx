@@ -139,7 +139,7 @@ export default function Pedidos() {
           onFechar={() => setNovo(false)} onSalvo={() => { setNovo(false); setFiltro('abertos'); carregar() }} />
       )}
       {aberto && (
-        <PedidoDetalhe pedido={aberto} produtos={produtos} cores={cores}
+        <PedidoDetalhe pedido={aberto} produtos={produtos} cores={cores} parceiros={parceiros}
           onFechar={() => setAberto(null)} onMudou={depoisDeMudar} />
       )}
     </>

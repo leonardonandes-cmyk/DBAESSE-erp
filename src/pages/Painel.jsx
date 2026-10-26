@@ -7,6 +7,7 @@ import { brl, brlCurto, dataBR, inteiro, numeroPedido } from '../lib/format.js'
 import { listarParceiros } from '../lib/parceiros.js'
 import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, totaisPedido } from '../lib/pedidos.js'
 import { listarProdutos } from '../lib/produtos.js'
+import { listarTitulos, situacao } from '../lib/financeiro.js'
 
 const TOM_ALERTA = {
   bad: { background: 'var(--bad-soft)', color: 'var(--bad)' },
@@ -34,14 +35,18 @@ export default function Painel({ usuario }) {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    Promise.all([listarPedidos(), listarSaldos(), listarProdutos(), listarParceiros()])
-      .then(([pedidos, saldos, produtos, parceiros]) => setDados({ pedidos, saldos, produtos, parceiros }))
+    Promise.all([listarPedidos(), listarSaldos(), listarProdutos(), listarParceiros(), listarTitulos()])
+      .then(([pedidos, saldos, produtos, parceiros, titulos]) => setDados({ pedidos, saldos, produtos, parceiros, titulos }))
       .catch((e) => setErro(e.message))
   }, [])
 
   const calc = useMemo(() => {
     if (!dados) return null
-    const { pedidos, saldos, produtos, parceiros } = dados
+    const { pedidos, saldos, produtos, parceiros, titulos } = dados
+    const vencidos = titulos.filter((t) => !t.pago_em && ['vencido', 'hoje'].includes(situacao(t).id))
+    const pagarVenc = vencidos.filter((t) => t.tipo === 'pagar')
+    const receberVenc = vencidos.filter((t) => t.tipo === 'receber')
+    const somaV = (l) => l.reduce((x, t) => x + Number(t.valor), 0)
     const abertos = pedidos.filter((p) => ABERTOS.includes(p.status))
     const vendidos = pedidos.filter((p) => ['faturado', 'entregue'].includes(p.status))
     const agora = new Date()
@@ -70,6 +75,8 @@ export default function Painel({ usuario }) {
     const clientes = parceiros.filter((p) => p.tipos.includes('cliente') || p.tipos.includes('revendedora')).length
 
     const alertas = [
+      pagarVenc.length && { n: pagarVenc.length, titulo: 'Contas a pagar vencendo', sub: `${brl(somaV(pagarVenc))} vencidas ou para hoje`, tom: 'bad', para: '/financeiro' },
+      receberVenc.length && { n: receberVenc.length, titulo: 'Recebimentos em atraso', sub: `${brl(somaV(receberVenc))} para cobrar`, tom: 'warn', para: '/financeiro' },
       atrasados.length && { n: atrasados.length, titulo: 'Pedidos atrasados', sub: 'Previsão de entrega já passou', tom: 'bad', para: '/pedidos' },
       zerados && { n: zerados, titulo: 'SKUs sem estoque', sub: 'Modelos ativos com saldo zerado', tom: 'warn', para: '/estoque' },
       rascunhos && { n: rascunhos, titulo: 'Modelos em rascunho', sub: 'Faltam nome e cores para ativar', tom: 'neutral', para: '/produtos' },
