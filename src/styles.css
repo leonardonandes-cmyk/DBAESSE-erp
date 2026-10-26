@@ -269,3 +269,6 @@ tr.selected td { background: #FAF7F3; }
   .form-grid .span-2 { grid-column: span 2; }
   .modal { padding: 20px; }
 }
+.thumb img.desenho { object-fit: contain; background: #fff; padding: 6px; }
+.field select.input { appearance: auto; }
+.field input:disabled { background: var(--surface-2); color: var(--muted); }

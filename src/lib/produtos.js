@@ -71,3 +71,34 @@ export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gra
   }
   return prod
 }
+
+// Atualiza o modelo e cria só os SKUs que faltam (nunca apaga SKU — ele pode já estar em etiqueta)
+export async function atualizarProduto(produto, { nome, tipo, colecao, ncm, gradeDe, gradeAte, status, cores }) {
+  const { error } = await supabase
+    .from('produtos')
+    .update({ nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status })
+    .eq('id', produto.id)
+  if (error) throw error
+  const existentes = new Set(produto.skus.map((s) => `${s.cor_id}|${s.numero}`))
+  const linhas = []
+  for (const c of cores) {
+    for (let n = gradeDe; n <= gradeAte; n++) {
+      if (!existentes.has(`${c.id}|${n}`)) {
+        linhas.push({ produto_id: produto.id, cor_id: c.id, numero: n, sku: codigoSku(produto.ref, c.sigla, n) })
+      }
+    }
+  }
+  if (linhas.length) {
+    const { error: e2 } = await supabase.from('skus').insert(linhas)
+    if (e2) throw e2
+  }
+  return linhas.length
+}
+
+// Desenho padrão pelo tipo (public/desenhos/<tipo>.png), igual à regra das etiquetas
+export function desenhoDoTipo(tipo) {
+  if (!tipo) return null
+  const slug = tipo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/\s+/g, '-')
+  return DESENHOS.includes(slug) ? `/desenhos/${slug}.png` : null
+}
+const DESENHOS = ['mocassim', 'fisherman']

@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import NovoModelo from '../components/NovoModelo.jsx'
-import { listarCores, listarProdutos } from '../lib/produtos.js'
+import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
+
+function Imagem({ p, size }) {
+  const src = p.foto_url || desenhoDoTipo(p.tipo)
+  if (src) return <img src={src} alt="" className={p.foto_url ? '' : 'desenho'} />
+  return <Icon name="sapato" size={size} stroke={1.2} />
+}
 
 const STATUS = {
   ativo: { label: 'Ativo', tom: 'ok' },
@@ -21,6 +27,7 @@ export default function Produtos() {
   const [corSel, setCorSel] = useState(null)
   const [aba, setAba] = useState(ABAS[0])
   const [novo, setNovo] = useState(false)
+  const [editar, setEditar] = useState(null)
 
   async function carregar(focoRef) {
     setErro('')
@@ -112,7 +119,7 @@ export default function Produtos() {
                           onClick={() => { setSelRef(p.ref); setCorSel(null) }}>
                           <td>
                             <div className="prod-cell">
-                              <div className="thumb">{p.foto_url ? <img src={p.foto_url} alt="" /> : <Icon name="sapato" size={30} stroke={1.3} />}</div>
+                              <div className="thumb"><Imagem p={p} size={30} /></div>
                               <div><b>{p.nome}</b><span>REF {p.ref}{p.tipo ? ` · ${p.tipo}` : ''}</span></div>
                             </div>
                           </td>
@@ -134,7 +141,7 @@ export default function Produtos() {
             {sel && (
               <section className="card detail" aria-label="Detalhe do produto">
                 <div className="detail-head">
-                  <div className="thumb lg">{sel.foto_url ? <img src={sel.foto_url} alt="" /> : <Icon name="sapato" size={72} stroke={1.1} />}</div>
+                  <div className="thumb lg"><Imagem p={sel} size={72} /></div>
                   <div style={{ minWidth: 0 }}>
                     <div className="eyebrow">REF {sel.ref}{sel.tipo ? ` · ${sel.tipo}` : ''}</div>
                     <h2>{sel.nome}</h2>
@@ -156,7 +163,9 @@ export default function Produtos() {
                   ))}
                 </div>
 
-                {aba === 'Grade e SKUs' ? (
+                {aba === 'Grade e SKUs' && coresSel.length === 0 ? (
+                  <p className="preview" style={{ margin: 0 }}>Este modelo ainda não tem cores. Clique em <b>Editar modelo</b> para escolher as cores e gerar os SKUs.</p>
+                ) : aba === 'Grade e SKUs' ? (
                   <div className="table-wrap">
                     <table>
                       <thead><tr><th>Nº</th><th>SKU</th><th>EAN</th><th className="r">Estoque</th></tr></thead>
@@ -184,12 +193,22 @@ export default function Produtos() {
 
                 <div className="actions">
                   <button className="btn" style={{ flex: 1 }}>Imprimir etiquetas</button>
-                  <button className="btn btn-dark" style={{ flex: 1 }}>Editar modelo</button>
+                  <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => setEditar(sel)}>Editar modelo</button>
                 </div>
               </section>
             )}
           </div>
         </>
+      )}
+
+      {editar && (
+        <NovoModelo
+          produto={editar}
+          cores={cores}
+          onFechar={() => setEditar(null)}
+          onCorCriada={(c) => setCores([...cores, c].sort((a, b) => a.nome.localeCompare(b.nome)))}
+          onSalvo={(ref) => { setEditar(null); carregar(ref) }}
+        />
       )}
 
       {novo && (
