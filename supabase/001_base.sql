@@ -121,7 +121,7 @@ begin
 end $$;
 
 create or replace function public.tocar_atualizado()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin new.atualizado_em = now(); return new; end $$;
 
 drop trigger if exists produtos_atualizado on public.produtos;
@@ -170,6 +170,9 @@ grant usage on schema public to authenticated;
 grant select on public.empresas, public.perfis, public.historico to authenticated;
 grant select, insert, update, delete on public.cores, public.produtos, public.skus to authenticated;
 grant execute on function public.minha_empresa() to authenticated;
+revoke execute on function public.minha_empresa() from anon, public;
+revoke execute on function public.novo_usuario() from anon, authenticated, public;
+revoke execute on function public.registrar_historico() from anon, authenticated, public;
 
 -- ---------- Cores iniciais (dá para editar/acrescentar depois) ----------
 insert into public.cores (empresa_id, nome, sigla, hex)
