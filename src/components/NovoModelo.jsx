@@ -16,6 +16,8 @@ export default function NovoModelo({ produto, cores, onFechar, onSalvo, onCorCri
     gradeDe: produto?.grade_de || 34,
     gradeAte: produto?.grade_ate || 39,
     status: produto?.status === 'rascunho' ? 'ativo' : produto?.status || 'ativo',
+    precoAtacado: produto?.preco_atacado ?? '',
+    precoVarejo: produto?.preco_varejo ?? '',
   }))
   const [sel, setSel] = useState(coresAtuais)
   const [novaCor, setNovaCor] = useState('')
@@ -96,6 +98,8 @@ export default function NovoModelo({ produto, cores, onFechar, onSalvo, onCorCri
           <label className="field"><span>NCM</span><input value={f.ncm} onChange={set('ncm')} placeholder="6402.99.90" /></label>
           <label className="field"><span>Grade de</span><input type="number" value={f.gradeDe} onChange={set('gradeDe')} /></label>
           <label className="field"><span>até</span><input type="number" value={f.gradeAte} onChange={set('gradeAte')} /></label>
+          <label className="field"><span>Preço atacado (R$)</span><input type="number" step="0.01" min="0" value={f.precoAtacado} onChange={set('precoAtacado')} placeholder="59,90" /></label>
+          <label className="field"><span>Preço varejo (R$)</span><input type="number" step="0.01" min="0" value={f.precoVarejo} onChange={set('precoVarejo')} placeholder="129,90" /></label>
           <label className="field">
             <span>Situação</span>
             <select className="input" value={f.status} onChange={set('status')}>

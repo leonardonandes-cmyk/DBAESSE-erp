@@ -272,3 +272,43 @@ tr.selected td { background: #FAF7F3; }
 .thumb img.desenho { object-fit: contain; background: #fff; padding: 6px; }
 .field select.input { appearance: auto; }
 .field input:disabled { background: var(--surface-2); color: var(--muted); }
+
+/* ---------- Fases 2–4: pedidos, estoque, clientes ---------- */
+.form-grid .span-3 { grid-column: 1 / -1; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.check input { width: 18px; height: 18px; accent-color: var(--ink); }
+.modal-lg { max-width: 920px; }
+.divisor { display: flex; align-items: center; gap: 12px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.divisor::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.seletor { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.grade-input { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.grade-cel { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 6px; }
+.grade-cel:focus-within { border-color: var(--ink); }
+.grade-num { font-weight: 700; font-size: 18px; }
+.grade-cel input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: 8px; text-align: center; font-size: 15px; font-weight: 600; outline: 0; }
+.grade-cel input:focus { border-color: var(--ink); }
+.grade-saldo { font-size: 11px; color: var(--muted); }
+.grade-mini { display: flex; flex-wrap: wrap; gap: 4px; }
+.grade-mini span { display: inline-flex; flex-direction: column; align-items: center; min-width: 34px; padding: 3px 4px; border: 1px solid var(--line); border-radius: 6px; font-weight: 600; font-size: 13px; line-height: 1.15; }
+.grade-mini small { font-size: 10px; font-weight: 500; color: var(--muted); }
+.input-sm { height: 36px; width: 104px; text-align: right; }
+.link-btn { border: 0; background: transparent; color: var(--muted); text-decoration: underline; font-size: 12px; padding: 4px; }
+.link-btn:hover { color: var(--bad); }
+.btn-perigo { color: var(--bad); border-color: #EBC9C4; }
+.btn-perigo:hover { background: var(--bad-soft); border-color: var(--bad); }
+.pedido-rodape { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.pedido-totais { display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px; color: var(--muted); font-size: 13px; }
+.pedido-totais b { font-size: 24px; color: var(--ink); letter-spacing: -.02em; }
+.fluxo { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; overflow-x: auto; }
+.fluxo li { flex: 1; min-width: 92px; text-align: center; font-size: 12px; font-weight: 600; padding: 8px 6px; border-radius: 8px; background: var(--neutral-soft); color: var(--faint); white-space: nowrap; }
+.fluxo li.feito { background: var(--ok-soft); color: var(--ok); }
+.fluxo li.atual { background: var(--ink); color: #fff; }
+.bars-vazio { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); font-size: 13px; padding: 0 24px; }
+a.btn { text-decoration: none; }
+@media (max-width: 860px) {
+  .grade-input { grid-template-columns: repeat(3, 1fr); }
+  .pedido-rodape .actions { width: 100%; }
+  .pedido-rodape .actions .btn { flex: 1; }
+}
+.grade-cel input::-webkit-outer-spin-button, .grade-cel input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.grade-cel input[type=number] { -moz-appearance: textfield; }

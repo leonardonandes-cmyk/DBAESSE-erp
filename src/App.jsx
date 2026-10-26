@@ -6,22 +6,25 @@ import Login from './pages/Login.jsx'
 import Painel from './pages/Painel.jsx'
 import Produtos from './pages/Produtos.jsx'
 import Producao from './pages/Producao.jsx'
+import Pedidos from './pages/Pedidos.jsx'
+import Estoque from './pages/Estoque.jsx'
+import Clientes from './pages/Clientes.jsx'
 import EmBreve from './pages/EmBreve.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
   { to: '/', icon: 'painel', label: 'Painel' },
-  { to: '/pedidos', icon: 'pedidos', label: 'Pedidos', fase: 3 },
-  { to: '/producao', icon: 'producao', label: 'Produção' },
+  { to: '/pedidos', icon: 'pedidos', label: 'Pedidos' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos' },
-  { to: '/estoque', icon: 'estoque', label: 'Estoque', fase: 4 },
-  { to: '/clientes', icon: 'clientes', label: 'Clientes', fase: 2 },
+  { to: '/estoque', icon: 'estoque', label: 'Estoque' },
+  { to: '/clientes', icon: 'clientes', label: 'Clientes' },
+  { to: '/producao', icon: 'producao', label: 'Produção', exemplo: true },
   { to: '/compras', icon: 'compras', label: 'Compras', fase: 8 },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', fase: 6 },
   { to: '/relatorios', icon: 'relatorios', label: 'Relatórios', fase: 7 },
 ]
 
-const TABBAR = ['/', '/pedidos', '/producao', '/produtos', '/estoque']
+const TABBAR = ['/', '/pedidos', '/produtos', '/estoque', '/clientes']
 
 const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Operador' }
 
@@ -63,6 +66,7 @@ export default function App() {
               <Icon name={m.icon} />
               <span>{m.label}</span>
               {m.fase && <span className="soon">Em breve</span>}
+              {m.exemplo && <span className="soon">Exemplo</span>}
             </NavLink>
           ))}
         </nav>
@@ -79,16 +83,19 @@ export default function App() {
       <main className="main">
         <div className="mobile-top">
           <div className="brand-word">{EMPRESA.nome}</div>
-          <button className="btn icon-btn" aria-label="Notificações"><Icon name="sino" /></button>
+          <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
         </div>
         <Routes>
           <Route path="/" element={<Painel usuario={EMPRESA.usuario} />} />
           <Route path="/produtos" element={<Produtos />} />
+          <Route path="/pedidos" element={<Pedidos />} />
+          <Route path="/estoque" element={<Estoque />} />
+          <Route path="/clientes" element={<Clientes />} />
           <Route path="/producao" element={<Producao />} />
           {MODULOS.filter((m) => m.fase).map((m) => (
             <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />
           ))}
-          <Route path="*" element={<Painel />} />
+          <Route path="*" element={<Painel usuario={EMPRESA.usuario} />} />
         </Routes>
       </main>
 

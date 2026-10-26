@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import NovoModelo from '../components/NovoModelo.jsx'
 import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
+import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
+import { brl } from '../lib/format.js'
 
 function Imagem({ p, size }) {
   const src = p.foto_url || desenhoDoTipo(p.tipo)
@@ -19,6 +21,7 @@ const ABAS = ['Grade e SKUs', 'Dados', 'Preços', 'Ficha técnica']
 export default function Produtos() {
   const [produtos, setProdutos] = useState([])
   const [cores, setCores] = useState([])
+  const [saldos, setSaldos] = useState({})
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [filtro, setFiltro] = useState('Todos')
@@ -32,9 +35,10 @@ export default function Produtos() {
   async function carregar(focoRef) {
     setErro('')
     try {
-      const [p, c] = await Promise.all([listarProdutos(), listarCores()])
+      const [p, c, sa] = await Promise.all([listarProdutos(), listarCores(), listarSaldos()])
       setProdutos(p)
       setCores(c)
+      setSaldos(saldoPorSku(sa))
       if (focoRef) setSelRef(focoRef)
     } catch (e) {
       setErro(e.message)
@@ -108,10 +112,10 @@ export default function Produtos() {
               <div className="table-wrap">
                 <table style={{ minWidth: 560 }}>
                   <thead className="tinted">
-                    <tr><th>Modelo</th><th>Cores</th><th>Grade</th><th className="r">SKUs</th><th>Situação</th></tr>
+                    <tr><th>Modelo</th><th>Cores</th><th>Grade</th><th className="r">SKUs</th><th className="r">Estoque</th><th>Situação</th></tr>
                   </thead>
                   <tbody>
-                    {carregando && <tr><td colSpan={5} style={{ color: 'var(--muted)', padding: 32 }}>Carregando…</td></tr>}
+                    {carregando && <tr><td colSpan={6} style={{ color: 'var(--muted)', padding: 32 }}>Carregando…</td></tr>}
                     {lista.map((p) => {
                       const st = STATUS[p.status] || STATUS.ativo
                       return (
@@ -125,13 +129,14 @@ export default function Produtos() {
                           </td>
                           <td><div className="dots">{coresDo(p).map((c) => <span key={c.id} className="dot" title={c.nome} style={{ background: c.hex || '#ddd' }} />)}</div></td>
                           <td style={{ color: 'var(--ink-2)' }}>{p.grade_de} ao {p.grade_ate}</td>
-                          <td className="r"><b style={{ fontWeight: 600 }}>{p.skus.length}</b></td>
+                          <td className="r" style={{ color: 'var(--muted)' }}>{p.skus.length}</td>
+                          <td className="r"><b style={{ fontWeight: 600 }}>{p.skus.reduce((t, s) => t + (saldos[s.id] || 0), 0)}</b></td>
                           <td><span className={`pill ${st.tom}`}>{st.label}</span></td>
                         </tr>
                       )
                     })}
                     {!carregando && lista.length === 0 && (
-                      <tr><td colSpan={5} style={{ color: 'var(--muted)', padding: 32 }}>Nenhum modelo encontrado.</td></tr>
+                      <tr><td colSpan={6} style={{ color: 'var(--muted)', padding: 32 }}>Nenhum modelo encontrado.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -175,7 +180,7 @@ export default function Produtos() {
                             <td className="size">{g.numero}</td>
                             <td className="mono">{g.sku}</td>
                             <td style={{ color: 'var(--muted)' }}>{g.ean || 'Aguardando GS1'}</td>
-                            <td className="r" style={{ color: 'var(--faint)' }}>—</td>
+                            <td className="r" style={{ fontWeight: 700, color: (saldos[g.id] || 0) < 0 ? 'var(--bad)' : (saldos[g.id] || 0) === 0 ? 'var(--faint)' : 'var(--ink)' }}>{saldos[g.id] || 0}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -187,8 +192,15 @@ export default function Produtos() {
                     <dt>NCM</dt><dd>{sel.ncm || '—'}</dd>
                     <dt>Tipo</dt><dd>{sel.tipo || '—'}</dd>
                   </dl>
+                ) : aba === 'Preços' ? (
+                  <dl className="dados">
+                    <dt>Atacado</dt><dd>{sel.preco_atacado != null ? brl(sel.preco_atacado) : '—'}</dd>
+                    <dt>Varejo</dt><dd>{sel.preco_varejo != null ? brl(sel.preco_varejo) : '—'}</dd>
+                    <dt />
+                    <dd className="card-sub">Para alterar, clique em Editar modelo. O preço de atacado entra sozinho nos pedidos.</dd>
+                  </dl>
                 ) : (
-                  <p className="card-sub" style={{ margin: 0 }}>Esta aba entra nas próximas etapas.</p>
+                  <p className="card-sub" style={{ margin: 0 }}>A ficha técnica (materiais e consumo) entra na fase 8.</p>
                 )}
 
                 <div className="actions">

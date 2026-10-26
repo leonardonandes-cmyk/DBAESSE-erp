@@ -10,7 +10,7 @@ export async function listarCores() {
 export async function listarProdutos() {
   const { data, error } = await supabase
     .from('produtos')
-    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,skus(id,cor_id,numero,sku,ean)')
+    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,preco_atacado,preco_varejo,skus(id,cor_id,numero,sku,ean)')
     .order('ref')
   if (error) throw error
   return data
@@ -45,10 +45,12 @@ export function codigoSku(ref, sigla, numero) {
 }
 
 // Cria o modelo e gera todos os SKUs (cada cor × cada número da grade)
-export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gradeAte, cores }) {
+const preco = (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.')))
+
+export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gradeAte, status, precoAtacado, precoVarejo, cores }) {
   const { data: prod, error } = await supabase
     .from('produtos')
-    .insert({ ref: ref.trim().toUpperCase(), nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte })
+    .insert({ ref: ref.trim().toUpperCase(), nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status: status || 'ativo', preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo) })
     .select()
     .single()
   if (error) {
@@ -73,10 +75,10 @@ export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gra
 }
 
 // Atualiza o modelo e cria só os SKUs que faltam (nunca apaga SKU — ele pode já estar em etiqueta)
-export async function atualizarProduto(produto, { nome, tipo, colecao, ncm, gradeDe, gradeAte, status, cores }) {
+export async function atualizarProduto(produto, { nome, tipo, colecao, ncm, gradeDe, gradeAte, status, precoAtacado, precoVarejo, cores }) {
   const { error } = await supabase
     .from('produtos')
-    .update({ nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status })
+    .update({ nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status, preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo) })
     .eq('id', produto.id)
   if (error) throw error
   const existentes = new Set(produto.skus.map((s) => `${s.cor_id}|${s.numero}`))
