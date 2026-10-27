@@ -34,29 +34,37 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
   const [buscando, setBuscando] = useState('')
   const campoNumero = useRef(null)
 
+  const [receita, setReceita] = useState(null) // dados vindos da Receita, para conferir antes de usar
+
   async function porCnpj(valor = f.documento) {
     if (soDigitos(valor).length !== 14) return
-    setBuscando('cnpj'); setBusca((b) => ({ ...b, cnpj: '' }))
+    setBuscando('cnpj'); setBusca((b) => ({ ...b, cnpj: '' })); setReceita(null)
     try {
       const d = await buscarCnpj(valor)
-      const nomeBom = titulo(d.fantasia) || titulo(d.razao)
-      setF((x) => ({
-        ...x,
-        nome: x.nome || nomeBom,
-        telefone: x.telefone || d.telefone,
-        email: x.email || d.email,
-        cep: d.cep ? `${d.cep.slice(0, 5)}-${d.cep.slice(5)}` : x.cep,
-        endereco: titulo(d.logradouro) || x.endereco,
-        numero: d.numero || x.numero,
-        complemento: titulo(d.complemento) || x.complemento,
-        bairro: titulo(d.bairro) || x.bairro,
-        cidade: titulo(d.cidade) || x.cidade,
-        uf: d.uf || x.uf,
-        observacoes: x.observacoes || (d.fantasia && d.razao ? `Razão social: ${titulo(d.razao)}` : ''),
-      }))
-      const sit = (d.situacao || '').toUpperCase()
-      setBusca((b) => ({ ...b, cnpj: sit && sit !== 'ATIVA' ? `⚠ Situação na Receita: ${sit}` : `✓ ${titulo(d.razao)}${sit ? ' · ATIVA' : ''}` }))
+      setReceita({
+        razao: titulo(d.razao), fantasia: titulo(d.fantasia), situacao: (d.situacao || '').toUpperCase(),
+        telefone: d.telefone, email: d.email, cep: d.cep ? `${d.cep.slice(0, 5)}-${d.cep.slice(5)}` : '',
+        endereco: titulo(d.logradouro), numero: d.numero || '', complemento: titulo(d.complemento), bairro: titulo(d.bairro),
+        cidade: titulo(d.cidade), uf: d.uf || '',
+      })
     } catch (e) { setBusca((b) => ({ ...b, cnpj: e.message })) } finally { setBuscando('') }
+  }
+
+  // tudo = substitui o que estiver preenchido; senão, só completa o que está em branco
+  function usarReceita(tudo) {
+    const r = receita
+    const pega = (atual, novo) => (tudo ? novo || atual : atual || novo)
+    setF((x) => ({
+      ...x,
+      nome: pega(x.nome, r.fantasia || r.razao),
+      telefone: pega(x.telefone, r.telefone), email: pega(x.email, r.email),
+      cep: pega(x.cep, r.cep), endereco: pega(x.endereco, r.endereco), numero: pega(x.numero, r.numero),
+      complemento: pega(x.complemento, r.complemento), bairro: pega(x.bairro, r.bairro),
+      cidade: pega(x.cidade, r.cidade), uf: pega(x.uf, r.uf),
+      observacoes: x.observacoes || (r.fantasia && r.razao ? `Razão social: ${r.razao}` : ''),
+    }))
+    setBusca((b) => ({ ...b, cnpj: `✓ Dados da Receita aplicados — confira e ajuste o que o cliente passou diferente` }))
+    setReceita(null)
   }
 
   async function porCep(valor = f.cep) {
@@ -111,7 +119,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
         </div>
 
         <div className="form-grid">
-          <div className="field">
+          <div className="field span-2">
             <span>CNPJ / CPF</span>
             <div className="campo-busca">
               <input value={f.documento} inputMode="numeric" placeholder="Digite o CNPJ"
@@ -120,6 +128,29 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
             </div>
             {busca.cnpj && <small className={busca.cnpj.startsWith('✓') ? 'busca-ok' : 'busca-erro'}>{busca.cnpj}</small>}
           </div>
+          {receita && (
+            <div className="receita span-3" role="region" aria-label="Dados encontrados na Receita">
+              <div className="receita-head">
+                <div><b>Dados da Receita Federal</b><span>Confira antes de usar</span></div>
+                <span className={`pill ${receita.situacao === 'ATIVA' ? 'ok' : 'bad'}`}>{receita.situacao || 'situação não informada'}</span>
+              </div>
+              <dl className="receita-dados">
+                <dt>Razão social</dt><dd>{receita.razao || '—'}</dd>
+                <dt>Nome fantasia</dt><dd>{receita.fantasia || '—'}</dd>
+                <dt>Telefone</dt><dd>{receita.telefone || '—'}</dd>
+                <dt>E-mail</dt><dd>{receita.email || '—'}</dd>
+                <dt>Endereço</dt><dd>{[receita.endereco, receita.numero].filter(Boolean).join(', ') || '—'}{receita.complemento ? ` – ${receita.complemento}` : ''}</dd>
+                <dt>Bairro</dt><dd>{receita.bairro || '—'}</dd>
+                <dt>Cidade</dt><dd>{receita.cidade ? `${receita.cidade}/${receita.uf}` : '—'}{receita.cep ? ` · CEP ${receita.cep}` : ''}</dd>
+              </dl>
+              {receita.situacao && receita.situacao !== 'ATIVA' && <p className="busca-erro" style={{ margin: 0 }}>⚠ Este CNPJ não está ATIVO na Receita. Confirme com o cliente antes de vender.</p>}
+              <div className="actions" style={{ justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-sm" onClick={() => setReceita(null)}>Ignorar</button>
+                <button type="button" className="btn btn-sm" onClick={() => usarReceita(false)}>Completar só o que está em branco</button>
+                <button type="button" className="btn btn-sm btn-dark" onClick={() => usarReceita(true)}>Usar estes dados</button>
+              </div>
+            </div>
+          )}
           <label className="field span-2"><span>Nome / razão social *</span><input required value={f.nome} onChange={set('nome')} placeholder="Loja Primavera" /></label>
           <label className="field"><span>Telefone / WhatsApp</span><input value={f.telefone} onChange={set('telefone')} placeholder="(37) 99999-0000" inputMode="tel" /></label>
           <label className="field span-2"><span>E-mail</span><input type="email" value={f.email} onChange={set('email')} /></label>

@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
+import ParceiroForm from './ParceiroForm.jsx'
 import { brl } from '../lib/format.js'
 import { CANAIS } from '../lib/parceiros.js'
 import { criarPedido } from '../lib/pedidos.js'
 import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 
 export default function NovoPedido({ produtos, cores, parceiros, saldos, onFechar, onSalvo }) {
+  const [novos, setNovos] = useState([]) // clientes cadastrados agora, dentro da venda
+  const [cadastrar, setCadastrar] = useState(false)
   const clientes = useMemo(
-    () => parceiros.filter((p) => p.ativo && (p.tipos.includes('cliente') || p.tipos.includes('revendedora'))),
-    [parceiros]
+    () => [...novos, ...parceiros].filter((p, i, a) => p.ativo && (p.tipos.includes('cliente') || p.tipos.includes('revendedora')) && a.findIndex((x) => x.id === p.id) === i),
+    [parceiros, novos]
   )
   const [f, setF] = useState({ parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', desconto: '', status: 'orcamento' })
   const [listas, setListas] = useState([])
@@ -93,7 +96,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
 
         <div className="form-grid">
           <label className="field span-2">
-            <span>Cliente</span>
+            <span style={{ display: 'flex', justifyContent: 'space-between' }}>Cliente <button type="button" className="link-btn" onClick={() => setCadastrar(true)}>+ Novo cliente</button></span>
             <select className="input" value={f.parceiro_id} onChange={set('parceiro_id')}>
               <option value="">{clientes.length ? 'Escolha o cliente…' : 'Sem cliente (cadastre em Clientes)'}</option>
               {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}{c.cidade ? ` · ${c.cidade}` : ''}</option>)}
@@ -169,6 +172,19 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
           </div>
         </div>
       </div>
+      {cadastrar && (
+        <ParceiroForm tipoInicial="cliente" onFechar={() => setCadastrar(false)}
+          onSalvo={(novo) => {
+            setCadastrar(false)
+            if (!novo?.id) return
+            setNovos((n) => [novo, ...n])
+            const canal = novo.canal || f.canal
+            const lista = listaSugerida(novo, canal)
+            setF((x) => ({ ...x, parceiro_id: novo.id, canal, lista }))
+            const l = listas.find((x) => x.codigo === lista)
+            setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoNaLista(i.produto, l) })))
+          }} />
+      )}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import Leitor from '../components/Leitor.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
+import ParceiroForm from '../components/ParceiroForm.jsx'
 import { listarSaldos } from '../lib/estoque.js'
 import { brl, numeroPedido } from '../lib/format.js'
 import { acharSku, avisar, criarIndice } from '../lib/leitura.js'
@@ -223,7 +224,10 @@ function Separar({ pedido, indice, produtos, cores, onVoltar }) {
 }
 
 // ---------------- Novo pedido bipando ----------------
-function NovoBipando({ indice, parceiros, onVoltar }) {
+function NovoBipando({ indice, parceiros: parceirosBase, onVoltar }) {
+  const [novos, setNovos] = useState([])
+  const [cadastrar, setCadastrar] = useState(false)
+  const parceiros = [...novos, ...parceirosBase]
   const clientes = parceiros.filter((p) => p.ativo && p.tipos.some((t) => t === 'cliente' || t === 'revendedora'))
   const [cliente, setCliente] = useState('')
   const [canal, setCanal] = useState('Atacado')
@@ -284,7 +288,7 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
     <div className="appv">
       <Topo titulo="Novo pedido" sub={`${pares} pares · ${brl(valor)}`} onVoltar={onVoltar} />
       <div className="appv-campos">
-        <label className="field"><span>Cliente</span>
+        <label className="field"><span style={{ display: 'flex', justifyContent: 'space-between' }}>Cliente <button type="button" className="link-btn" onClick={() => setCadastrar(true)}>+ Novo</button></span>
           <select className="input" value={cliente} onChange={(e) => escolherCliente(e.target.value)}>
             <option value="">Escolha o cliente…</option>
             {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -301,6 +305,15 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
           </select>
         </label>
       </div>
+      {cadastrar && (
+        <ParceiroForm tipoInicial="cliente" onFechar={() => setCadastrar(false)}
+          onSalvo={(novo) => {
+            setCadastrar(false)
+            if (!novo?.id) return
+            setNovos((n) => [novo, ...n]); setCliente(novo.id)
+            const c = novo.canal || canal; setCanal(c); setCodLista(listaSugerida(novo, c))
+          }} />
+      )}
       <Leitor onCodigo={bipou} rotulo="Bipar par" />
       <Retorno r={retorno} />
       <div className="appv-itens">

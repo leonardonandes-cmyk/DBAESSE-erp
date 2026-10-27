@@ -494,3 +494,11 @@ td.clickable { cursor: pointer; }
 .campo-busca input { flex: 1; min-width: 0; }
 .busca-ok { color: var(--ok); font-size: 12px; }
 .busca-erro { color: var(--bad); font-size: 12px; }
+/* conferência dos dados da Receita */
+.receita { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid #d9cbb9; border-radius: var(--radius-sm); background: #FBF7F2; }
+.receita-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.receita-head b { display: block; }
+.receita-head span:not(.pill) { font-size: 12px; color: var(--muted); }
+.receita-dados { display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
+.receita-dados dt { color: var(--muted); }
+.receita-dados dd { margin: 0; font-weight: 500; }
