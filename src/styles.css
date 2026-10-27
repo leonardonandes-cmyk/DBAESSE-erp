@@ -1182,3 +1182,10 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 @media (max-width: 1250px) { .atalhos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); } .atalho { white-space: normal; } }
 .atalho > svg:last-child { display: none; } .atalho { justify-content: flex-start; gap: 10px; font-size: 14px; }
+/* abas que são links (mesmo relevo dos botões) */
+.segmented .aba-link { display: inline-flex; align-items: center; height: 42px; padding: 0 20px; border-radius: 10px; color: var(--ink-2); font-weight: 600; font-size: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F6F4F0 100%); border: 1px solid #DEDAD3;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 2px 0 #D6D1C8, 0 4px 10px -6px rgba(20,18,15,.25); white-space: nowrap; }
+.segmented .aba-link:hover { transform: translateY(-1px); }
+.segmented .aba-link.on { color: #fff; border-color: #151515; background: linear-gradient(180deg, #2A2927 0%, #151515 100%); box-shadow: 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.45); }
+.bipar-pagina { max-width: 640px; }

@@ -19,6 +19,7 @@ import TabelaPrecos from './pages/TabelaPrecos.jsx'
 import MargemLojas from './pages/MargemLojas.jsx'
 import Indicadores from './pages/Indicadores.jsx'
 import FichasTecnicas from './pages/FichasTecnicas.jsx'
+import BiparProducao from './components/BiparProducao.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
@@ -28,7 +29,10 @@ export const MODULOS = [
   { to: '/app', icon: 'leitor', label: 'App vendas', grupo: 'Comercial' },
   { to: '/precos', icon: 'precos', label: 'Tabela de preços', grupo: 'Comercial' },
   { to: '/lojas', icon: 'loja', label: 'Margem por loja', grupo: 'Comercial' },
-  { to: '/producao', icon: 'producao', label: 'Produção', grupo: 'Operações' },
+  { to: '/producao', icon: 'producao', label: 'Produção', grupo: 'Operações', exato: true },
+  { to: '/producao/mapas', icon: 'ficha', label: 'Mapas e corte', grupo: 'Operações', sub: true },
+  { to: '/producao/pcp', icon: 'relatorios', label: 'Programação (PCP)', grupo: 'Operações', sub: true },
+  { to: '/producao/bipar', icon: 'leitor', label: 'Bipar fichas', grupo: 'Operações', sub: true },
   { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações' },
   { to: '/compras', icon: 'compras', label: 'Compras', grupo: 'Operações' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
@@ -97,7 +101,7 @@ export default function App() {
             <div className="nav-grupo" key={g || 'inicio'}>
               {g && <div className="nav-titulo">{g}</div>}
               {MODULOS.filter((m) => (m.grupo || '') === g).map((m) => (
-                <NavLink key={m.to} to={m.to} end={m.to === '/'} className={m.sub ? 'sub' : undefined}>
+                <NavLink key={m.to} to={m.to} end={m.to === '/' || m.exato} className={m.sub ? 'sub' : undefined}>
                   <Icon name={m.icon} size={m.sub ? 16 : 18} />
                   <span>{m.label}</span>
                   {m.fase && <span className="soon">Em breve</span>}
@@ -136,7 +140,10 @@ export default function App() {
           <Route path="/indicadores" element={<Indicadores />} />
           <Route path="/fichas" element={<FichasTecnicas />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/producao" element={<Producao />} />
+          <Route path="/producao" element={<Producao visao="quadro" />} />
+          <Route path="/producao/mapas" element={<Producao visao="mapas" />} />
+          <Route path="/producao/pcp" element={<Producao visao="pcp" />} />
+          <Route path="/producao/bipar" element={<BiparProducao />} />
           <Route path="/app" element={<AppVendas />} />
           {MODULOS.filter((m) => m.fase).map((m) => (
             <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />

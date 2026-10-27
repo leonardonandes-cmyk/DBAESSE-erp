@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import ProdutoCelula, { FotoProduto } from '../components/FotoProduto.jsx'
 import Icon from '../components/Icon.jsx'
 import GerarOPs from '../components/GerarOPs.jsx'
@@ -21,7 +22,7 @@ const FILTROS = [
 ]
 const CEL = { concluida: { cls: 'ok', txt: 'OK' }, em_curso: { cls: 'cur', txt: 'Em curso' }, pendente: { cls: 'pend', txt: '—' } }
 
-export default function Producao() {
+export default function Producao({ visao = 'quadro' }) {
   const [ops, setOps] = useState([])
   const [setores, setSetores] = useState([])
   const [produtos, setProdutos] = useState([])
@@ -35,7 +36,6 @@ export default function Producao() {
   const [nova, setNova] = useState(false)
   const [sugestoes, setSugestoes] = useState(null)
   const [aberta, setAberta] = useState(null)
-  const [visao, setVisao] = useState('quadro')
 
   async function carregar() {
     try {
@@ -97,9 +97,10 @@ export default function Producao() {
       {erro && <p className="form-error" role="alert">{erro}</p>}
 
       <div className="segmented lojas-abas" role="tablist">
-        <button role="tab" className={visao === 'quadro' ? 'on' : ''} onClick={() => setVisao('quadro')}>Quadro de ordens</button>
-        <button role="tab" className={visao === 'mapas' ? 'on' : ''} onClick={() => setVisao('mapas')}>Mapas e folhas de corte</button>
-        <button role="tab" className={visao === 'pcp' ? 'on' : ''} onClick={() => setVisao('pcp')}>Programação (PCP)</button>
+        <Link role="tab" to="/producao" className={`aba-link ${visao === 'quadro' ? 'on' : ''}`}>Quadro de ordens</Link>
+        <Link role="tab" to="/producao/mapas" className={`aba-link ${visao === 'mapas' ? 'on' : ''}`}>Mapas e folhas de corte</Link>
+        <Link role="tab" to="/producao/pcp" className={`aba-link ${visao === 'pcp' ? 'on' : ''}`}>Programação (PCP)</Link>
+        <Link role="tab" to="/producao/bipar" className="aba-link">Bipar fichas</Link>
       </div>
 
       {visao === 'mapas' ? <MapasLista ops={ops} produtos={produtos} cores={cores} onMudou={carregar} />
