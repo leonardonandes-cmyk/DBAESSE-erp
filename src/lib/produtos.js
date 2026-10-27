@@ -1,5 +1,5 @@
 // Acesso ao banco para o cadastro de produtos — as telas só usam estas funções.
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 
 export async function listarCores() {
   const { data, error } = await supabase.from('cores').select('id,nome,sigla,hex').order('nome')
@@ -8,12 +8,10 @@ export async function listarCores() {
 }
 
 export async function listarProdutos() {
-  const { data, error } = await supabase
+  return todas(() => supabase
     .from('produtos')
     .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,preco_atacado,preco_varejo,ficha,skus(id,cor_id,numero,sku,ean)')
-    .order('ref')
-  if (error) throw error
-  return data
+    .order('ref'))
 }
 
 // Sigla de 3 letras a partir do nome (Preto/Nude/Caramelo → PNC; "Off white" → OFF)

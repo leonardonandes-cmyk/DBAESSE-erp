@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 
 export const TIPOS_PARCEIRO = [
   { valor: 'cliente', label: 'Cliente', plural: 'Clientes' },
@@ -10,12 +10,10 @@ export const TIPOS_PARCEIRO = [
 export const CANAIS = ['Atacado', 'Revenda', 'Drop', 'Shopee', 'TikTok Shop', 'Mercado Livre', 'Instagram', 'Loja / varejo']
 
 export async function listarParceiros() {
-  const { data, error } = await supabase
+  return todas(() => supabase
     .from('parceiros')
     .select('id,nome,tipos,documento,telefone,email,cep,endereco,cidade,uf,canal,observacoes,ativo')
-    .order('nome')
-  if (error) throw error
-  return data
+    .order('nome').order('id'))
 }
 
 export async function salvarParceiro(dados, id) {

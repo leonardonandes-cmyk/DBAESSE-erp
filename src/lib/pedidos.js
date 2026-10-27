@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 
 export const STATUS_PEDIDO = {
   orcamento: { label: 'Orçamento', tom: 'neutral', ordem: 0 },
@@ -27,8 +27,7 @@ export function atrasado(p) {
 }
 
 export async function listarPedidos() {
-  const { data, error } = await supabase.from('pedidos').select(CAMPOS).order('numero', { ascending: false })
-  if (error) throw error
+  const data = await todas(() => supabase.from('pedidos').select(CAMPOS).order('numero', { ascending: false }))
   return data
 }
 

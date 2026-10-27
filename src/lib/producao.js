@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 
 export const STATUS_OP = {
   aberta: { label: 'Aberta', tom: 'neutral' },
@@ -29,8 +29,7 @@ const CAMPOS = 'id,numero,status,prioridade,prazo,observacao,estoque_lancado,con
   'op_etapas(id,setor_id,ordem,status,inicio,fim,qtd_ok,qtd_perda,responsavel,observacao)'
 
 export async function listarOPs() {
-  const { data, error } = await supabase.from('ordens_producao').select(CAMPOS).order('numero', { ascending: false })
-  if (error) throw error
+  const data = await todas(() => supabase.from('ordens_producao').select(CAMPOS).order('numero', { ascending: false }))
   return data.map((o) => ({
     ...o,
     op_itens: (o.op_itens || []).sort((a, b) => a.skus.numero - b.skus.numero),
@@ -125,10 +124,10 @@ export function sugerirOPs({ pedidosAbertos, itensPedidos, saldos, ops, produtos
 }
 
 export async function itensDosPedidosAbertos() {
-  const { data, error } = await supabase
+  const data = await todas(() => supabase
     .from('pedido_itens')
-    .select('sku_id,quantidade,pedidos!inner(id,numero,status)')
+    .select('id,sku_id,quantidade,pedidos!inner(id,numero,status)')
     .in('pedidos.status', ['aprovado', 'producao', 'separacao'])
-  if (error) throw error
+    .order('id'))
   return data.map((i) => ({ sku_id: i.sku_id, quantidade: i.quantidade, pedido_numero: i.pedidos.numero, pedido_id: i.pedidos.id }))
 }

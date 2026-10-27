@@ -1,12 +1,11 @@
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 
 // Saldo de cada SKU (entradas − saídas ± ajustes)
 export async function listarSaldos() {
-  const { data, error } = await supabase
+  return todas(() => supabase
     .from('estoque_saldos')
     .select('sku_id,produto_id,cor_id,numero,sku,saldo,saldo_bulk,saldo_pick')
-  if (error) throw error
-  return data
+    .order('sku_id'))
 }
 
 export const LOCAIS = {

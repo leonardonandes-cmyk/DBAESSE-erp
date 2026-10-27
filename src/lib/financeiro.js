@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 import { hojeISO } from './format.js'
 
 export const CATEGORIAS = {
@@ -8,12 +8,10 @@ export const CATEGORIAS = {
 export const FORMAS = ['Pix', 'Boleto', 'Transferência', 'Dinheiro', 'Cartão', 'Cheque']
 
 export async function listarTitulos() {
-  const { data, error } = await supabase
+  return todas(() => supabase
     .from('titulos')
     .select('id,tipo,descricao,parceiro_id,categoria,valor,vencimento,parcela,pago_em,valor_pago,forma,pedido_id,observacao,parceiros(nome)')
-    .order('vencimento')
-  if (error) throw error
-  return data
+    .order('vencimento').order('id'))
 }
 
 export function situacao(t) {

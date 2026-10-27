@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase, todas } from './supabase.js'
 
 export const UNIDADES = [
   { v: 'par', l: 'par' }, { v: 'un', l: 'unidade' }, { v: 'm', l: 'metro linear' }, { v: 'm2', l: 'm²' },
@@ -44,8 +44,7 @@ export async function salvarMaterial(d, id) {
 
 // saldo por material (e por número, nos materiais por numeração)
 export async function listarSaldosMateriais() {
-  const { data, error } = await supabase.from('material_saldos').select('material_id,numero,saldo')
-  if (error) throw error
+  const data = await todas(() => supabase.from('material_saldos').select('material_id,numero,saldo').order('material_id').order('numero'))
   return data
 }
 
@@ -133,12 +132,10 @@ export function calcularNecessidade({ ops, ficha, materiais, saldos, compras }) 
 
 // ---------- Pedidos de compra ----------
 export async function listarCompras() {
-  const { data, error } = await supabase
+  return todas(() => supabase
     .from('compras')
     .select('id,numero,status,previsao,observacao,recebido_em,criado_em,fornecedor_id,parceiros(nome),compra_itens(id,material_id,numero,quantidade,custo_unit,materiais(nome,unidade))')
-    .order('numero', { ascending: false })
-  if (error) throw error
-  return data
+    .order('numero', { ascending: false }))
 }
 
 export const totalCompra = (c) => (c.compra_itens || []).reduce((t, i) => t + Number(i.quantidade) * Number(i.custo_unit), 0)
