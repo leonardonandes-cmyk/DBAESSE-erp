@@ -1176,3 +1176,9 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .atalho:active { transform: translateY(2px); box-shadow: 0 1px 0 #D9D3C9; }
 .atalho-ico { background: #151515; color: #fff; border: 0; box-shadow: 0 2px 0 #000; }
 .atalho:hover .atalho-ico { background: var(--accent); }
+.atalhos { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.atalho { min-width: 0; font-size: 13.5px; }
+.atalho-ico { flex: none; }
+@media (max-width: 1250px) { .atalhos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); } .atalho { white-space: normal; } }
+.atalho > svg:last-child { display: none; } .atalho { justify-content: flex-start; gap: 10px; font-size: 14px; }

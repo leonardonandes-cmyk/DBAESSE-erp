@@ -186,6 +186,15 @@ export default function Painel({ usuario }) {
         )}
       </div>
 
+      <nav className="atalhos" aria-label="Atalhos">
+        {[
+          ['pedidos', 'Novo pedido', '/pedidos'], ['producao', 'Nova OP', '/producao'], ['estoque', 'Entrada estoque', '/estoque'],
+          ['produtos', 'Novo produto', '/produtos'], ['clientes', 'Novo cliente', '/clientes'], ['leitor', 'App vendas', '/app'],
+        ].map(([ic, t, to]) => (
+          <Link key={t} to={to} className="atalho"><span className="atalho-ico"><Icon name={ic} size={18} /></span>{t}<Icon name="seta" size={14} /></Link>
+        ))}
+      </nav>
+
       {erro && <p className="form-error" role="alert">Não consegui ler o banco: {erro}</p>}
 
       <section className="painel-kpis" aria-label="Indicadores">
@@ -234,14 +243,6 @@ export default function Painel({ usuario }) {
         </div>
       </section>
 
-      <nav className="atalhos" aria-label="Atalhos">
-        {[
-          ['pedidos', 'Novo pedido', '/pedidos'], ['producao', 'Ordem de produção', '/producao'], ['estoque', 'Entrada de estoque', '/estoque'],
-          ['produtos', 'Cadastro de produto', '/produtos'], ['clientes', 'Novo cliente', '/clientes'], ['leitor', 'App vendas', '/app'],
-        ].map(([ic, t, to]) => (
-          <Link key={t} to={to} className="atalho"><span className="atalho-ico"><Icon name={ic} size={18} /></span>{t}<Icon name="seta" size={14} /></Link>
-        ))}
-      </nav>
 
       <section className="painel-linha tres">
         <div className="card">
