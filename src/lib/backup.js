@@ -5,7 +5,7 @@ const ABAS = [
   ['Produtos', 'produtos', 'ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,preco_atacado,preco_varejo,foto_url'],
   ['SKUs e estoque', 'estoque_saldos', 'sku,numero,saldo,saldo_bulk,saldo_pick'],
   ['Cores', 'cores', 'nome,sigla,hex'],
-  ['Clientes e fornecedores', 'parceiros', 'nome,tipos,documento,telefone,email,cep,endereco,cidade,uf,canal,observacoes,ativo'],
+  ['Clientes e fornecedores', 'parceiros', 'nome,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,observacoes,ativo'],
   ['Pedidos', 'pedidos', 'numero,canal,status,previsao,desconto,observacoes,criado_em,parceiros(nome)'],
   ['Itens dos pedidos', 'pedido_itens', 'quantidade,preco_unit,pedidos(numero),skus(sku)'],
   ['Movimentos de estoque', 'estoque_movimentos', 'criado_em,local,tipo,quantidade,motivo,observacao,skus(sku)'],

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import ParceiroForm from '../components/ParceiroForm.jsx'
 import { linkWhats } from '../lib/format.js'
-import { TIPOS_PARCEIRO, listarParceiros } from '../lib/parceiros.js'
+import { TIPOS_PARCEIRO, listarParceiros, enderecoCompleto } from '../lib/parceiros.js'
 
 const LABEL = Object.fromEntries(TIPOS_PARCEIRO.map((t) => [t.valor, t.label]))
 const TOM = { cliente: 'info', revendedora: 'warn', fornecedor: 'neutral', transportadora: 'neutral' }
@@ -87,7 +87,7 @@ export default function Clientes() {
                     <tr key={p.id} className="clickable" onClick={() => setForm({ parceiro: p })} style={p.ativo ? undefined : { opacity: 0.5 }}>
                       <td><b>{p.nome}</b>{!p.ativo && <span className="pill neutral" style={{ marginLeft: 8 }}>Inativo</span>}</td>
                       <td><div className="chips" style={{ gap: 4 }}>{p.tipos.map((t) => <span key={t} className={`pill ${TOM[t]}`}>{LABEL[t]}</span>)}</div></td>
-                      <td style={{ color: 'var(--ink-2)' }}>{p.cidade ? `${p.cidade}${p.uf ? ` / ${p.uf}` : ''}` : '—'}</td>
+                      <td style={{ color: 'var(--ink-2)' }} title={enderecoCompleto(p)}>{p.cidade ? `${p.cidade}${p.uf ? ` / ${p.uf}` : ''}` : '—'}</td>
                       <td>
                         {zap ? <a className="link" href={zap} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{p.telefone}</a> : (p.email || '—')}
                       </td>

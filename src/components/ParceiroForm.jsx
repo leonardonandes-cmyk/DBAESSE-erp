@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { listarListas } from '../lib/precos.js'
-import { buscarCep, buscarCnpj, montarEndereco, titulo } from '../lib/consultas.js'
+import { buscarCep, buscarCnpj, titulo } from '../lib/consultas.js'
 import { soDigitos } from '../lib/format.js'
 import Icon from './Icon.jsx'
 import { CANAIS, TIPOS_PARCEIRO, salvarParceiro } from '../lib/parceiros.js'
@@ -15,6 +15,9 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     email: parceiro?.email || '',
     cep: parceiro?.cep || '',
     endereco: parceiro?.endereco || '',
+    numero: parceiro?.numero || '',
+    complemento: parceiro?.complemento || '',
+    bairro: parceiro?.bairro || '',
     cidade: parceiro?.cidade || '',
     uf: parceiro?.uf || '',
     canal: parceiro?.canal || '',
@@ -29,6 +32,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const [busca, setBusca] = useState({ cnpj: '', cep: '' }) // mensagem de cada busca
   const [buscando, setBuscando] = useState('')
+  const campoNumero = useRef(null)
 
   async function porCnpj(valor = f.documento) {
     if (soDigitos(valor).length !== 14) return
@@ -42,7 +46,10 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
         telefone: x.telefone || d.telefone,
         email: x.email || d.email,
         cep: d.cep ? `${d.cep.slice(0, 5)}-${d.cep.slice(5)}` : x.cep,
-        endereco: montarEndereco(d) || x.endereco,
+        endereco: titulo(d.logradouro) || x.endereco,
+        numero: d.numero || x.numero,
+        complemento: titulo(d.complemento) || x.complemento,
+        bairro: titulo(d.bairro) || x.bairro,
         cidade: titulo(d.cidade) || x.cidade,
         uf: d.uf || x.uf,
         observacoes: x.observacoes || (d.fantasia && d.razao ? `Razão social: ${titulo(d.razao)}` : ''),
@@ -57,8 +64,9 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     setBuscando('cep'); setBusca((b) => ({ ...b, cep: '' }))
     try {
       const d = await buscarCep(valor)
-      setF((x) => ({ ...x, cep: `${d.cep.slice(0, 5)}-${d.cep.slice(5)}`, endereco: montarEndereco(d) || x.endereco, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
-      setBusca((b) => ({ ...b, cep: `✓ ${d.cidade}/${d.uf} — complete o número` }))
+      setF((x) => ({ ...x, cep: `${d.cep.slice(0, 5)}-${d.cep.slice(5)}`, endereco: titulo(d.logradouro) || x.endereco, bairro: titulo(d.bairro) || x.bairro, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
+      setTimeout(() => campoNumero.current?.focus(), 50)
+      setBusca((b) => ({ ...b, cep: `✓ ${d.cidade}/${d.uf} — digite o número` }))
     } catch (e) { setBusca((b) => ({ ...b, cep: e.message })) } finally { setBuscando('') }
   }
 
@@ -124,7 +132,10 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
             </div>
             {busca.cep && <small className={busca.cep.startsWith('✓') ? 'busca-ok' : 'busca-erro'}>{busca.cep}</small>}
           </div>
-          <label className="field span-2"><span>Endereço</span><input value={f.endereco} onChange={set('endereco')} placeholder="Rua, número, bairro" /></label>
+          <label className="field span-2"><span>Rua / avenida</span><input value={f.endereco} onChange={set('endereco')} placeholder="Rua Para de Minas" /></label>
+          <label className="field"><span>Número</span><input ref={campoNumero} value={f.numero} onChange={set('numero')} placeholder="1200 ou S/N" /></label>
+          <label className="field"><span>Complemento</span><input value={f.complemento} onChange={set('complemento')} placeholder="Sala 2, galpão B…" /></label>
+          <label className="field"><span>Bairro</span><input value={f.bairro} onChange={set('bairro')} /></label>
           <label className="field"><span>Cidade</span><input value={f.cidade} onChange={set('cidade')} /></label>
           <label className="field"><span>UF</span><input value={f.uf} onChange={set('uf')} maxLength={2} placeholder="MG" /></label>
           <label className="field">

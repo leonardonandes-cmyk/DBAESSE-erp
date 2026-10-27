@@ -12,7 +12,7 @@ export const CANAIS = ['Atacado', 'Revenda', 'Drop', 'Shopee', 'TikTok Shop', 'M
 export async function listarParceiros() {
   return todas(() => supabase
     .from('parceiros')
-    .select('id,nome,tipos,documento,telefone,email,cep,endereco,cidade,uf,canal,lista,observacoes,ativo')
+    .select('id,nome,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,observacoes,ativo')
     .order('nome').order('id'))
 }
 
@@ -25,6 +25,9 @@ export async function salvarParceiro(dados, id) {
     email: dados.email?.trim() || null,
     cep: dados.cep?.trim() || null,
     endereco: dados.endereco?.trim() || null,
+    numero: dados.numero?.trim() || null,
+    complemento: dados.complemento?.trim() || null,
+    bairro: dados.bairro?.trim() || null,
     cidade: dados.cidade?.trim() || null,
     uf: dados.uf?.trim().toUpperCase() || null,
     canal: dados.canal || null,
@@ -41,4 +44,12 @@ export async function salvarParceiro(dados, id) {
     throw error
   }
   return data
+}
+
+// "Rua X, 120 – Sala 2 – Centro – Nova Serrana/MG – CEP 35520-000"
+export function enderecoCompleto(p) {
+  if (!p) return ''
+  const rua = [p.endereco, p.numero].filter(Boolean).join(', ')
+  const cid = p.cidade ? `${p.cidade}${p.uf ? `/${p.uf}` : ''}` : ''
+  return [rua, p.complemento, p.bairro, cid, p.cep ? `CEP ${p.cep}` : ''].filter(Boolean).join(' – ')
 }
