@@ -80,8 +80,8 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
     <header className="pr-cab">
       <Marca titulo={titulo} sub={modelos} />
       <div className="pr-cab-dados">
-        <span><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
-        <span><small>Pedido</small><b>{mapa.pedido || '—'}</b></span>
+        <span className="pr-cab-dest"><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
+        <span className="pr-cab-dest"><small>Pedido</small><b>{mapa.pedido || '—'}</b></span>
         <span><small>Cliente</small><b>{mapa.cliente || '—'}</b></span>
         <span><small>Marca</small><b>{mapa.marca || '—'}</b></span>
         <span><small>Data</small><b>{dataBR(mapa.data)}</b></span>
@@ -166,8 +166,8 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
           <span><small>Data</small><b>{dataBR(mapa.data)}</b></span>
           <span><small>Cliente</small><b>{mapa.cliente || '—'}</b></span>
           <span><small>Prev. entrega</small><b>{dataBR(mapa.previsao)}</b></span>
-          <span><small>Pedido</small><b>{mapa.pedido || '—'}</b></span>
-          <span><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
+          <span className="pr-cab-dest"><small>Pedido</small><b>{mapa.pedido || '—'}</b></span>
+          <span className="pr-cab-dest"><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
           <span className="pr-dest"><small>Qtd pares</small><b>{inteiro(totPalm)}</b></span>
         </div>
         <table className="pr-tab pr-palm-total">

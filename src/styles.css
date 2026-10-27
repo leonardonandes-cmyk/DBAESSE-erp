@@ -1189,3 +1189,7 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .segmented .aba-link:hover { transform: translateY(-1px); }
 .segmented .aba-link.on { color: #fff; border-color: #151515; background: linear-gradient(180deg, #2A2927 0%, #151515 100%); box-shadow: 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.45); }
 .bipar-pagina { max-width: 640px; }
+/* MAPA e PEDIDO em destaque também no mapa geral e na palmilha */
+.pr-cab-dados { align-items: end; }
+.pr-cab-dest { border: 1.8px solid #111; border-radius: 1.8mm; padding: 1mm 3mm 1.2mm; }
+.pr-cab-dest b { font-family: 'Jost', var(--font); font-size: 19pt !important; font-weight: 600; line-height: 1.05; }
