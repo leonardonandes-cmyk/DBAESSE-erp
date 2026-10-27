@@ -592,3 +592,15 @@ td.clickable { cursor: pointer; }
 .loja-logo { display: inline-block; object-fit: contain; vertical-align: middle; margin-right: 8px; flex: none; }
 .lojas-abas button, .lojas-kpi .kpi-label, .modal-head h2:has(.loja-logo) { display: inline-flex; align-items: center; }
 .lojas-tab th .loja-logo { margin-right: 6px; vertical-align: -4px; }
+
+/* Logo DBAESSE: placa preta, letras brancas em 3D */
+.brand { background: #0B0B0B; border-radius: 14px; padding: 20px 16px 16px; align-items: center; text-align: center;
+  box-shadow: 0 10px 24px -12px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); }
+.brand-word, .mobile-top .brand-word {
+  color: #FFFFFF; font-family: var(--brand); font-weight: 600; letter-spacing: .26em; padding-left: .26em; line-height: 1;
+  text-shadow: .02em .025em 0 #8C8C8C, .04em .05em 0 #4A4A4A, .05em .08em .12em rgba(0,0,0,.85);
+}
+.brand .brand-word { font-size: 24px; }
+.brand .brand-sub { color: #9A9A9A; letter-spacing: .34em; padding-left: .34em; margin-top: 6px; }
+.mobile-top .brand-word { background: #0B0B0B; border-radius: 10px; padding: 9px 12px 11px calc(12px + .26em); font-size: 17px; }
+.login-card .brand { margin-bottom: 18px; }
