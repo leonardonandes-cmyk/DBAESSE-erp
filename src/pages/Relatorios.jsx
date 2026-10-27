@@ -5,6 +5,10 @@ import { brl, brlCurto, inteiro } from '../lib/format.js'
 import { totaisPedido, listarPedidos } from '../lib/pedidos.js'
 import { listarOPs, listarSetores, paresOP } from '../lib/producao.js'
 import { listarProdutos } from '../lib/produtos.js'
+import { listarFichaConsumo } from '../lib/compras.js'
+import { custosPorProduto, margemNaLista, pct, tomMargem } from '../lib/custos.js'
+import { listarListas, precoNaLista } from '../lib/precos.js'
+import { FotoProduto } from '../components/FotoProduto.jsx'
 
 const PERIODOS = [
   { id: 'mes', label: 'Este mês' }, { id: '30', label: '30 dias' }, { id: '90', label: '90 dias' },
@@ -40,8 +44,8 @@ export default function Relatorios() {
   const [periodo, setPeriodo] = useState('mes')
 
   useEffect(() => {
-    Promise.all([listarPedidos(), listarProdutos(), listarSaldos(), listarOPs(), listarSetores(), listarTitulos()])
-      .then(([pedidos, produtos, saldos, ops, setores, titulos]) => setDados({ pedidos, produtos, saldos, ops, setores, titulos }))
+    Promise.all([listarPedidos(), listarProdutos(), listarSaldos(), listarOPs(), listarSetores(), listarTitulos(), listarFichaConsumo(), listarListas()])
+      .then(([pedidos, produtos, saldos, ops, setores, titulos, ficha, listas]) => setDados({ pedidos, produtos, saldos, ops, setores, titulos, custos: custosPorProduto(ficha), listas }))
       .catch((e) => setErro(e.message))
   }, [])
 
@@ -200,9 +204,71 @@ export default function Relatorios() {
               {r.despesas.length > 0 && <><div className="divisor" style={{ margin: '14px 0 10px' }}><span>Despesas por categoria</span></div><Barras itens={r.despesas.map((p) => ({ ...p, cor: 'var(--ink-2)' }))} fmt={brlCurto} /></>}
             </div>
           </section>
-          <p className="footnote">Vendas = pedidos faturados ou entregues, pela data do pedido. Caixa = lançamentos baixados no Financeiro.</p>
+          <Margens dados={dados} />
+          <p className="footnote">Vendas = pedidos faturados ou entregues, pela data do pedido. Caixa = lançamentos baixados no Financeiro. Margens = preço da lista − custo da ficha técnica − despesas da lista.</p>
         </>
       )}
     </>
+  )
+}
+
+// Margem de todos os modelos por lista (como a aba INICIO da planilha de ficha técnica)
+function Margens({ dados }) {
+  const [ordem, setOrdem] = useState('margem')
+  const [so, setSo] = useState('todos')
+  const listas = dados.listas || []
+  const linhas = dados.produtos.filter((p) => p.status === 'ativo').map((p) => {
+    const custo = dados.custos[p.id] || 0
+    const porLista = Object.fromEntries(listas.map((l) => {
+      const preco = precoNaLista(p, l)
+      return [l.codigo, { preco, ...(custo && preco ? margemNaLista(custo, preco, l) : {}) }]
+    }))
+    return { p, custo, porLista }
+  })
+  const ref = listas[0]?.codigo
+  const filtradas = linhas.filter((x) => so === 'todos' || (so === 'baixa' ? (x.porLista[ref]?.margem ?? 1) < 0.2 : !x.custo))
+  filtradas.sort((a, b) => ordem === 'margem'
+    ? (a.porLista[ref]?.margem ?? 9) - (b.porLista[ref]?.margem ?? 9)
+    : a.p.ref.localeCompare(b.p.ref, 'pt-BR', { numeric: true }))
+  const comCusto = linhas.filter((x) => x.custo)
+  const media = (cod) => {
+    const ms = comCusto.map((x) => x.porLista[cod]?.margem).filter((m) => m != null)
+    return ms.length ? ms.reduce((t, m) => t + m, 0) / ms.length : null
+  }
+  return (
+    <section className="card">
+      <div className="card-head">
+        <div><h2>Custo e margem por modelo</h2><div className="card-sub">{comCusto.length} de {linhas.length} modelos ativos com ficha técnica · custo médio {brl(comCusto.reduce((t, x) => t + x.custo, 0) / (comCusto.length || 1))}</div></div>
+        <div className="chips">
+          {[['todos', 'Todos'], ['baixa', 'Margem abaixo de 20%'], ['sem', 'Sem ficha']].map(([k, l]) => <button key={k} className={`chip ${so === k ? 'on' : ''}`} onClick={() => setSo(k)}>{l}</button>)}
+          <button className="chip" onClick={() => setOrdem(ordem === 'margem' ? 'ref' : 'margem')}>Ordem: {ordem === 'margem' ? 'menor margem' : 'REF'}</button>
+        </div>
+      </div>
+      <div className="table-wrap">
+        <table style={{ minWidth: 760 }}>
+          <thead>
+            <tr><th>Modelo</th><th className="r">Custo</th>{listas.map((l) => <th key={l.codigo} className="r">{l.nome}</th>)}</tr>
+            <tr className="sub"><th>Média</th><th />{listas.map((l) => <th key={l.codigo} className="r">{pct(media(l.codigo))}</th>)}</tr>
+          </thead>
+          <tbody>
+            {filtradas.map(({ p, custo, porLista }) => (
+              <tr key={p.id}>
+                <td><div className="prod-cell"><FotoProduto p={p} className="sm" /><div><b>{p.ref} · {p.nome}</b><span>{p.tipo}</span></div></div></td>
+                <td className="r">{custo ? brl(custo) : <span style={{ color: 'var(--faint)' }}>sem ficha</span>}</td>
+                {listas.map((l) => {
+                  const x = porLista[l.codigo]
+                  return (
+                    <td key={l.codigo} className="r">
+                      <div>{x.preco ? brl(x.preco) : '—'}</div>
+                      {x.margem != null && <span className={`pill ${tomMargem(x.margem)}`} title={`Lucro ${brl(x.lucro)} · ideal ${x.ideal ? brl(x.ideal) : '—'}`}>{pct(x.margem)}</span>}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }

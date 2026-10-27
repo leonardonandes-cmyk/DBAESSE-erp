@@ -62,6 +62,8 @@ export default function Configuracoes() {
   }
   async function mudarPapel(u, papel) {
     setErro('')
+    const { data: eu } = await supabase.auth.getUser()
+    if (u.id === eu?.user?.id && papel !== 'admin') return setErro('Você não pode tirar o seu próprio acesso de administrador (o sistema ficaria sem ninguém para gerenciar usuários).')
     const { error } = await supabase.from('perfis').update({ papel }).eq('id', u.id)
     if (error) setErro(error.message); else { aviso('Permissão atualizada'); carregar() }
   }
@@ -126,26 +128,10 @@ export default function Configuracoes() {
       </section>
 
       <section className="card">
-        <div className="card-head"><div><h2>Listas de preço</h2><div className="card-sub">Preço do pedido = preço-base do modelo + acréscimo. O cliente usa a lista do cadastro dele; sem lista, vai pelo canal.</div></div></div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Lista</th><th>Base</th><th className="r">Acréscimo por par</th><th>Quando usar</th></tr></thead>
-            <tbody>
-              {listas.map((l) => (
-                <tr key={l.id}>
-                  <td><b>{l.nome}</b></td>
-                  <td style={{ color: 'var(--muted)' }}>{l.base === 'varejo' ? 'Preço varejo (FERALCCI)' : 'Preço atacado'}</td>
-                  <td className="r">
-                    <input className="input input-sm" type="number" step="0.01" min="0" defaultValue={l.acrescimo} style={{ width: 110, textAlign: 'right' }}
-                      onBlur={(e) => Number(e.target.value) !== Number(l.acrescimo) && salvarL(l, { acrescimo: e.target.value })} aria-label={`Acréscimo ${l.nome}`} />
-                  </td>
-                  <td style={{ color: 'var(--muted)' }}>{l.descricao || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card-head"><div><h2>Listas de preço e despesas</h2><div className="card-sub">Preço = preço-base do modelo + acréscimo. As despesas (% do preço ou R$ por par) e a margem-alvo calculam o lucro, a margem e o preço ideal de cada modelo em Produtos → Preços e margem.</div></div></div>
+        <div className="listas-cfg">
+          {listas.map((l) => <ListaEditor key={l.id} lista={l} onSalvar={(campos) => salvarL(l, campos)} />)}
         </div>
-        <p className="footnote" style={{ marginTop: 8 }}>Ex.: modelo com atacado {brl(59.9)} → Variado e Drop saem {brl(64.9)} com acréscimo de {brl(5)}.</p>
       </section>
 
       <section className="card">
@@ -157,5 +143,53 @@ export default function Configuracoes() {
         <p className="footnote" style={{ marginTop: 8 }}>Guarde no OneDrive. No plano grátis do Supabase não há backup automático — faça pelo menos uma vez por semana.</p>
       </section>
     </>
+  )
+}
+
+function ListaEditor({ lista, onSalvar }) {
+  const [f, setF] = useState(() => ({
+    acrescimo: lista.acrescimo, margem_alvo: Math.round(Number(lista.margem_alvo || 0) * 1000) / 10,
+    despesas: (lista.despesas || []).map((d) => ({ nome: d.nome, pct: Math.round(Number(d.pct || 0) * 10000) / 100, rs: d.rs || 0 })),
+  }))
+  const [mudou, setMudou] = useState(false)
+  const set = (patch) => { setF({ ...f, ...patch }); setMudou(true) }
+  const setD = (i, patch) => set({ despesas: f.despesas.map((d, k) => (k === i ? { ...d, ...patch } : d)) })
+  const somaPct = f.despesas.reduce((t, d) => t + (Number(String(d.pct).replace(',', '.')) || 0), 0)
+  function salvar() {
+    onSalvar({
+      acrescimo: f.acrescimo,
+      margem_alvo: (Number(String(f.margem_alvo).replace(',', '.')) || 0) / 100,
+      despesas: f.despesas.map((d) => ({ nome: d.nome, pct: (Number(String(d.pct).replace(',', '.')) || 0) / 100, rs: d.rs })),
+    })
+    setMudou(false)
+  }
+  return (
+    <div className="lista-cfg">
+      <div className="lista-cfg-head">
+        <div><b>{lista.nome}</b><span>{lista.base === 'varejo' ? 'Preço varejo (FERALCCI)' : 'Preço atacado'}{Number(f.acrescimo) ? ` + R$ ${String(f.acrescimo).replace('.', ',')}` : ''}</span></div>
+        {mudou && <button className="btn btn-sm btn-dark" onClick={salvar}>Salvar</button>}
+      </div>
+      <div className="lista-cfg-campos">
+        <label className="field"><span>Acréscimo (R$/par)</span><input type="number" step="0.01" min="0" value={f.acrescimo} onChange={(e) => set({ acrescimo: e.target.value })} /></label>
+        <label className="field"><span>Margem-alvo (%)</span><input type="number" step="0.5" min="0" value={f.margem_alvo} onChange={(e) => set({ margem_alvo: e.target.value })} /></label>
+      </div>
+      <table className="lista-cfg-desp">
+        <thead><tr><th>Despesa</th><th className="r">% do preço</th><th className="r">R$ por par</th><th /></tr></thead>
+        <tbody>
+          {f.despesas.map((d, i) => (
+            <tr key={i}>
+              <td><input className="input input-sm" style={{ textAlign: 'left', width: '100%' }} value={d.nome} onChange={(e) => setD(i, { nome: e.target.value })} aria-label="Nome da despesa" /></td>
+              <td className="r"><input className="input input-sm" inputMode="decimal" value={d.pct} onChange={(e) => setD(i, { pct: e.target.value })} aria-label="Percentual" /></td>
+              <td className="r"><input className="input input-sm" inputMode="decimal" value={d.rs} onChange={(e) => setD(i, { rs: e.target.value })} aria-label="Valor por par" /></td>
+              <td className="r"><button className="link-btn" onClick={() => set({ despesas: f.despesas.filter((_, k) => k !== i) })}>remover</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="actions" style={{ justifyContent: 'space-between' }}>
+        <button className="link-btn" onClick={() => set({ despesas: [...f.despesas, { nome: '', pct: 0, rs: 0 }] })}>+ despesa</button>
+        <span className="card-sub" style={{ margin: 0 }}>Despesas: {somaPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do preço</span>
+      </div>
+    </div>
   )
 }

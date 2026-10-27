@@ -3,9 +3,16 @@ import { supabase, todas } from './supabase.js'
 export const UNIDADES = [
   { v: 'par', l: 'par' }, { v: 'un', l: 'unidade' }, { v: 'm', l: 'metro linear' }, { v: 'm2', l: 'm²' },
   { v: 'kg', l: 'kg' }, { v: 'g', l: 'grama' }, { v: 'l', l: 'litro' }, { v: 'rolo', l: 'rolo' }, { v: 'folha', l: 'folha' },
+  { v: 'placa', l: 'placa' }, { v: 'pc', l: 'peça' }, { v: 'rateio', l: 'rateio (R$ por par)' },
 ]
-export const UN_CURTA = { par: 'par', un: 'un', m: 'm', m2: 'm²', kg: 'kg', g: 'g', l: 'L', rolo: 'rolo', folha: 'fl' }
-export const CATEGORIAS_MAT = ['Cabedal (couro/sintético)', 'Forro', 'Solado', 'Palmilha', 'Salto', 'Linha', 'Cola / química', 'Enfeite / fivela', 'Embalagem', 'Etiqueta', 'Outros']
+export const UN_CURTA = { par: 'par', un: 'un', m: 'm', m2: 'm²', kg: 'kg', g: 'g', l: 'L', rolo: 'rolo', folha: 'fl', placa: 'placa', pc: 'pç', rateio: 'rateio' }
+export const CATEGORIAS_MAT = ['Cabedal', 'Solado / palmilha', 'Acabamento / embalagem', 'Mão de obra', 'Custo fixo', 'Outros']
+// tipo: material entra no estoque e na necessidade de compra; mão de obra e custo fixo só entram no custo do par
+export const TIPOS_MAT = {
+  material: { label: 'Material', desc: 'controla estoque e compra' },
+  mao_de_obra: { label: 'Mão de obra', desc: 'só custo' },
+  custo_fixo: { label: 'Custo fixo / rateio', desc: 'só custo' },
+}
 
 export const STATUS_COMPRA = {
   rascunho: { label: 'Rascunho', tom: 'neutral' },
@@ -21,13 +28,13 @@ export const fmtQtd = (v) => (Number(v) || 0).toLocaleString('pt-BR', { maximumF
 export async function listarMateriais() {
   return todas(() => supabase
     .from('materiais')
-    .select('id,nome,categoria,unidade,por_numero,custo,estoque_minimo,fornecedor_id,ativo,parceiros(nome)')
+    .select('id,codigo,nome,categoria,tipo,unidade,por_numero,custo,estoque_minimo,fornecedor_id,ativo,parceiros(nome)')
     .order('nome').order('id'))
 }
 
 export async function salvarMaterial(d, id) {
   const linha = {
-    nome: d.nome.trim(), categoria: d.categoria || null, unidade: d.unidade, por_numero: !!d.por_numero,
+    nome: d.nome.trim(), categoria: d.categoria || null, unidade: d.unidade, por_numero: !!d.por_numero, tipo: d.tipo || 'material',
     custo: d.custo === '' || d.custo == null ? null : Number(d.custo),
     estoque_minimo: d.estoque_minimo === '' || d.estoque_minimo == null ? null : Number(d.estoque_minimo),
     fornecedor_id: d.fornecedor_id || null, ativo: d.ativo ?? true,
@@ -59,20 +66,28 @@ export async function movimentarMaterial(linhas) {
 // ---------- Ficha de consumo ----------
 export async function listarFichaConsumo(produtoId) {
   return todas(() => {
-    let q = supabase.from('ficha_consumo').select('id,produto_id,material_id,consumo,perda_pct,observacao,materiais(nome,unidade,por_numero,custo)')
+    let q = supabase.from('ficha_consumo').select('id,produto_id,material_id,secao,modo,rendimento,consumo,custo_proprio,perda_pct,observacao,ordem,materiais(nome,unidade,tipo,por_numero,custo)')
     if (produtoId) q = q.eq('produto_id', produtoId)
-    return q.order('id')
+    return q.order('ordem').order('id')
   })
 }
 
-export async function salvarLinhaFicha({ id, produto_id, material_id, consumo, perda_pct, observacao }) {
-  const linha = { produto_id, material_id, consumo: Number(String(consumo).replace(',', '.')), perda_pct: Number(String(perda_pct || 0).replace(',', '.')), observacao: observacao || null }
-  const q = id ? supabase.from('ficha_consumo').update(linha).eq('id', id) : supabase.from('ficha_consumo').insert(linha)
-  const { error } = await q
-  if (error) {
-    if (error.code === '23505') throw new Error('Esse material já está na ficha deste modelo.')
-    throw error
+const num = (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.')))
+
+// modo 'consumo': qtd = quanto 1 par gasta · modo 'rendimento': qtd = quantos pares rende 1 unidade
+export async function salvarLinhaFicha({ id, produto_id, material_id, secao, modo = 'consumo', qtd, custo_proprio, perda_pct, observacao, ordem }) {
+  const q = num(qtd)
+  if (!(q > 0)) throw new Error(modo === 'rendimento' ? 'Informe quantos pares rende.' : 'Informe o consumo por par.')
+  const linha = {
+    produto_id, material_id, secao: secao || 'cabedal', modo,
+    rendimento: modo === 'rendimento' ? q : null,
+    consumo: modo === 'rendimento' ? Math.round((1 / q) * 1e6) / 1e6 : q,
+    custo_proprio: num(custo_proprio), perda_pct: num(perda_pct) || 0, observacao: observacao || null,
   }
+  if (ordem != null) linha.ordem = ordem
+  const r = id ? supabase.from('ficha_consumo').update(linha).eq('id', id) : supabase.from('ficha_consumo').insert(linha)
+  const { error } = await r
+  if (error) throw error
 }
 
 export async function removerLinhaFicha(id) {
@@ -84,8 +99,11 @@ export async function removerLinhaFicha(id) {
 export async function copiarFicha(deProdutoId, paraProdutoId) {
   const origem = await listarFichaConsumo(deProdutoId)
   const destino = await listarFichaConsumo(paraProdutoId)
-  const ja = new Set(destino.map((d) => d.material_id))
-  const novas = origem.filter((o) => !ja.has(o.material_id)).map((o) => ({ produto_id: paraProdutoId, material_id: o.material_id, consumo: o.consumo, perda_pct: o.perda_pct, observacao: o.observacao }))
+  const ja = new Set(destino.map((d) => `${d.secao}|${d.material_id}`))
+  const novas = origem.filter((o) => !ja.has(`${o.secao}|${o.material_id}`)).map((o) => ({
+    produto_id: paraProdutoId, material_id: o.material_id, secao: o.secao, modo: o.modo, rendimento: o.rendimento,
+    consumo: o.consumo, custo_proprio: o.custo_proprio, perda_pct: o.perda_pct, observacao: o.observacao, ordem: o.ordem,
+  }))
   if (!novas.length) return 0
   const { error } = await supabase.from('ficha_consumo').insert(novas)
   if (error) throw error
@@ -108,7 +126,7 @@ export function calcularNecessidade({ ops, ficha, materiais, saldos, compras }) 
     const linhas = fichaPorProduto[o.produto_id] || []
     const pares = o.op_itens.reduce((t, i) => t + i.quantidade, 0)
     linhas.forEach((f) => {
-      const m = matPorId[f.material_id]; if (!m) return
+      const m = matPorId[f.material_id]; if (!m || (m.tipo && m.tipo !== 'material')) return
       const fator = Number(f.consumo) * (1 + Number(f.perda_pct) / 100)
       if (m.por_numero) o.op_itens.forEach((i) => add(m.id, i.skus.numero, fator * i.quantidade))
       else add(m.id, null, fator * pares)

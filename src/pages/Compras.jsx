@@ -3,7 +3,7 @@ import Icon from '../components/Icon.jsx'
 import CompraForm from '../components/CompraForm.jsx'
 import MaterialForm from '../components/MaterialForm.jsx'
 import TituloForm from '../components/TituloForm.jsx'
-import { STATUS_COMPRA, UN_CURTA, calcularNecessidade, fmtQtd, listarCompras, listarFichaConsumo, listarMateriais, listarSaldosMateriais,
+import { STATUS_COMPRA, TIPOS_MAT, UN_CURTA, calcularNecessidade, fmtQtd, listarCompras, listarFichaConsumo, listarMateriais, listarSaldosMateriais,
   movimentarMaterial, mudarStatusCompra, numeroCompra, saldoMaterial, totalCompra } from '../lib/compras.js'
 import { brl, dataBR, hojeISO } from '../lib/format.js'
 import { listarParceiros } from '../lib/parceiros.js'
@@ -12,6 +12,8 @@ import { listarOPs } from '../lib/producao.js'
 const ABAS = [{ id: 'necessidade', label: 'Necessidade' }, { id: 'compras', label: 'Pedidos de compra' }, { id: 'materiais', label: 'Materiais' }]
 
 export default function Compras() {
+  const [buscaMat, setBuscaMat] = useState('')
+  const [tipoMat, setTipoMat] = useState('material')
   const [aba, setAba] = useState('necessidade')
   const [materiais, setMateriais] = useState([])
   const [saldos, setSaldos] = useState([])
@@ -148,24 +150,38 @@ export default function Compras() {
       )}
 
       {aba === 'materiais' && (
+        <div className="actions">
+          <label className="search">
+            <Icon name="busca" size={16} />
+            <input type="search" placeholder="Buscar material" value={buscaMat} onChange={(e) => setBuscaMat(e.target.value)} aria-label="Buscar material" />
+          </label>
+          <div className="chips">
+            {[['', 'Todos'], ...Object.entries(TIPOS_MAT).map(([k, t]) => [k, t.label])].map(([k, l]) => (
+              <button key={k} className={`chip ${tipoMat === k ? 'on' : ''}`} onClick={() => setTipoMat(k)}>{l} · {materiais.filter((m) => !k || (m.tipo || 'material') === k).length}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {aba === 'materiais' && (
         <section className="card card-flush">
           <div className="table-wrap">
             <table style={{ minWidth: 720 }}>
               <thead className="tinted"><tr><th>Material</th><th>Categoria</th><th className="r">Saldo</th><th className="r">Mínimo</th><th className="r">Custo</th><th>Fornecedor</th><th /></tr></thead>
               <tbody>
-                {materiais.map((m) => {
+                {materiais.filter((m) => (!tipoMat || (m.tipo || 'material') === tipoMat) && (!buscaMat.trim() || m.nome.toLowerCase().includes(buscaMat.trim().toLowerCase()))).map((m) => {
+                  const ehMat = (m.tipo || 'material') === 'material'
                   const s = saldoMaterial(saldos, m.id)
                   const baixo = m.estoque_minimo != null && s < Number(m.estoque_minimo)
                   return (
                     <tr key={m.id} style={m.ativo ? undefined : { opacity: 0.5 }}>
                       <td className="clickable" onClick={() => setModal({ tipo: 'material', material: m })}><b style={{ fontWeight: 600 }}>{m.nome}</b>{m.por_numero && <span className="card-sub"> · por nº</span>}</td>
-                      <td style={{ color: 'var(--muted)' }}>{m.categoria || '—'}</td>
-                      <td className="r" style={{ fontWeight: 700, color: s < 0 ? 'var(--bad)' : baixo ? 'var(--accent)' : 'var(--ink)' }}>{fmtQtd(s)} {UN_CURTA[m.unidade]}</td>
+                      <td style={{ color: 'var(--muted)' }}>{m.categoria || '—'}{!ehMat && <span className="pill neutral" style={{ marginLeft: 6 }}>{TIPOS_MAT[m.tipo]?.label}</span>}</td>
+                      <td className="r" style={{ fontWeight: 700, color: s < 0 ? 'var(--bad)' : baixo ? 'var(--accent)' : 'var(--ink)' }}>{ehMat ? `${fmtQtd(s)} ${UN_CURTA[m.unidade]}` : '—'}</td>
                       <td className="r" style={{ color: 'var(--muted)' }}>{m.estoque_minimo != null ? fmtQtd(m.estoque_minimo) : '—'}</td>
-                      <td className="r">{m.custo != null ? brl(m.custo) : '—'}</td>
+                      <td className="r">{m.custo != null ? brl(m.custo) : '—'}<small style={{ color: 'var(--faint)' }}> /{UN_CURTA[m.unidade]}</small></td>
                       <td>{m.parceiros?.nome || '—'}</td>
                       <td className="r" style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn btn-sm" onClick={() => setModal({ tipo: 'mov', material: m })}>Entrada / ajuste</button>
+                        {ehMat && <button className="btn btn-sm" onClick={() => setModal({ tipo: 'mov', material: m })}>Entrada / ajuste</button>}
                       </td>
                     </tr>
                   )

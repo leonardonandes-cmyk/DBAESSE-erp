@@ -35,7 +35,7 @@ npm run dev
 Configurações: setores da produção, permissões dos usuários e botão "Baixar backup" (Excel com tudo).
 
 ## Banco (Supabase)
-Scripts em `supabase/` na ordem (001…009). Já aplicados no projeto dbaesse-erp.
+Scripts em `supabase/` na ordem (001…013). Já aplicados no projeto dbaesse-erp.
 Toda tabela tem empresa_id + regras de acesso (RLS) + histórico (antes/depois).
 Movimento de estoque (produto ou material) não se apaga: corrige-se com ajuste.
 
@@ -46,3 +46,10 @@ Movimento de estoque (produto ou material) não se apaga: corrige-se com ajuste.
 - Faturar tira primeiro do Pick e o que faltar do Bulk; cancelar devolve ao mesmo local.
 
 Toda tela que mostra produto mostra a foto (ou o desenho do tipo): componente `FotoProduto`.
+
+## Ficha técnica e custo
+- Ficha por modelo em 5 seções (padrão da planilha FICHA TÉCNICA): cabedal, solado/palmilha, acabamento, mão de obra, custo fixo (rateio).
+- Cada linha: material + "gasta X por par" ou "rende X pares por unidade". Custo = cadastro do material (ou custo próprio da linha).
+- Materiais têm tipo: material (estoque e compra), mão de obra e custo fixo (só custo).
+- Listas de preço têm despesas (% do preço ou R$ por par) e margem-alvo → lucro, margem e preço ideal por modelo.
+- Importado da planilha em 27/10/2026: 269 itens da aba MP e as fichas de 85 modelos.

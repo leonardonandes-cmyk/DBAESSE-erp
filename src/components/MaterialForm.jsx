@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { CATEGORIAS_MAT, UNIDADES, salvarMaterial } from '../lib/compras.js'
+import { CATEGORIAS_MAT, TIPOS_MAT, UNIDADES, salvarMaterial } from '../lib/compras.js'
 
 export default function MaterialForm({ material, fornecedores, onFechar, onSalvo }) {
   const [f, setF] = useState(() => ({
     nome: material?.nome || '', categoria: material?.categoria || '', unidade: material?.unidade || 'm',
     por_numero: material?.por_numero || false, custo: material?.custo ?? '', estoque_minimo: material?.estoque_minimo ?? '',
-    fornecedor_id: material?.fornecedor_id || '', ativo: material?.ativo ?? true,
+    fornecedor_id: material?.fornecedor_id || '', ativo: material?.ativo ?? true, tipo: material?.tipo || 'material',
   }))
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -13,8 +13,8 @@ export default function MaterialForm({ material, fornecedores, onFechar, onSalvo
 
   function mudarCategoria(e) {
     const c = e.target.value
-    const porNum = ['Solado', 'Palmilha', 'Salto'].includes(c)
-    setF({ ...f, categoria: c, por_numero: porNum || f.por_numero, unidade: porNum ? 'par' : f.unidade })
+    const tipo = c === 'Mão de obra' ? 'mao_de_obra' : c === 'Custo fixo' ? 'custo_fixo' : f.tipo
+    setF({ ...f, categoria: c, tipo })
   }
 
   async function salvar(e) {
@@ -42,6 +42,12 @@ export default function MaterialForm({ material, fornecedores, onFechar, onSalvo
             <span>Unidade</span>
             <select className="input" value={f.unidade} onChange={set('unidade')}>
               {UNIDADES.map((u) => <option key={u.v} value={u.v}>{u.l}</option>)}
+            </select>
+          </label>
+          <label className="field">
+            <span>Tipo</span>
+            <select className="input" value={f.tipo} onChange={set('tipo')}>
+              {Object.entries(TIPOS_MAT).map(([k, t]) => <option key={k} value={k}>{t.label} — {t.desc}</option>)}
             </select>
           </label>
           <label className="field"><span>Custo (R$ por unidade)</span><input type="number" step="0.0001" min="0" value={f.custo} onChange={set('custo')} /></label>

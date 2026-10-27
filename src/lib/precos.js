@@ -2,14 +2,17 @@ import { supabase } from './supabase.js'
 
 // Listas de preço: preço = preço-base do modelo (atacado ou varejo/FERALCCI) + acréscimo da lista
 export async function listarListas() {
-  const { data, error } = await supabase.from('listas_preco').select('id,codigo,nome,base,acrescimo,descricao,ordem').order('ordem')
+  const { data, error } = await supabase.from('listas_preco').select('id,codigo,nome,base,acrescimo,descricao,ordem,despesas,margem_alvo').order('ordem')
   if (error) throw error
   return data
 }
 
-export async function salvarLista(id, { acrescimo, descricao }) {
-  const { error } = await supabase.from('listas_preco')
-    .update({ acrescimo: Number(String(acrescimo).replace(',', '.')) || 0, descricao: descricao || null }).eq('id', id)
+export async function salvarLista(id, { acrescimo, descricao, despesas, margem_alvo }) {
+  const n = (v) => Number(String(v ?? 0).replace(',', '.')) || 0
+  const linha = { acrescimo: n(acrescimo), descricao: descricao || null }
+  if (despesas) linha.despesas = despesas.filter((d) => d.nome?.trim()).map((d) => ({ nome: d.nome.trim(), pct: n(d.pct), rs: n(d.rs) }))
+  if (margem_alvo != null) linha.margem_alvo = n(margem_alvo)
+  const { error } = await supabase.from('listas_preco').update(linha).eq('id', id)
   if (error) throw error
 }
 

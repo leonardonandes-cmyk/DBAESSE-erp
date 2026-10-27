@@ -442,3 +442,50 @@ td.clickable { cursor: pointer; }
   .leitor-barra { grid-template-columns: 1fr; }
   .appv-rodape { bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
+
+/* ---------- Ficha técnica ---------- */
+.ficha { display: flex; flex-direction: column; gap: 16px; }
+.sec-cabedal { background: #8A5A32; } .sec-solado { background: #151515; } .sec-acabamento { background: #B9B3AA; }
+.sec-mao_de_obra { background: #2F5D46; } .sec-rateio { background: #D9CFC2; }
+.ficha-topo { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+.ficha-topo .eyebrow { display: block; }
+.ficha-total { font-size: 30px; font-weight: 600; letter-spacing: -.02em; }
+.ficha-barra { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--line); }
+.ficha-barra i { display: block; height: 100%; }
+.ficha-legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.ficha-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.ficha-legenda i, .ficha-secao h3 i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; }
+.ficha-legenda b { color: var(--ink); font-weight: 600; }
+.ficha-secao { display: grid; gap: 6px; }
+.ficha-secao header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.ficha-secao h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.ficha-secao header > span { font-weight: 600; }
+.ficha-tab td, .ficha-tab th { padding: 8px 6px; font-size: 13px; }
+.ficha-tab small { color: var(--faint); }
+.ficha-tab sup { color: var(--accent); }
+.ficha-acoes { white-space: nowrap; }
+.ficha-acoes .link-btn + .link-btn { margin-left: 10px; }
+.ficha-aviso { color: #B4781F; cursor: help; }
+.ficha-obs td { font-size: 12px; color: #8a5d14; background: #FBF4E6; padding: 4px 8px !important; }
+.ficha-add-btn { justify-self: start; font-size: 13px; }
+.ficha-form { display: grid; grid-template-columns: minmax(180px, 2.2fr) 1.3fr .8fr .9fr auto auto; gap: 8px; align-items: center; }
+.ficha-form .input { height: 38px; }
+@media (max-width: 760px) { .ficha-form { grid-template-columns: 1fr 1fr; } .ficha-form .input:first-child { grid-column: 1 / -1; } }
+
+/* listas de preço (configurações) */
+.listas-cfg { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.lista-cfg { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+.lista-cfg-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lista-cfg-head b { display: block; font-size: 16px; }
+.lista-cfg-head span { font-size: 12px; color: var(--muted); }
+.lista-cfg-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lista-cfg-desp td, .lista-cfg-desp th { padding: 4px; font-size: 13px; }
+.lista-cfg-desp .input-sm { width: 80px; }
+.margens td, .margens th { white-space: nowrap; }
+.table-wrap thead tr.sub th { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0; text-transform: none; padding-top: 0; }
+/* ficha técnica e margem precisam de espaço: a lista encolhe, o detalhe cresce */
+.split-largo > .list { flex: 1 1 340px; }
+.split-largo > .list table { min-width: 0 !important; }
+.split-largo > .list th:nth-child(n+3), .split-largo > .list td:nth-child(n+3) { display: none; }
+.split-largo > .detail { flex: 3 1 640px; }
+.detail .tabs { overflow-x: auto; scrollbar-width: none; }

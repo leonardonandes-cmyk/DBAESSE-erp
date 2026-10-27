@@ -4,6 +4,8 @@ import NovoModelo from '../components/NovoModelo.jsx'
 import FichaConsumo from '../components/FichaConsumo.jsx'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 import { listarListas, precoNaLista } from '../lib/precos.js'
+import { listarFichaConsumo } from '../lib/compras.js'
+import { custosPorProduto, margemNaLista, pct, tomMargem } from '../lib/custos.js'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
 import { brl } from '../lib/format.js'
@@ -14,7 +16,7 @@ const STATUS = {
   rascunho: { label: 'Rascunho', tom: 'neutral' },
   inativo: { label: 'Inativo', tom: 'bad' },
 }
-const ABAS = ['Grade e SKUs', 'Dados', 'Preços', 'Ficha técnica']
+const ABAS = ['Grade e SKUs', 'Dados', 'Preços e margem', 'Ficha técnica']
 
 export default function Produtos() {
   const [produtos, setProdutos] = useState([])
@@ -26,6 +28,8 @@ export default function Produtos() {
   const [busca, setBusca] = useState('')
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
+  const [custos, setCustos] = useState({}) // produto_id -> custo do par (ficha técnica)
+  useEffect(() => { listarFichaConsumo().then((l) => setCustos(custosPorProduto(l))).catch(() => {}) }, [])
   const [selRef, setSelRef] = useState(null)
   const [corSel, setCorSel] = useState(null)
   const [aba, setAba] = useState(ABAS[0])
@@ -107,12 +111,12 @@ export default function Produtos() {
             </div>
           </div>
 
-          <div className="split">
+          <div className={`split ${['Ficha técnica', 'Preços e margem'].includes(aba) ? 'split-largo' : ''}`}>
             <section className="card card-flush list" aria-label="Lista de produtos">
               <div className="table-wrap">
                 <table style={{ minWidth: 560 }}>
                   <thead className="tinted">
-                    <tr><th>Modelo</th><th>Cores</th><th>Grade</th><th className="r">SKUs</th><th className="r">Estoque</th><th>Situação</th></tr>
+                    <tr><th>Modelo</th><th>Cores</th><th>Grade</th><th className="r">Custo</th><th className="r">Estoque</th><th>Situação</th></tr>
                   </thead>
                   <tbody>
                     {carregando && <tr><td colSpan={6} style={{ color: 'var(--muted)', padding: 32 }}>Carregando…</td></tr>}
@@ -129,7 +133,7 @@ export default function Produtos() {
                           </td>
                           <td><div className="dots">{coresDo(p).map((c) => <span key={c.id} className="dot" title={c.nome} style={{ background: c.hex || '#ddd' }} />)}</div></td>
                           <td style={{ color: 'var(--ink-2)' }}>{p.grade_de} ao {p.grade_ate}</td>
-                          <td className="r" style={{ color: 'var(--muted)' }}>{p.skus.length}</td>
+                          <td className="r" style={{ color: custos[p.id] ? 'var(--ink-2)' : 'var(--faint)' }}>{custos[p.id] ? brl(custos[p.id]) : '—'}</td>
                           <td className="r"><b style={{ fontWeight: 600 }}>{p.skus.reduce((t, s) => t + (saldos[s.id] || 0), 0)}</b></td>
                           <td><span className={`pill ${st.tom}`}>{st.label}</span></td>
                         </tr>
@@ -192,19 +196,36 @@ export default function Produtos() {
                     <dt>NCM</dt><dd>{sel.ncm || '—'}</dd>
                     <dt>Tipo</dt><dd>{sel.tipo || '—'}</dd>
                   </dl>
-                ) : aba === 'Preços' ? (
-                  <dl className="dados">
-                    {listas.map((l) => (
-                      <Fragment key={l.codigo}>
-                        <dt>{l.nome}</dt>
-                        <dd><b>{sel.preco_atacado != null ? brl(precoNaLista(sel, l)) : '—'}</b>
-                          {Number(l.acrescimo) > 0 && <span className="card-sub"> · atacado + {brl(l.acrescimo)}</span>}
-                          {l.base === 'varejo' && <span className="card-sub"> · preço FERALCCI</span>}</dd>
-                      </Fragment>
-                    ))}
-                    <dt />
-                    <dd className="card-sub">Atacado e varejo mudam em Editar modelo; os acréscimos das listas, em Configurações.</dd>
-                  </dl>
+                ) : aba === 'Preços e margem' ? (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    <div className="preview" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <span>Custo do par (ficha técnica): <b>{custos[sel.id] ? brl(custos[sel.id]) : 'sem ficha'}</b></span>
+                      <button className="link-btn" onClick={() => setAba('Ficha técnica')}>ver ficha</button>
+                    </div>
+                    <div className="table-wrap">
+                      <table className="margens">
+                        <thead><tr><th>Lista</th><th className="r">Preço</th><th className="r">Despesas</th><th className="r">Lucro</th><th className="r">Margem</th><th className="r">Preço ideal</th></tr></thead>
+                        <tbody>
+                          {listas.map((l) => {
+                            const preco = precoNaLista(sel, l)
+                            const c = custos[sel.id] || 0
+                            const m = c ? margemNaLista(c, preco, l) : null
+                            return (
+                              <tr key={l.codigo}>
+                                <td><b>{l.nome}</b><br /><span className="card-sub">{Number(l.acrescimo) > 0 ? `atacado + ${brl(l.acrescimo)}` : l.base === 'varejo' ? 'preço FERALCCI' : 'preço base'}</span></td>
+                                <td className="r"><b>{preco ? brl(preco) : '—'}</b></td>
+                                <td className="r" title={(l.despesas || []).map((d) => `${d.nome}: ${d.pct ? pct(d.pct) : ''}${d.rs ? ` R$ ${d.rs}` : ''}`).join('\n')}>{m ? brl(m.despesas) : '—'}</td>
+                                <td className="r" style={{ color: m && m.lucro < 0 ? 'var(--bad)' : undefined }}>{m ? brl(m.lucro) : '—'}</td>
+                                <td className="r">{m && preco ? <span className={`pill ${tomMargem(m.margem)}`}>{pct(m.margem)}</span> : '—'}</td>
+                                <td className="r" title={`Para margem de ${pct(l.margem_alvo)}`}>{m?.ideal ? brl(m.ideal) : '—'}</td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="card-sub" style={{ margin: 0 }}>Lucro = preço − custo − despesas da lista (imposto, comissão, frete, perda, investimento…). Preço ideal = o que daria a margem-alvo da lista. Despesas e margem-alvo em Configurações → Listas de preço.</p>
+                  </div>
                 ) : (
                   <>
                     {sel.ficha ? (
@@ -213,10 +234,8 @@ export default function Produtos() {
                           .filter(([k]) => sel.ficha[k] != null)
                           .map(([k, l]) => <Fragment key={k}><dt>{l}</dt><dd>{String(sel.ficha[k]).replace('.', ',')}</dd></Fragment>)}
                       </dl>
-                    ) : (
-                      <p className="card-sub" style={{ margin: 0 }}>Sem dados técnicos cadastrados.</p>
-                    )}
-                    <FichaConsumo produto={sel} produtos={produtos} />
+                    ) : null}
+                    <FichaConsumo produto={sel} produtos={produtos} onCusto={(v) => setCustos((c) => (Math.abs((c[sel.id] || 0) - v) > 0.001 ? { ...c, [sel.id]: v } : c))} />
                   </>
                 )}
 
