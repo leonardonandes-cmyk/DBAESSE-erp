@@ -4,7 +4,7 @@ import Icon from '../components/Icon.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { Rosca } from '../components/Graficos.jsx'
 import { UN_CURTA, listarFichaConsumo } from '../lib/compras.js'
-import { margemNaLista, pct, tomMargem, valorLinha } from '../lib/custos.js'
+import { BLOCOS, blocoDe, margemNaLista, pct, tomMargem, valorLinha } from '../lib/custos.js'
 import { brl } from '../lib/format.js'
 import { listarListas, precoNaLista } from '../lib/precos.js'
 import { listarProdutos } from '../lib/produtos.js'
@@ -15,16 +15,7 @@ import { listarProdutos } from '../lib/produtos.js'
   MDI/MDE saem do nome do material ("MDI - ..." / "MDE- ..."), como na planilha.
   Busca por modelo; até 4 lado a lado para comparar.
 */
-export const BLOCOS = [
-  { id: 'cabedal', nome: 'Cabedal', cor: '#8A5A32' },
-  { id: 'solado', nome: 'Solado e palmilha', cor: '#2B2A28' },
-  { id: 'acabamento', nome: 'Acabamento', cor: '#C9A27E' },
-  { id: 'mdi', nome: 'MDI · mão de obra interna', curto: 'MDI', cor: '#2F5D46' },
-  { id: 'mde', nome: 'MDE · mão de obra externa', curto: 'MDE', cor: '#7FA38A' },
-  { id: 'rateio', nome: 'Rateio · custo fixo', curto: 'Rateio', cor: '#B9B3AA' },
-]
 const COR_MODELO = ['#2a78d6', '#eb6834', '#1baf7a', '#6250d6']
-const blocoDe = (l) => (l.secao === 'mao_de_obra' ? (/^\s*MDE/i.test(l.materiais?.nome || '') ? 'mde' : 'mdi') : l.secao)
 const fmtN = (v) => (Number(v) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 })
 const consumoTxt = (l) => (l.modo === 'rendimento' ? `rende ${fmtN(l.rendimento)} pares` : `${fmtN(l.consumo)} ${UN_CURTA[l.materiais?.unidade] || 'un'}/par`)
 const custoUnit = (l) => (l.custo_proprio != null ? Number(l.custo_proprio) : Number(l.materiais?.custo || 0))

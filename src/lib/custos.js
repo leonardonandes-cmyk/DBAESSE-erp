@@ -8,6 +8,18 @@ export const SECOES = [
   { id: 'rateio', label: 'Custo fixo (rateio)' },
 ]
 
+// Blocos de exibição da ficha (mão de obra separada em MDI/MDE pelo nome do material, como na planilha)
+export const BLOCOS = [
+  { id: 'cabedal', secao: 'cabedal', nome: 'Cabedal', cor: '#8A5A32' },
+  { id: 'solado', secao: 'solado', nome: 'Solado e palmilha', curto: 'Solado e palmilha', cor: '#6B5E52' },
+  { id: 'acabamento', secao: 'acabamento', nome: 'Acabamento', cor: '#C9A27E' },
+  { id: 'mdi', secao: 'mao_de_obra', nome: 'MDI · mão de obra interna', curto: 'MDI', cor: '#2F5D46' },
+  { id: 'mde', secao: 'mao_de_obra', nome: 'MDE · mão de obra externa', curto: 'MDE', cor: '#7FA38A' },
+  { id: 'rateio', secao: 'rateio', nome: 'Rateio · custo fixo', curto: 'Rateio', cor: '#B9B3AA' },
+]
+export const ehMDE = (nome) => /^\s*MDE/i.test(nome || '')
+export const blocoDe = (l) => (l.secao === 'mao_de_obra' ? (ehMDE(l.materiais?.nome) ? 'mde' : 'mdi') : l.secao)
+
 // valor por par de uma linha da ficha
 export function valorLinha(l) {
   const custo = l.custo_proprio != null ? Number(l.custo_proprio) : Number(l.materiais?.custo || 0)

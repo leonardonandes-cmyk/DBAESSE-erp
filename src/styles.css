@@ -914,3 +914,51 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 }
 @media (max-width: 520px) { .ft-topo { grid-template-columns: 1fr; } .ft-comp-topo { grid-template-columns: 1fr !important; } }
 .ft-topo .ft-nome { margin: 4px 0 14px; font-family: "Jost", var(--font); font-weight: 500; font-size: 30px; letter-spacing: -.01em; line-height: 1.1; }
+
+/* ---------- Ficha técnica (aba do produto) ---------- */
+.ft-specs { display: grid; gap: 10px; }
+.ft-specs-tit, .fc-total span { font-family: 'Jost', var(--font); font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.ft-specs-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.ft-spec { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface-2); }
+.ft-spec small { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+.ft-spec b { font-weight: 600; font-size: 13.5px; }
+.ficha2 { display: grid; gap: 14px; }
+.fc-resumo { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 18px; border-radius: 14px; background: #151515; color: #fff; }
+.fc-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.fc-total span { color: #C9A27E; }
+.fc-total b { font-family: 'Jost', var(--font); font-size: 34px; font-weight: 500; letter-spacing: -.02em; line-height: 1; }
+.fc-comp { display: grid; gap: 10px; min-width: 0; }
+.fc-resumo .ft-barra { background: #2B2A28; height: 12px; }
+.fc-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 20px; }
+.fc-tile span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fc-tile { display: grid; grid-template-columns: 9px 1fr auto auto; gap: 6px; align-items: center; font-size: 12px; color: #CFC9C0; }
+.fc-tile i { width: 9px; height: 9px; border-radius: 3px; }
+.fc-tile b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; } .fc-tile em { font-style: normal; color: #8F8A82; font-size: 11px; min-width: 34px; text-align: right; }
+.fb { border: 1px solid var(--line-soft); border-left: 3px solid var(--bc); border-radius: 12px; padding: 4px 14px 10px; background: var(--surface); }
+.fb-head { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line-soft); margin-bottom: 4px; }
+.fb-head h4 { margin: 0; flex: 1; display: flex; align-items: center; gap: 8px; font-family: 'Jost', var(--font); font-size: 12.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.fb-head h4 i { width: 9px; height: 9px; border-radius: 3px; background: var(--bc); }
+.fb-pct { font-size: 12px; color: var(--muted); }
+.fb-head b { font-family: 'Jost', var(--font); font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; min-width: 84px; text-align: right; }
+.fb-linha { display: grid; grid-template-columns: minmax(0, 1fr) 90px 76px 52px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line-soft); }
+.fb-linha:last-of-type { border-bottom: 0; }
+.fb-mat { display: grid; gap: 2px; min-width: 0; }
+.fb-mat b { font-size: 13px; font-weight: 600; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-mat small { font-size: 11.5px; color: var(--muted); }
+.fb-bar { height: 6px; border-radius: 3px; background: var(--line-soft); overflow: hidden; }
+.fb-bar i { display: block; height: 100%; background: var(--bc); border-radius: 3px; }
+.fb-val { text-align: right; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.fb-acoes { display: flex; gap: 2px; justify-content: flex-end; opacity: .35; transition: opacity .15s; }
+.fb-linha:hover .fb-acoes, .fb-acoes:focus-within { opacity: 1; }
+.fb-acoes button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-2); font-size: 13px; }
+.fb-acoes button:hover { background: var(--surface-2); }
+.fb-obs { font-size: 11.5px; color: #8a5d14; background: #FBF4E6; padding: 4px 8px; border-radius: 6px; margin: -2px 0 6px; }
+.fb-edit { padding: 8px 0; }
+.fb-add { margin-top: 6px; width: 100%; border: 1px dashed var(--line); background: transparent; border-radius: 8px; padding: 7px; font-size: 12.5px; color: var(--muted); }
+.fb-add:hover { border-color: var(--bc); color: var(--ink); }
+.fc-rodape { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding-top: 4px; }
+@media (max-width: 760px) {
+  .fc-resumo { grid-template-columns: 1fr; } .fc-tiles { grid-template-columns: 1fr 1fr; }
+  .fb-linha { grid-template-columns: minmax(0, 1fr) 70px 46px; } .fb-bar { display: none; } .fb-acoes { opacity: 1; }
+}
+.fc-resumo .ft-barra { background: #2B2A28; gap: 2px; } .fc-tile i { box-shadow: 0 0 0 1px rgba(255,255,255,.18); }

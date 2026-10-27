@@ -229,12 +229,15 @@ export default function Produtos() {
                   </div>
                 ) : (
                   <>
-                    {sel.ficha ? (
-                      <dl className="dados">
-                        {[['cabedal', 'Cabedal'], ['solado', 'Solado'], ['salto', 'Salto'], ['forma', 'Forma'], ['peso_kg', 'Peso (kg)'], ['caixa', 'Caixa'], ['medidas', 'Medidas (palmilha)']]
-                          .filter(([k]) => sel.ficha[k] != null)
-                          .map(([k, l]) => <Fragment key={k}><dt>{l}</dt><dd>{String(sel.ficha[k]).replace('.', ',')}</dd></Fragment>)}
-                      </dl>
+                    {sel.ficha && Object.values(sel.ficha).some((v) => v != null) ? (
+                      <div className="ft-specs">
+                        <span className="ft-specs-tit">Especificação</span>
+                        <div className="ft-specs-grade">
+                          {[['cabedal', 'Cabedal'], ['solado', 'Solado'], ['salto', 'Salto'], ['forma', 'Forma'], ['peso_kg', 'Peso (kg)'], ['caixa', 'Caixa'], ['medidas', 'Medidas']]
+                            .filter(([k]) => sel.ficha[k] != null)
+                            .map(([k, l]) => <span key={k} className="ft-spec"><small>{l}</small><b>{String(sel.ficha[k]).replace('.', ',')}</b></span>)}
+                        </div>
+                      </div>
                     ) : null}
                     <FichaConsumo produto={sel} produtos={produtos} onCusto={(v) => setCustos((c) => (Math.abs((c[sel.id] || 0) - v) > 0.001 ? { ...c, [sel.id]: v } : c))} />
                   </>

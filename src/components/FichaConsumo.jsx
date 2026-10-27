@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { UN_CURTA, copiarFicha, listarFichaConsumo, listarMateriais, removerLinhaFicha, salvarLinhaFicha } from '../lib/compras.js'
-import { SECOES, custoFicha, pct, valorLinha } from '../lib/custos.js'
+import { BLOCOS, blocoDe, ehMDE, pct, valorLinha } from '../lib/custos.js'
 import { brl } from '../lib/format.js'
 
 /*
@@ -9,7 +9,7 @@ import { brl } from '../lib/format.js'
   seções Cabedal · Solado/palmilha · Acabamento · Mão de obra · Custo fixo (rateio).
   Cada linha: material + consumo por par OU "rende X pares" por unidade → valor por par.
 */
-const vazio = (secao) => ({ secao, nome: '', modo: 'rendimento', qtd: '', custo_proprio: '' })
+const vazio = (bloco) => ({ bloco, secao: BLOCOS.find((b) => b.id === bloco)?.secao || bloco, nome: '', modo: bloco === 'mdi' || bloco === 'mde' || bloco === 'rateio' ? 'consumo' : 'rendimento', qtd: bloco === 'mdi' || bloco === 'mde' || bloco === 'rateio' ? '1' : '', custo_proprio: '' })
 const fmt = (v) => String(Number(v)).replace('.', ',')
 
 export default function FichaConsumo({ produto, produtos, onCusto }) {
@@ -29,7 +29,13 @@ export default function FichaConsumo({ produto, produtos, onCusto }) {
   useEffect(() => { setLinhas(null); setNova(null); setEdit(null); carregar() }, [produto.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const matPorNome = useMemo(() => Object.fromEntries(materiais.map((m) => [m.nome.toUpperCase(), m])), [materiais])
-  const resumo = useMemo(() => custoFicha(linhas), [linhas])
+  const resumo = useMemo(() => {
+    const porBloco = Object.fromEntries(BLOCOS.map((b) => [b.id, 0])); let total = 0
+    ;(linhas || []).forEach((l) => { const v = valorLinha(l); porBloco[blocoDe(l)] = (porBloco[blocoDe(l)] || 0) + v; total += v })
+    return { total, porBloco }
+  }, [linhas])
+  // materiais sugeridos em cada bloco (o tipo certo aparece primeiro na lista)
+  const sugeridos = (bloco) => materiais.filter((m) => (bloco === 'mdi' ? m.tipo === 'mao_de_obra' && !ehMDE(m.nome) : bloco === 'mde' ? m.tipo === 'mao_de_obra' && ehMDE(m.nome) : bloco === 'rateio' ? m.tipo === 'custo_fixo' : m.tipo === 'material'))
   useEffect(() => { if (linhas) onCusto?.(resumo.total) }, [resumo.total]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function salvar(l, id) {
@@ -54,7 +60,7 @@ export default function FichaConsumo({ produto, produtos, onCusto }) {
     const m = matPorNome[l.nome.trim().toUpperCase()]
     return (
       <div className="ficha-form">
-        <input className="input" list="ficha-materiais" placeholder="Material…" value={l.nome} autoFocus
+        <input className="input" list={`ficha-mat-${l.bloco || 'todos'}`} placeholder="Material…" value={l.nome} autoFocus
           onChange={(e) => setL({ ...l, nome: e.target.value })} aria-label="Material" />
         <select className="input" value={l.modo} onChange={(e) => setL({ ...l, modo: e.target.value })} aria-label="Como medir">
           <option value="rendimento">rende (pares por {m ? UN_CURTA[m.unidade] : 'unid.'})</option>
@@ -69,23 +75,23 @@ export default function FichaConsumo({ produto, produtos, onCusto }) {
   }
 
   return (
-    <div className="ficha">
-      <datalist id="ficha-materiais">{materiais.map((m) => <option key={m.id} value={m.nome} />)}</datalist>
+    <div className="ficha2">
+      {BLOCOS.map((b) => <datalist key={b.id} id={`ficha-mat-${b.id}`}>{sugeridos(b.id).map((m) => <option key={m.id} value={m.nome} />)}</datalist>)}
 
-      <div className="ficha-topo">
-        <div>
-          <span className="eyebrow">Custo do par</span>
-          <b className="ficha-total">{brl(resumo.total)}</b>
+      <div className="fc-resumo">
+        <div className="fc-total">
+          <span>Custo do par</span>
+          <b>{brl(resumo.total)}</b>
         </div>
-        <div className="ficha-barra" aria-label="Composição do custo">
-          {SECOES.map((s) => resumo.porSecao[s.id] > 0 && (
-            <i key={s.id} className={`sec-${s.id}`} style={{ width: `${(resumo.porSecao[s.id] / resumo.total) * 100}%` }} title={`${s.label}: ${brl(resumo.porSecao[s.id])}`} />
-          ))}
-        </div>
-        <div className="ficha-legenda">
-          {SECOES.map((s) => (
-            <span key={s.id}><i className={`sec-${s.id}`} />{s.label} <b>{brl(resumo.porSecao[s.id])}</b> <small>{resumo.total ? pct(resumo.porSecao[s.id] / resumo.total) : ''}</small></span>
-          ))}
+        <div className="fc-comp">
+          <div className="ft-barra">
+            {BLOCOS.map((b) => resumo.porBloco[b.id] > 0 && <i key={b.id} style={{ width: `${(resumo.porBloco[b.id] / resumo.total) * 100}%`, background: b.cor }} title={`${b.nome}: ${brl(resumo.porBloco[b.id])}`} />)}
+          </div>
+          <div className="fc-tiles">
+            {BLOCOS.map((b) => (
+              <span key={b.id} className="fc-tile"><i style={{ background: b.cor }} /><span>{b.curto || b.nome}</span><b>{brl(resumo.porBloco[b.id])}</b><em>{resumo.total ? pct(resumo.porBloco[b.id] / resumo.total) : '—'}</em></span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -93,55 +99,49 @@ export default function FichaConsumo({ produto, produtos, onCusto }) {
         <p className="card-sub" style={{ margin: 0 }}>Cadastre os materiais em <Link className="link" to="/compras">Compras → Materiais</Link> para montar a ficha.</p>
       )}
 
-      {SECOES.map((s) => {
-        const ls = linhas.filter((l) => l.secao === s.id)
+      {BLOCOS.map((b) => {
+        const ls = linhas.filter((l) => blocoDe(l) === b.id)
+        const max = Math.max(0.0001, ...ls.map(valorLinha))
         return (
-          <section key={s.id} className="ficha-secao">
-            <header>
-              <h3><i className={`sec-${s.id}`} />{s.label}</h3>
-              <span>{brl(resumo.porSecao[s.id])}</span>
+          <section key={b.id} className="fb" style={{ '--bc': b.cor }}>
+            <header className="fb-head">
+              <h4><i />{b.nome}</h4>
+              <span className="fb-pct">{resumo.total ? pct(resumo.porBloco[b.id] / resumo.total) : ''}</span>
+              <b>{brl(resumo.porBloco[b.id])}</b>
             </header>
-            {ls.length > 0 && (
-              <table className="ficha-tab">
-                <thead><tr><th>Material</th><th className="r">Custo</th><th className="r">Consumo</th><th className="r">Por par</th><th /></tr></thead>
-                <tbody>
-                  {ls.map((l) => edit?.id === l.id ? (
-                    <tr key={l.id}><td colSpan={5}>{formLinha(edit, setEdit, () => salvar(edit, l.id), () => setEdit(null))}</td></tr>
-                  ) : (
-                    <Fragment key={l.id}>
-                      <tr>
-                        <td>
-                          {l.materiais?.nome}
-                          {l.observacao && <span className="ficha-aviso" title={l.observacao}> ⚠</span>}
-                        </td>
-                        <td className="r" title={l.custo_proprio != null ? 'Custo próprio desta linha' : 'Custo do cadastro'}>
-                          {brl(l.custo_proprio ?? l.materiais?.custo)}{l.custo_proprio != null && <sup>*</sup>}
-                          <small> /{UN_CURTA[l.materiais?.unidade] || 'un'}</small>
-                        </td>
-                        <td className="r">{l.modo === 'rendimento' ? <>rende <b>{fmt(l.rendimento)}</b> pares</> : <><b>{fmt(l.consumo)}</b> {UN_CURTA[l.materiais?.unidade]}/par</>}</td>
-                        <td className="r"><b>{brl(valorLinha(l))}</b></td>
-                        <td className="r ficha-acoes">
-                          <button className="link-btn" onClick={() => { setNova(null); setEdit({ id: l.id, secao: l.secao, nome: l.materiais?.nome || '', modo: l.modo, qtd: fmt(l.modo === 'rendimento' ? l.rendimento : l.consumo), custo_proprio: l.custo_proprio ?? '', perda_pct: l.perda_pct, observacao: l.observacao }) }}>editar</button>
-                          <button className="link-btn" onClick={() => remover(l.id)}>remover</button>
-                        </td>
-                      </tr>
-                      {l.observacao && <tr className="ficha-obs"><td colSpan={5}>⚠ {l.observacao}</td></tr>}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            {nova?.secao === s.id
-              ? formLinha(nova, setNova, () => salvar(nova), () => setNova(null))
-              : <button className="link-btn ficha-add-btn" onClick={() => { setEdit(null); setNova(vazio(s.id)) }}>+ adicionar em {s.label.toLowerCase()}</button>}
+            {ls.map((l) => edit?.id === l.id ? (
+              <div key={l.id} className="fb-edit">{formLinha(edit, setEdit, () => salvar(edit, l.id), () => setEdit(null))}</div>
+            ) : (
+              <Fragment key={l.id}>
+                <div className="fb-linha">
+                  <div className="fb-mat">
+                    <b>{l.materiais?.nome}{l.observacao && <span className="ficha-aviso" title={l.observacao}> ⚠</span>}</b>
+                    <small>
+                      {l.modo === 'rendimento' ? <>rende {fmt(l.rendimento)} pares</> : <>{fmt(l.consumo)} {UN_CURTA[l.materiais?.unidade] || 'un'}/par</>}
+                      {' · '}{brl(l.custo_proprio ?? l.materiais?.custo)}/{UN_CURTA[l.materiais?.unidade] || 'un'}{l.custo_proprio != null && <span title="Custo próprio desta linha"> *</span>}
+                    </small>
+                  </div>
+                  <span className="fb-bar"><i style={{ width: `${(valorLinha(l) / max) * 100}%` }} /></span>
+                  <b className="fb-val">{brl(valorLinha(l))}</b>
+                  <span className="fb-acoes">
+                    <button type="button" title="Editar" aria-label={`Editar ${l.materiais?.nome}`} onClick={() => { setNova(null); setEdit({ id: l.id, bloco: b.id, secao: l.secao, nome: l.materiais?.nome || '', modo: l.modo, qtd: fmt(l.modo === 'rendimento' ? l.rendimento : l.consumo), custo_proprio: l.custo_proprio ?? '', perda_pct: l.perda_pct, observacao: l.observacao }) }}>✎</button>
+                    <button type="button" title="Remover" aria-label={`Remover ${l.materiais?.nome}`} onClick={() => remover(l.id)}>✕</button>
+                  </span>
+                </div>
+                {l.observacao && <div className="fb-obs">⚠ {l.observacao}</div>}
+              </Fragment>
+            ))}
+            {nova?.bloco === b.id
+              ? <div className="fb-edit">{formLinha(nova, setNova, () => salvar(nova), () => setNova(null))}</div>
+              : <button type="button" className="fb-add" onClick={() => { setEdit(null); setNova(vazio(b.id)) }}>+ adicionar em {b.curto && b.curto.length <= 6 ? b.curto : (b.curto || b.nome).toLowerCase()}</button>}
           </section>
         )
       })}
 
-      <div className="actions" style={{ justifyContent: 'space-between' }}>
-        <span className="card-sub" style={{ margin: 0 }}>* custo próprio da linha (diferente do cadastro do material)</span>
+      <div className="fc-rodape">
+        <span className="card-sub" style={{ margin: 0 }}>* custo próprio da linha · <Link className="link" to="/fichas">ver nas Fichas técnicas</Link></span>
         <span className="actions">
-          <select className="input input-sm" style={{ width: 190, textAlign: 'left' }} value={copiarDe} onChange={(e) => setCopiarDe(e.target.value)} aria-label="Copiar ficha de">
+          <select className="input input-sm" style={{ width: 200, textAlign: 'left' }} value={copiarDe} onChange={(e) => setCopiarDe(e.target.value)} aria-label="Copiar ficha de">
             <option value="">Copiar de outro modelo…</option>
             {produtos.filter((p) => p.id !== produto.id).map((p) => <option key={p.id} value={p.id}>{p.ref} · {p.nome}</option>)}
           </select>
