@@ -1164,3 +1164,15 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .pr-ficha-info .pr-dest-box { grid-column: span 2; }
 .pr-ficha-info .c1 { grid-column: span 1; } .pr-ficha-info .c2 { grid-column: span 2; }
 .pr-ficha-info .c2 b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* atalhos do Painel em relevo, como botões */
+.atalhos { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.atalho {
+  white-space: nowrap; min-height: 60px; padding: 12px 14px; font-size: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F6F4F0 100%); border: 1px solid #DEDAD3;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 3px 0 #D9D3C9, 0 8px 16px -10px rgba(20,18,15,.3);
+  transition: transform .08s, box-shadow .08s, border-color .15s;
+}
+.atalho:hover { transform: translateY(-2px); border-color: #CFC6BA; box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 5px 0 #D9D3C9, 0 12px 20px -10px rgba(20,18,15,.35); }
+.atalho:active { transform: translateY(2px); box-shadow: 0 1px 0 #D9D3C9; }
+.atalho-ico { background: #151515; color: #fff; border: 0; box-shadow: 0 2px 0 #000; }
+.atalho:hover .atalho-ico { background: var(--accent); }
