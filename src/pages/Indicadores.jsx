@@ -6,6 +6,13 @@ import { BarrasEmpilhadas, GraficoArea, Rosca, Sparkline, corCanal, ordenarCanai
 import { brl, brlCurto, dataBR, inteiro } from '../lib/format.js'
 import { listarPedidos, totaisPedido } from '../lib/pedidos.js'
 import { listarProdutos } from '../lib/produtos.js'
+import { listarSaldos } from '../lib/estoque.js'
+import { listarOPs, listarSetores } from '../lib/producao.js'
+import { listarTitulos } from '../lib/financeiro.js'
+import { listarFichaConsumo } from '../lib/compras.js'
+import { custosPorProduto } from '../lib/custos.js'
+import { listarListas } from '../lib/precos.js'
+import { AbaEstoque, AbaFinanceiro, AbaMargem, AbaProducao } from '../components/IndicadoresAbas.jsx'
 
 /*
   Indicadores (BI interno). Aba Vendas: pedidos faturados ou entregues, pela data do pedido.
@@ -13,10 +20,10 @@ import { listarProdutos } from '../lib/produtos.js'
 */
 const ABAS = [
   { id: 'vendas', label: 'Vendas' },
-  { id: 'margem', label: 'Produtos e margem', breve: true },
-  { id: 'producao', label: 'Produção', breve: true },
-  { id: 'estoque', label: 'Estoque', breve: true },
-  { id: 'financeiro', label: 'Financeiro', breve: true },
+  { id: 'margem', label: 'Produtos e margem' },
+  { id: 'estoque', label: 'Estoque' },
+  { id: 'producao', label: 'Produção' },
+  { id: 'financeiro', label: 'Financeiro' },
 ]
 const VENDIDO = ['faturado', 'entregue']
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -64,12 +71,16 @@ export default function Indicadores() {
   const [tipo, setTipo] = useState('Todos')
   const [medida, setMedida] = useState('valor')
   const [visao, setVisao] = useState('canal')
+  const [extra, setExtra] = useState(null) // dados das outras abas
 
   useEffect(() => {
     Promise.all([listarPedidos(), listarProdutos()])
       .then(([pe, pr]) => { setPedidos(pe); setProdutos(pr) })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
+    Promise.all([listarSaldos(), listarOPs(), listarSetores(), listarTitulos(), listarFichaConsumo(), listarListas()])
+      .then(([saldos, ops, setores, titulos, ficha, listas]) => setExtra({ saldos, ops, setores, titulos, custos: custosPorProduto(ficha), listas }))
+      .catch((e) => setErro(e.message))
   }, [])
 
   const skuInfo = useMemo(() => {
@@ -182,6 +193,7 @@ export default function Indicadores() {
 
       <div className="ind-filtros card">
         <div className="field"><span>Período</span><SeletorPeriodo valor={periodo} onChange={setPeriodo} /></div>
+        {aba === 'vendas' && <>
         <label className="field"><span>Canal</span>
           <select className="input" value={canal} onChange={(e) => setCanal(e.target.value)}>{canais.map((c) => <option key={c}>{c}</option>)}</select>
         </label>
@@ -195,10 +207,17 @@ export default function Indicadores() {
           </div>
         </div>
         {(canal !== 'Todos' || tipo !== 'Todos') && <button className="link-btn" onClick={() => { setCanal('Todos'); setTipo('Todos') }}>limpar filtros</button>}
+        </>}
       </div>
 
       {erro && <p className="form-error" role="alert">Não consegui ler o banco: {erro}</p>}
 
+      {aba !== 'vendas' && (!extra ? <p className="card-sub">Carregando…</p> : (() => {
+        const d = { ...extra, pedidos, produtos }
+        return aba === 'margem' ? <AbaMargem dados={d} per={per} /> : aba === 'estoque' ? <AbaEstoque dados={d} per={per} /> : aba === 'producao' ? <AbaProducao dados={d} per={per} /> : <AbaFinanceiro dados={d} per={per} />
+      })())}
+
+      {aba === 'vendas' && <>
       <section className="kpis-cor">
         <KpiCor cor="#8A5A32" rotulo="Faturamento" valor={brl(r.a.valor)} v={r.varValor} spark={r.pts.map((p) => p.valor)} />
         <KpiCor cor="#2a78d6" rotulo="Pares vendidos" valor={inteiro(r.a.pares)} v={r.varPares} spark={r.pts.map((p) => p.pares)} />
@@ -311,6 +330,7 @@ export default function Indicadores() {
         </div>
       </section>
       <p className="card-sub" style={{ margin: 0 }}>Vendas = pedidos faturados ou entregues, pela data do pedido. As setas comparam com o período anterior de mesmo tamanho. Desconto do pedido rateado entre os itens.{carregando ? ' Carregando…' : ''}</p>
+      </>}
     </>
   )
 }

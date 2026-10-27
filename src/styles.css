@@ -790,3 +790,36 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 
 .ind-filtros .segmented { width: max-content; }
 @media (max-width: 760px) { .kpis-cor { grid-template-columns: 1fr 1fr; gap: 10px; } .kpi-cor { padding: 14px 14px 10px; } .kpi-cor .kpi2-valor { font-size: 19px; } .kpi-cor .kpi-note em { display: none; } }
+
+/* ============ Acabamento premium: hierarquia clara, cor só nos gráficos ============ */
+.main { gap: 28px; }
+.card { border-color: #E9E6E0; border-radius: 18px; box-shadow: 0 1px 2px rgba(20,18,15,.04), 0 12px 32px -22px rgba(20,18,15,.22); }
+.card-head { padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--line-soft); align-items: flex-end; }
+.card-head.pad { border-bottom: 0; padding-bottom: 0; }
+.card-head h2 {
+  margin: 0; display: flex; align-items: center; gap: 10px;
+  font-family: 'Jost', var(--font); font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+}
+.card-head h2::before { content: ''; width: 18px; height: 2px; background: var(--accent); border-radius: 2px; flex: none; }
+.card-head .card-sub { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.page-head .eyebrow { color: var(--accent); font-weight: 600; }
+.page-head h1 { font-family: 'Jost', var(--font); font-weight: 500; letter-spacing: -.015em; font-size: 38px; }
+.kpi-label { font-family: 'Jost', var(--font); font-weight: 600; letter-spacing: .14em; color: var(--muted); }
+.kpi2-valor, .kpi-value { font-family: 'Jost', var(--font); font-weight: 500; letter-spacing: -.01em; }
+.kpi-cor { padding-top: 22px; }
+.kpi-cor::before { display: none; }
+.painel-sub { font-size: 15px; }
+.legenda-graf { margin: 0 0 14px; }
+.rosca-valor { font-family: 'Jost', var(--font); font-weight: 500; }
+.hbar-nome, .abc-nome b { color: var(--ink); }
+
+/* listas ranqueadas (curva ABC, estoque parado) */
+.abc-lista { display: grid; gap: 4px; }
+.abc-linha { display: grid; grid-template-columns: 22px 40px minmax(120px, 1.3fr) minmax(80px, 2fr) 84px 24px; gap: 12px; align-items: center; padding: 6px 4px; border-radius: 10px; }
+.abc-linha:hover { background: var(--surface-2); }
+.abc-pos { font-size: 12px; color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; }
+.abc-nome { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.abc-val { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.abc-classe { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: #fff; font-size: 11px; font-weight: 700; }
+.abc-linha .hbar-trilho { height: 10px; }
+@media (max-width: 760px) { .abc-linha { grid-template-columns: 40px 1fr 70px 22px; } .abc-pos, .abc-linha .hbar-trilho { display: none; } .page-head h1 { font-size: 30px; } }

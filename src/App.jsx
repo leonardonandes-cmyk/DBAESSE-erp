@@ -11,7 +11,6 @@ import Estoque from './pages/Estoque.jsx'
 import Clientes from './pages/Clientes.jsx'
 import Financeiro from './pages/Financeiro.jsx'
 import Compras from './pages/Compras.jsx'
-import Relatorios from './pages/Relatorios.jsx'
 import Configuracoes from './pages/Configuracoes.jsx'
 import EmBreve from './pages/EmBreve.jsx'
 import AppVendas from './pages/AppVendas.jsx'
@@ -34,7 +33,6 @@ export const MODULOS = [
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro' },
   { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
-  { to: '/relatorios', icon: 'precos', label: 'Relatórios', grupo: 'Relatórios' },
   { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
 ]
 const GRUPOS = [...new Set(MODULOS.map((m) => m.grupo || ''))]
@@ -116,7 +114,7 @@ export default function App() {
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/compras" element={<Compras />} />
-          <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/relatorios" element={<Indicadores />} />
           <Route path="/indicadores" element={<Indicadores />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao />} />
