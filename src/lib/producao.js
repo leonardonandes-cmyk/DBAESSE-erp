@@ -11,19 +11,20 @@ export const OP_ABERTAS = ['aberta', 'em_producao']
 export const numeroOP = (n) => `OP-${String(n).padStart(4, '0')}`
 
 export async function listarSetores() {
-  const { data, error } = await supabase.from('setores').select('id,nome,ordem,ativo').order('ordem')
+  const { data, error } = await supabase.from('setores').select('id,nome,ordem,ativo,capacidade_dia').order('ordem')
   if (error) throw error
   return data
 }
 
-export async function salvarSetor({ id, nome, ordem, ativo }) {
+export async function salvarSetor({ id, nome, ordem, ativo, capacidade_dia }) {
   const linha = { nome: nome.trim(), ordem: Number(ordem) || 0, ativo: ativo ?? true }
+  if (capacidade_dia != null) linha.capacidade_dia = Math.max(1, Math.round(Number(capacidade_dia)) || 600)
   const q = id ? supabase.from('setores').update(linha).eq('id', id) : supabase.from('setores').insert(linha)
   const { error } = await q
   if (error) throw error
 }
 
-const CAMPOS = 'id,numero,status,prioridade,prazo,observacao,estoque_lancado,concluida_em,criado_em,produto_id,cor_id,pedido_id,' +
+const CAMPOS = 'id,numero,status,prioridade,prazo,observacao,estoque_lancado,concluida_em,criado_em,produto_id,cor_id,pedido_id,sequencia,inicio_programado,' +
   'produtos(ref,nome,tipo,foto_url,fotos),cores(nome,hex,sigla),pedidos(numero),' +
   'op_itens(id,quantidade,sku_id,skus(numero,sku)),' +
   'op_etapas(id,setor_id,ordem,status,inicio,fim,qtd_ok,qtd_perda,responsavel,observacao)'
@@ -130,4 +131,17 @@ export async function itensDosPedidosAbertos() {
     .in('pedidos.status', ['aprovado', 'producao', 'separacao'])
     .order('id'))
   return data.map((i) => ({ sku_id: i.sku_id, quantidade: i.quantidade, pedido_numero: i.pedidos.numero, pedido_id: i.pedidos.id }))
+}
+
+// PCP: grava a ordem da fila de produção (1, 2, 3…)
+export async function salvarSequencia(ids) {
+  for (let i = 0; i < ids.length; i++) {
+    const { error } = await supabase.from('ordens_producao').update({ sequencia: i + 1 }).eq('id', ids[i])
+    if (error) throw error
+  }
+}
+
+export async function diasDeTrabalho() {
+  const { data } = await supabase.from('empresas').select('dias_trabalho').limit(1).maybeSingle()
+  return data?.dias_trabalho?.length ? data.dias_trabalho : [1, 2, 3, 4, 5]
 }

@@ -88,6 +88,11 @@ export default function Configuracoes() {
               <div key={s.id} className="setor-linha" style={s.ativo ? undefined : { opacity: 0.5 }}>
                 <span className="setor-ordem">{i + 1}</span>
                 <input className="input" defaultValue={s.nome} onBlur={(e) => e.target.value.trim() && e.target.value !== s.nome && salvarS({ ...s, nome: e.target.value })} aria-label="Nome do setor" />
+                <label className="setor-cap" title="Capacidade do setor em pares por dia (usada na Programação)">
+                  <input className="input" inputMode="numeric" defaultValue={s.capacidade_dia ?? 600} aria-label={`Capacidade de ${s.nome} em pares por dia`}
+                    onBlur={(e) => Number(e.target.value) > 0 && Number(e.target.value) !== s.capacidade_dia && salvarS({ ...s, capacidade_dia: e.target.value })} />
+                  <small>pares/dia</small>
+                </label>
                 <button className="btn btn-sm icon-btn" onClick={() => mover(i, -1)} aria-label="Subir" disabled={i === 0}>↑</button>
                 <button className="btn btn-sm icon-btn" onClick={() => mover(i, 1)} aria-label="Descer" disabled={i === setores.length - 1}>↓</button>
                 <label className="check" style={{ whiteSpace: 'nowrap' }}><input type="checkbox" checked={s.ativo} onChange={(e) => salvarS({ ...s, ativo: e.target.checked })} />ativo</label>

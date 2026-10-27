@@ -997,3 +997,35 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .chip.on { background: linear-gradient(180deg, #2A2927 0%, #151515 100%); border-color: #151515; color: #fff; box-shadow: 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.4); }
 .btn-dark { background: linear-gradient(180deg, #2A2927 0%, #151515 100%); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.4); }
 .btn-dark:active { transform: translateY(1px); box-shadow: 0 1px 0 #000; }
+
+/* ---------- PCP / Programação ---------- */
+.pcp-cal { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(196px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.pcp-dia { display: grid; align-content: start; gap: 6px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface-2); min-height: 180px; }
+.pcp-dia.hoje { border-color: var(--accent); background: #FBF7F2; }
+.pcp-dia-topo { display: flex; justify-content: space-between; align-items: baseline; }
+.pcp-dia-topo b { font-family: 'Jost', var(--font); font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.pcp-dia-topo span { font-size: 12px; color: var(--muted); }
+.pcp-carga { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.pcp-carga i { display: block; height: 100%; background: #2a78d6; border-radius: 4px; }
+.pcp-carga i.cheio { background: #1baf7a; }
+.pcp-carga-txt { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pcp-ops { display: grid; gap: 6px; margin-top: 4px; }
+.pcp-op { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 5px 8px 5px 5px; text-align: left; box-shadow: 0 2px 0 #E4E0D8; }
+.pcp-op:hover { border-color: #cfc6ba; }
+.pcp-op.atrasa { border-color: var(--bad); }
+.pcp-op span { display: grid; min-width: 0; } .pcp-op b { font-size: 12px; } .pcp-op small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcp-op em { font-style: normal; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pcp-livre { font-size: 12px; color: var(--faint); text-align: center; padding: 18px 0; }
+.link-sem { border: 0; background: transparent; padding: 0; text-align: left; cursor: pointer; }
+.pcp-mover { white-space: nowrap; } .pcp-mover .btn { width: 32px; height: 32px; }
+.pcp-cons-resumo { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.pcp-cons-resumo span { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 12px; color: var(--muted); }
+.pcp-cons-resumo b { color: var(--ink); font-size: 14px; margin-right: 4px; }
+.pcp-cons-resumo .falta b { color: var(--bad); }
+.pcp-cons { display: grid; max-height: 460px; overflow-y: auto; }
+.pcp-cons-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto 92px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line-soft); }
+.pcp-cons-linha.falta .pcp-cons-nome b { color: var(--bad); }
+.pcp-cons-nome { display: grid; min-width: 0; } .pcp-cons-nome b { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pcp-cons-nome small { font-size: 11px; color: var(--muted); }
+.pcp-cons-q { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; } .pcp-cons-q small { font-weight: 400; color: var(--muted); }
+.pcp-cons-st { text-align: right; } .pcp-cons-st .pill { font-size: 11px; padding: 2px 8px; }
+.setor-cap { display: inline-flex; align-items: center; gap: 6px; } .setor-cap .input { width: 74px; text-align: right; } .setor-cap small { font-size: 11px; color: var(--muted); white-space: nowrap; }
