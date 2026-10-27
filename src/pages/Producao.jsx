@@ -167,7 +167,7 @@ export default function Producao() {
                     <tr key={o.id} className="clickable" onClick={() => setAberta(o)} style={o.status === 'cancelada' ? { opacity: 0.5 } : undefined}>
                       <td>
                         <div className="prod-cell">
-                          <FotoProduto p={o.produtos} className="sm" size={18} />
+                          <FotoProduto p={o.produtos} corId={o.cor_id} className="sm" size={18} />
                           <div>
                             <b>{numeroOP(o.numero)} · {o.produtos?.ref} {o.produtos?.nome}</b>
                             {o.prioridade === 'urgente' && <span className="pill bad" style={{ marginLeft: 6 }}>Urgente</span>}

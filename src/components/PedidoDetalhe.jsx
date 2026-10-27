@@ -93,7 +93,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
                   const sub = g.itens.reduce((t, i) => t + i.quantidade * Number(i.preco_unit), 0)
                   return (
                     <tr key={g.chave}>
-                      <td><ProdutoCelula p={g.produto} linha2={<><i className="dot-cor" style={{ background: g.cor?.hex || '#ddd' }} />{g.cor?.nome}</>} /></td>
+                      <td><ProdutoCelula p={g.produto} cor={g.cor} linha2={<><i className="dot-cor" style={{ background: g.cor?.hex || '#ddd' }} />{g.cor?.nome}</>} /></td>
                       <td><div className="grade-mini">{g.itens.map((i) => <span key={i.id}><small>{i.skus.numero}</small>{i.quantidade}</span>)}</div></td>
                       <td className="r"><b>{qt}</b></td>
                       <td className="r">{brl(g.itens[0].preco_unit)}</td>

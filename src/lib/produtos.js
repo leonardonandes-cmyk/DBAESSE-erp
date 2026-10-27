@@ -10,7 +10,7 @@ export async function listarCores() {
 export async function listarProdutos() {
   return todas(() => supabase
     .from('produtos')
-    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,preco_atacado,preco_varejo,ficha,skus(id,cor_id,numero,sku,ean)')
+    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,fotos,preco_atacado,preco_varejo,ficha,skus(id,cor_id,numero,sku,ean)')
     .order('ref'))
 }
 

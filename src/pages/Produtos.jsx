@@ -2,15 +2,11 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import NovoModelo from '../components/NovoModelo.jsx'
 import FichaConsumo from '../components/FichaConsumo.jsx'
-import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
+import { listarCores, listarProdutos } from '../lib/produtos.js'
+import { FotoProduto } from '../components/FotoProduto.jsx'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
 import { brl } from '../lib/format.js'
 
-function Imagem({ p, size }) {
-  const src = p.foto_url || desenhoDoTipo(p.tipo)
-  if (src) return <img src={src} alt="" className={p.foto_url ? '' : 'desenho'} />
-  return <Icon name="sapato" size={size} stroke={1.2} />
-}
 
 const STATUS = {
   ativo: { label: 'Ativo', tom: 'ok' },
@@ -124,7 +120,7 @@ export default function Produtos() {
                           onClick={() => { setSelRef(p.ref); setCorSel(null) }}>
                           <td>
                             <div className="prod-cell">
-                              <div className="thumb"><Imagem p={p} size={30} /></div>
+                              <FotoProduto key={p.id} p={p} size={30} />
                               <div><b>{p.nome}</b><span>REF {p.ref}{p.tipo ? ` · ${p.tipo}` : ''}</span></div>
                             </div>
                           </td>
@@ -147,7 +143,7 @@ export default function Produtos() {
             {sel && (
               <section className="card detail" aria-label="Detalhe do produto">
                 <div className="detail-head">
-                  <div className="thumb lg"><Imagem p={sel} size={72} /></div>
+                  <FotoProduto key={`${sel.id}-${cor?.id}`} p={sel} corId={cor?.id} className="lg" size={72} />
                   <div style={{ minWidth: 0 }}>
                     <div className="eyebrow">REF {sel.ref}{sel.tipo ? ` · ${sel.tipo}` : ''}</div>
                     <h2>{sel.nome}</h2>

@@ -63,7 +63,7 @@ export default function SeletorGrade({ produtos, cores, saldos, onAdicionar, rot
 
       {prod && (
         <div className="seletor-prod">
-        <FotoProduto p={prod} />
+        <FotoProduto key={corId} p={prod} corId={corId} />
         <div className="chips">
           {coresProd.map((c) => (
             <button type="button" key={c.id} className={`color-tag ${c.id === corId ? 'on' : ''}`} onClick={() => { setCorId(c.id); setQtd({}) }}>

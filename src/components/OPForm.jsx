@@ -38,7 +38,7 @@ export default function OPForm({ produtos, cores, saldos, pedidosAbertos, onFech
 
         {linhas.length > 0 && (
           <div className="preview" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-            <ProdutoCelula p={prod} linha2={<><i className="dot-cor" style={{ background: cor?.hex || '#ddd' }} />{cor?.nome}</>} />
+            <ProdutoCelula p={prod} cor={cor} linha2={<><i className="dot-cor" style={{ background: cor?.hex || '#ddd' }} />{cor?.nome}</>} />
             <div className="grade-mini">{linhas.map((l) => <span key={l.sku_id}><small>{l.numero}</small>{l.quantidade}</span>)}</div>
             <span>{total} pares</span>
           </div>

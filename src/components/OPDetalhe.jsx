@@ -56,7 +56,7 @@ ${op.op_etapas.map((e) => `<tr><td style="text-align:left"><b>${setorPorId[e.set
           <div>
             <div className="eyebrow">{op.pedidos ? `Pedido ${numeroPedido(op.pedidos.numero)}` : 'Estoque / reposição'} · criada em {dataBR(op.criado_em)}</div>
             <div className="prod-cell">
-              <FotoProduto p={op.produtos} />
+              <FotoProduto p={op.produtos} corId={op.cor_id} />
               <div>
                 <h2>{numeroOP(op.numero)} · {op.produtos.ref} {op.produtos.nome}</h2>
                 <span><i className="dot-cor" style={{ background: op.cores?.hex || '#ddd' }} />{op.cores?.nome}</span>

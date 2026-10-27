@@ -121,7 +121,7 @@ export default function Estoque() {
               {linhas.map((l) => (
                 <tr key={l.chave}>
                   <td>
-                    <ProdutoCelula p={l.p} linha2={<><i className="dot-cor" style={{ background: l.cor?.hex || '#ddd' }} />{l.cor?.nome}</>} />
+                    <ProdutoCelula p={l.p} cor={l.cor} linha2={<><i className="dot-cor" style={{ background: l.cor?.hex || '#ddd' }} />{l.cor?.nome}</>} />
                   </td>
                   {numeros.map((n) => {
                     const v = l.grade[n]

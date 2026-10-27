@@ -24,7 +24,7 @@ export async function salvarSetor({ id, nome, ordem, ativo }) {
 }
 
 const CAMPOS = 'id,numero,status,prioridade,prazo,observacao,estoque_lancado,concluida_em,criado_em,produto_id,cor_id,pedido_id,' +
-  'produtos(ref,nome,tipo,foto_url),cores(nome,hex,sigla),pedidos(numero),' +
+  'produtos(ref,nome,tipo,foto_url,fotos),cores(nome,hex,sigla),pedidos(numero),' +
   'op_itens(id,quantidade,sku_id,skus(numero,sku)),' +
   'op_etapas(id,setor_id,ordem,status,inicio,fim,qtd_ok,qtd_perda,responsavel,observacao)'
 
