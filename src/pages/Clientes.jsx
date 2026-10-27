@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import ParceiroForm from '../components/ParceiroForm.jsx'
+import DadosEmpresa from '../components/DadosEmpresa.jsx'
+import { supabase } from '../lib/supabase.js'
 import { linkWhats } from '../lib/format.js'
 import { TIPOS_PARCEIRO, listarParceiros, enderecoCompleto } from '../lib/parceiros.js'
 
@@ -14,6 +16,9 @@ export default function Clientes() {
   const [filtro, setFiltro] = useState('todos')
   const [busca, setBusca] = useState('')
   const [form, setForm] = useState(null) // null | { parceiro? }
+  const [empresa, setEmpresa] = useState(false)
+  const [souAdmin, setSouAdmin] = useState(false)
+  useEffect(() => { supabase.rpc('sou_admin').then(({ data }) => setSouAdmin(Boolean(data))) }, [])
 
   async function carregar() {
     try { setLista(await listarParceiros()) } catch (e) { setErro(e.message) } finally { setCarregando(false) }
@@ -41,6 +46,7 @@ export default function Clientes() {
           <h1>Clientes e fornecedores</h1>
         </div>
         <div className="actions">
+          <button className="btn" onClick={() => setEmpresa(true)}>Minha empresa</button>
           <button className="btn btn-dark" onClick={() => setForm({ tipo: filtro === 'todos' ? 'cliente' : filtro })}>
             <Icon name="mais" size={16} stroke={2} />Novo cadastro
           </button>
@@ -103,6 +109,18 @@ export default function Clientes() {
             </table>
           </div>
         </section>
+      )}
+
+      {empresa && (
+        <div className="modal-bg" onClick={() => setEmpresa(false)}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div><div className="eyebrow">Cadastro</div><h2>Minha empresa</h2></div>
+              <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={() => setEmpresa(false)}>✕</button>
+            </div>
+            <DadosEmpresa podeEditar={souAdmin} onSalvo={() => setEmpresa(false)} />
+          </div>
+        </div>
       )}
 
       {form && (

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { baixarBackup } from '../lib/backup.js'
-import DadosEmpresa from '../components/DadosEmpresa.jsx'
 import { listarSetores, salvarSetor } from '../lib/producao.js'
 import { listarListas, salvarLista } from '../lib/precos.js'
 import { brl } from '../lib/format.js'
@@ -80,11 +79,6 @@ export default function Configuracoes() {
         {msg && <span className="pill ok">{msg}</span>}
       </header>
       {erro && <p className="form-error" role="alert">{erro}</p>}
-
-      <section className="card">
-        <div className="card-head"><div><h2>Dados da empresa</h2><div className="card-sub">Razão social, CNPJ, inscrição estadual, contato e endereço — usados em romaneio, etiqueta de envio e documentos.</div></div></div>
-        <DadosEmpresa podeEditar={souAdmin} onSalvo={() => aviso('Dados da empresa salvos')} />
-      </section>
 
       <section className="grid-2">
         <div className="card">
