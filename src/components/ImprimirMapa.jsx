@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { FotoProduto } from './FotoProduto.jsx'
 import { dataBR, inteiro } from '../lib/format.js'
 import { corDaPalmilha, numeroMapa, regraPalmilha } from '../lib/mapas.js'
+import { supabase } from '../lib/supabase.js'
 import { numeroOP, paresOP } from '../lib/producao.js'
 
 /*
@@ -17,7 +18,18 @@ const textoEscuro = (hex) => { const h = (hex || '#ffffff').replace('#', ''); co
 export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'mapa' }) {
   const [aba, setAba] = useState(inicial)
   const [regra, setRegra] = useState([{ chave: 'SALTO BLOCO', posicao: 2 }, { chave: '*', posicao: 1 }])
-  useEffect(() => { regraPalmilha().then(setRegra).catch(() => {}) }, [])
+  const [empresa, setEmpresa] = useState(null)
+  useEffect(() => {
+    regraPalmilha().then(setRegra).catch(() => {})
+    supabase.from('empresas').select('nome,razao_social,cnpj,telefone,cidade,uf').limit(1).maybeSingle().then(({ data }) => setEmpresa(data || null)).catch(() => {})
+  }, [])
+  const linhaEmpresa = empresa ? [empresa.razao_social, empresa.cnpj && `CNPJ ${empresa.cnpj}`, empresa.telefone, empresa.cidade && `${empresa.cidade}${empresa.uf ? `/${empresa.uf}` : ''}`].filter(Boolean).join(' · ') : ''
+  const Marca = ({ titulo, sub }) => (
+    <div className="pr-marca">
+      <div className="pr-logo"><b>D B A E S S E</b>{linhaEmpresa && <small>{linhaEmpresa}</small>}</div>
+      <div className="pr-doc"><b>{titulo}</b>{sub && <small>{sub}</small>}</div>
+    </div>
+  )
   useEffect(() => { document.body.classList.add('imprimindo'); return () => document.body.classList.remove('imprimindo') }, [])
 
   const corPorNome = useMemo(() => Object.fromEntries(cores.map((c) => [c.nome.trim().toUpperCase(), c])), [cores])
@@ -55,7 +67,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
 
   const Cab = ({ titulo }) => (
     <header className="pr-cab">
-      <div className="pr-marca">D B A E S S E<small>{titulo}</small></div>
+      <Marca titulo={titulo} sub={modelos} />
       <div className="pr-cab-dados">
         <span><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
         <span><small>Pedido</small><b>{mapa.pedido || '—'}</b></span>
@@ -104,6 +116,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
       {pagina.map(({ o, b }) => (
         <article key={o.id} className="pr-ficha">
           <div className="pr-ficha-topo">
+            <span className="pr-ficha-logo">D B A E S S E</span>
             <b>CONTROLE DE PRODUÇÃO</b>
             <span className="pr-ficha-modelo">{(b.produto?.tipo || '').toUpperCase()}</span>
             <span className="pr-ficha-op">{numeroOP(o.numero)}</span>
@@ -136,7 +149,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
   const Palmilha = () => fatiar(palmilhas, POR_FOLHA_PALM).map((pagina, pi) => (
     <div key={pi} className="folha">
       <header className="pr-cab pr-cab-palm">
-        <div className="pr-marca">PALMILHA<small>{modelos}</small></div>
+        <Marca titulo="Relação de palmilha" sub={modelos} />
         <div className="pr-cab-dados">
           <span><small>Data</small><b>{dataBR(mapa.data)}</b></span>
           <span><small>Cliente</small><b>{mapa.cliente || '—'}</b></span>
