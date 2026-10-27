@@ -16,6 +16,7 @@ import Configuracoes from './pages/Configuracoes.jsx'
 import EmBreve from './pages/EmBreve.jsx'
 import AppVendas from './pages/AppVendas.jsx'
 import Simulador from './pages/Simulador.jsx'
+import TabelaPrecos from './pages/TabelaPrecos.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
@@ -23,6 +24,7 @@ export const MODULOS = [
   { to: '/pedidos', icon: 'pedidos', label: 'Pedidos' },
   { to: '/app', icon: 'leitor', label: 'App vendas' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos' },
+  { to: '/precos', icon: 'precos', label: 'Tabela de preços' },
   { to: '/estoque', icon: 'estoque', label: 'Estoque' },
   { to: '/clientes', icon: 'clientes', label: 'Clientes' },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro' },
@@ -98,6 +100,7 @@ export default function App() {
           <Route path="/" element={<Painel usuario={EMPRESA.usuario} />} />
           <Route path="/produtos" element={<Produtos />} />
           <Route path="/simulador" element={<Simulador />} />
+          <Route path="/precos" element={<TabelaPrecos />} />
           <Route path="/pedidos" element={<Pedidos />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/clientes" element={<Clientes />} />

@@ -546,3 +546,23 @@ td.clickable { cursor: pointer; }
 .sim textarea { font: inherit; padding: 10px 14px; resize: vertical; }
 .sim-precos .field { min-width: 0; } .sim-precos input { width: 100%; min-width: 0; }
 @media (max-width: 760px) { .split-largo > .detail { flex-basis: 100%; min-width: 0; } .sim { min-width: 0; } }
+
+/* Tabela de preços */
+.tabela-precos { min-width: 640px; }
+.tabela-precos th small { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--faint); margin-top: 2px; }
+.tabela-precos td { vertical-align: middle; }
+.tabela-precos .preco { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tabela-precos.com-interno td.r .pill { display: block; width: max-content; margin: 4px 0 0 auto; font-size: 11px; padding: 2px 8px; }
+.tabela-precos .interno { color: var(--ink-2); background: var(--surface-2); }
+.tabela-precos .prod-cell span { color: var(--muted); font-size: 13px; }
+.faint { color: var(--faint); }
+@page { margin: 12mm; }
+@media print {
+  .sidebar, .tabbar, .mobile-top, .no-print, .page-head .actions { display: none !important; }
+  .shell, .main { display: block !important; padding: 0 !important; margin: 0 !important; }
+  body { background: #fff !important; }
+  .card { border: 0 !important; box-shadow: none !important; }
+  .tabela-precos { min-width: 0; font-size: 11px; }
+  .tabela-precos tr { break-inside: avoid; }
+  .table-wrap { overflow: visible !important; }
+}
