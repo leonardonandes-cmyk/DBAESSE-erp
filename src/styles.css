@@ -1123,3 +1123,6 @@ td.vazio { color: var(--muted); padding: 28px !important; }
   .folha:last-child { page-break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.pr-ficha-corpo { align-items: start; min-height: 0; }
+.pr-ficha-corpo .thumb { flex: none; }
+.pr-ficha { grid-template-rows: auto auto auto auto; align-content: start; }

@@ -109,7 +109,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
             <span className="pr-ficha-op">{numeroOP(o.numero)}</span>
           </div>
           <div className="pr-ficha-corpo">
-            <FotoProduto p={b.produto} corId={o.cor_id} size={84} />
+            <FotoProduto p={b.produto} corId={o.cor_id} size={66} />
             <div className="pr-ficha-info">
               <span><small>Data</small><b>{dataBR(mapa.data)}</b></span>
               <span><small>Ref.</small><b className="grande">{b.produto?.ref}</b></span>
