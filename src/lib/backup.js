@@ -44,7 +44,10 @@ export async function baixarBackup(aoProgresso) {
     aoProgresso?.(`Lendo ${nome}…`)
     const todas = []
     for (let de = 0; ; de += 1000) {
-      const { data, error } = await supabase.from(tabela).select(cols).range(de, de + 999)
+      // ordem fixa para a paginação não pular nem repetir linhas
+      let q = supabase.from(tabela).select(cols)
+      q = tabela === 'estoque_saldos' ? q.order('sku') : tabela === 'material_saldos' ? q.order('material_id').order('numero') : q.order('id')
+      const { data, error } = await q.range(de, de + 999)
       if (error) throw new Error(`${nome}: ${error.message}`)
       todas.push(...data.map(achatar))
       if (data.length < 1000) break

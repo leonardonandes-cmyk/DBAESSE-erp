@@ -19,12 +19,10 @@ export const fmtQtd = (v) => (Number(v) || 0).toLocaleString('pt-BR', { maximumF
 
 // ---------- Materiais ----------
 export async function listarMateriais() {
-  const { data, error } = await supabase
+  return todas(() => supabase
     .from('materiais')
     .select('id,nome,categoria,unidade,por_numero,custo,estoque_minimo,fornecedor_id,ativo,parceiros(nome)')
-    .order('nome')
-  if (error) throw error
-  return data
+    .order('nome').order('id'))
 }
 
 export async function salvarMaterial(d, id) {
@@ -60,11 +58,11 @@ export async function movimentarMaterial(linhas) {
 
 // ---------- Ficha de consumo ----------
 export async function listarFichaConsumo(produtoId) {
-  let q = supabase.from('ficha_consumo').select('id,produto_id,material_id,consumo,perda_pct,observacao,materiais(nome,unidade,por_numero,custo)')
-  if (produtoId) q = q.eq('produto_id', produtoId)
-  const { data, error } = await q
-  if (error) throw error
-  return data
+  return todas(() => {
+    let q = supabase.from('ficha_consumo').select('id,produto_id,material_id,consumo,perda_pct,observacao,materiais(nome,unidade,por_numero,custo)')
+    if (produtoId) q = q.eq('produto_id', produtoId)
+    return q.order('id')
+  })
 }
 
 export async function salvarLinhaFicha({ id, produto_id, material_id, consumo, perda_pct, observacao }) {
