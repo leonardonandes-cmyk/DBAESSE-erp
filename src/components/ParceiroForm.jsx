@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { listarListas } from '../lib/precos.js'
+import { buscarCep, buscarCnpj, montarEndereco, titulo } from '../lib/consultas.js'
+import { soDigitos } from '../lib/format.js'
+import Icon from './Icon.jsx'
 import { CANAIS, TIPOS_PARCEIRO, salvarParceiro } from '../lib/parceiros.js'
 
 export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo }) {
@@ -24,6 +27,40 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const [busca, setBusca] = useState({ cnpj: '', cep: '' }) // mensagem de cada busca
+  const [buscando, setBuscando] = useState('')
+
+  async function porCnpj(valor = f.documento) {
+    if (soDigitos(valor).length !== 14) return
+    setBuscando('cnpj'); setBusca((b) => ({ ...b, cnpj: '' }))
+    try {
+      const d = await buscarCnpj(valor)
+      const nomeBom = titulo(d.fantasia) || titulo(d.razao)
+      setF((x) => ({
+        ...x,
+        nome: x.nome || nomeBom,
+        telefone: x.telefone || d.telefone,
+        email: x.email || d.email,
+        cep: d.cep ? `${d.cep.slice(0, 5)}-${d.cep.slice(5)}` : x.cep,
+        endereco: montarEndereco(d) || x.endereco,
+        cidade: titulo(d.cidade) || x.cidade,
+        uf: d.uf || x.uf,
+        observacoes: x.observacoes || (d.fantasia && d.razao ? `Razão social: ${titulo(d.razao)}` : ''),
+      }))
+      const sit = (d.situacao || '').toUpperCase()
+      setBusca((b) => ({ ...b, cnpj: sit && sit !== 'ATIVA' ? `⚠ Situação na Receita: ${sit}` : `✓ ${titulo(d.razao)}${sit ? ' · ATIVA' : ''}` }))
+    } catch (e) { setBusca((b) => ({ ...b, cnpj: e.message })) } finally { setBuscando('') }
+  }
+
+  async function porCep(valor = f.cep) {
+    if (soDigitos(valor).length !== 8) return
+    setBuscando('cep'); setBusca((b) => ({ ...b, cep: '' }))
+    try {
+      const d = await buscarCep(valor)
+      setF((x) => ({ ...x, cep: `${d.cep.slice(0, 5)}-${d.cep.slice(5)}`, endereco: montarEndereco(d) || x.endereco, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
+      setBusca((b) => ({ ...b, cep: `✓ ${d.cidade}/${d.uf} — complete o número` }))
+    } catch (e) { setBusca((b) => ({ ...b, cep: e.message })) } finally { setBuscando('') }
+  }
 
   function alternarTipo(t) {
     const tem = f.tipos.includes(t)
@@ -66,12 +103,28 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
         </div>
 
         <div className="form-grid">
+          <div className="field">
+            <span>CNPJ / CPF</span>
+            <div className="campo-busca">
+              <input value={f.documento} inputMode="numeric" placeholder="Digite o CNPJ"
+                onChange={(e) => { setF({ ...f, documento: e.target.value }); if (soDigitos(e.target.value).length === 14) porCnpj(e.target.value) }} />
+              <button type="button" className="btn icon-btn" title="Buscar dados do CNPJ" aria-label="Buscar dados do CNPJ" onClick={() => porCnpj()} disabled={buscando === 'cnpj' || soDigitos(f.documento).length !== 14}>{buscando === 'cnpj' ? '…' : <Icon name="busca" size={16} />}</button>
+            </div>
+            {busca.cnpj && <small className={busca.cnpj.startsWith('✓') ? 'busca-ok' : 'busca-erro'}>{busca.cnpj}</small>}
+          </div>
           <label className="field span-2"><span>Nome / razão social *</span><input required value={f.nome} onChange={set('nome')} placeholder="Loja Primavera" /></label>
-          <label className="field"><span>CPF / CNPJ</span><input value={f.documento} onChange={set('documento')} inputMode="numeric" /></label>
           <label className="field"><span>Telefone / WhatsApp</span><input value={f.telefone} onChange={set('telefone')} placeholder="(37) 99999-0000" inputMode="tel" /></label>
           <label className="field span-2"><span>E-mail</span><input type="email" value={f.email} onChange={set('email')} /></label>
+          <div className="field">
+            <span>CEP</span>
+            <div className="campo-busca">
+              <input value={f.cep} inputMode="numeric" placeholder="00000-000"
+                onChange={(e) => { setF({ ...f, cep: e.target.value }); if (soDigitos(e.target.value).length === 8) porCep(e.target.value) }} />
+              <button type="button" className="btn icon-btn" title="Buscar endereço pelo CEP" aria-label="Buscar endereço pelo CEP" onClick={() => porCep()} disabled={buscando === 'cep' || soDigitos(f.cep).length !== 8}>{buscando === 'cep' ? '…' : <Icon name="busca" size={16} />}</button>
+            </div>
+            {busca.cep && <small className={busca.cep.startsWith('✓') ? 'busca-ok' : 'busca-erro'}>{busca.cep}</small>}
+          </div>
           <label className="field span-2"><span>Endereço</span><input value={f.endereco} onChange={set('endereco')} placeholder="Rua, número, bairro" /></label>
-          <label className="field"><span>CEP</span><input value={f.cep} onChange={set('cep')} inputMode="numeric" /></label>
           <label className="field"><span>Cidade</span><input value={f.cidade} onChange={set('cidade')} /></label>
           <label className="field"><span>UF</span><input value={f.uf} onChange={set('uf')} maxLength={2} placeholder="MG" /></label>
           <label className="field">

@@ -489,3 +489,8 @@ td.clickable { cursor: pointer; }
 .split-largo > .list th:nth-child(n+3), .split-largo > .list td:nth-child(n+3) { display: none; }
 .split-largo > .detail { flex: 3 1 640px; }
 .detail .tabs { overflow-x: auto; scrollbar-width: none; }
+/* campo com botão de busca (CEP / CNPJ) */
+.campo-busca { display: flex; gap: 6px; }
+.campo-busca input { flex: 1; min-width: 0; }
+.busca-ok { color: var(--ok); font-size: 12px; }
+.busca-erro { color: var(--bad); font-size: 12px; }
