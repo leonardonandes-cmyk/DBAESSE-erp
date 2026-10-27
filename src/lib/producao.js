@@ -24,7 +24,7 @@ export async function salvarSetor({ id, nome, ordem, ativo, capacidade_dia }) {
   if (error) throw error
 }
 
-const CAMPOS = 'id,numero,status,prioridade,prazo,observacao,estoque_lancado,concluida_em,criado_em,produto_id,cor_id,pedido_id,sequencia,inicio_programado,' +
+const CAMPOS = 'id,numero,status,prioridade,prazo,observacao,estoque_lancado,concluida_em,criado_em,produto_id,cor_id,pedido_id,sequencia,inicio_programado,programacao_id,' +
   'produtos(ref,nome,tipo,foto_url,fotos),cores(nome,hex,sigla),pedidos(numero),' +
   'op_itens(id,quantidade,sku_id,skus(numero,sku)),' +
   'op_etapas(id,setor_id,ordem,status,inicio,fim,qtd_ok,qtd_perda,responsavel,observacao)'
@@ -51,12 +51,12 @@ export function etapaAtual(o) {
   return (o.op_etapas || []).find((e) => e.status !== 'concluida') || null
 }
 
-export async function criarOP({ produto_id, cor_id, pedido_id, prazo, prioridade, observacao, itens }) {
+export async function criarOP({ produto_id, cor_id, pedido_id, prazo, prioridade, observacao, itens, programacao_id }) {
   const validos = itens.filter((i) => i.quantidade > 0)
   if (!validos.length) throw new Error('Informe a quantidade de pelo menos um número.')
   const { data: op, error } = await supabase
     .from('ordens_producao')
-    .insert({ produto_id, cor_id, pedido_id: pedido_id || null, prazo: prazo || null, prioridade: prioridade || 'normal', observacao: observacao || null })
+    .insert({ produto_id, cor_id, pedido_id: pedido_id || null, prazo: prazo || null, prioridade: prioridade || 'normal', observacao: observacao || null, programacao_id: programacao_id || null })
     .select('id,numero')
     .single()
   if (error) throw error

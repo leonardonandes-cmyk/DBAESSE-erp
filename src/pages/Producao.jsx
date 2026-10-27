@@ -5,6 +5,7 @@ import GerarOPs from '../components/GerarOPs.jsx'
 import OPDetalhe from '../components/OPDetalhe.jsx'
 import OPForm from '../components/OPForm.jsx'
 import Programacao from '../components/Programacao.jsx'
+import MapasLista from '../components/MapasLista.jsx'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
 import { dataBR, inteiro } from '../lib/format.js'
 import { ABERTOS, listarPedidos } from '../lib/pedidos.js'
@@ -97,10 +98,12 @@ export default function Producao() {
 
       <div className="segmented lojas-abas" role="tablist">
         <button role="tab" className={visao === 'quadro' ? 'on' : ''} onClick={() => setVisao('quadro')}>Quadro de ordens</button>
+        <button role="tab" className={visao === 'mapas' ? 'on' : ''} onClick={() => setVisao('mapas')}>Mapas e folhas de corte</button>
         <button role="tab" className={visao === 'pcp' ? 'on' : ''} onClick={() => setVisao('pcp')}>Programação (PCP)</button>
       </div>
 
-      {visao === 'pcp' ? <Programacao ops={ops} setores={setores} onAbrir={setAberta} onMudou={carregar} /> : <>
+      {visao === 'mapas' ? <MapasLista ops={ops} produtos={produtos} cores={cores} onMudou={carregar} />
+        : visao === 'pcp' ? <Programacao ops={ops} setores={setores} onAbrir={setAberta} onMudou={carregar} /> : <>
       <section className="grid-kpi">
         <div className="card kpi"><span className="kpi-label">Ordens em aberto</span><span className="kpi-value">{inteiro(abertas.length)}</span></div>
         <div className="card kpi"><span className="kpi-label">Pares em produção</span><span className="kpi-value">{inteiro(paresProd)}</span></div>
