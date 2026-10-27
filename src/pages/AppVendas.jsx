@@ -6,7 +6,8 @@ import { listarSaldos } from '../lib/estoque.js'
 import { brl, numeroPedido } from '../lib/format.js'
 import { acharSku, avisar, criarIndice } from '../lib/leitura.js'
 import { CANAIS, listarParceiros } from '../lib/parceiros.js'
-import { carregarItens, criarPedido, listarPedidos, precoPorCanal, separarItem } from '../lib/pedidos.js'
+import { carregarItens, criarPedido, listarPedidos, separarItem } from '../lib/pedidos.js'
+import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 
 /*
@@ -226,6 +227,11 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
   const clientes = parceiros.filter((p) => p.ativo && p.tipos.some((t) => t === 'cliente' || t === 'revendedora'))
   const [cliente, setCliente] = useState('')
   const [canal, setCanal] = useState('Atacado')
+  const [listas, setListas] = useState([])
+  const [codLista, setCodLista] = useState('atacado')
+  useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
+  const listaPreco = listas.find((l) => l.codigo === codLista)
+  const preco = (p) => precoNaLista(p, listaPreco)
   const [lista, setLista] = useState([]) // { item, quantidade }
   const [retorno, setRetorno] = useState(null)
   const [salvando, setSalvando] = useState(false)
@@ -234,7 +240,9 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
   function escolherCliente(id) {
     setCliente(id)
     const c = parceiros.find((p) => p.id === id)
-    if (c?.canal) setCanal(c.canal)
+    const novoCanal = c?.canal || canal
+    setCanal(novoCanal)
+    setCodLista(listaSugerida(c, novoCanal))
   }
 
   function bipou(codigo) {
@@ -251,15 +259,15 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
   const mudar = (id, d) => setLista((l) => l.map((x) => (x.item.id === id ? { ...x, quantidade: x.quantidade + d } : x)).filter((x) => x.quantidade > 0))
 
   const pares = lista.reduce((t, x) => t + x.quantidade, 0)
-  const valor = lista.reduce((t, x) => t + x.quantidade * precoPorCanal(x.item.produto, canal), 0)
+  const valor = lista.reduce((t, x) => t + x.quantidade * preco(x.item.produto), 0)
 
   async function salvar() {
     setSalvando(true)
     try {
       const ped = await criarPedido({
-        parceiro_id: cliente, canal, status: 'separacao', separado: true,
+        parceiro_id: cliente, canal, lista: codLista, status: 'separacao', separado: true,
         observacoes: 'Pedido montado no app (bipado)',
-        itens: lista.map((x) => ({ sku_id: x.item.id, quantidade: x.quantidade, preco_unit: precoPorCanal(x.item.produto, canal) })),
+        itens: lista.map((x) => ({ sku_id: x.item.id, quantidade: x.quantidade, preco_unit: preco(x.item.produto) })),
       })
       setCriado(ped)
     } catch (e) { setRetorno({ ok: false, titulo: e.message }); setSalvando(false) }
@@ -283,8 +291,13 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
           </select>
         </label>
         <label className="field"><span>Canal</span>
-          <select className="input" value={canal} onChange={(e) => setCanal(e.target.value)}>
+          <select className="input" value={canal} onChange={(e) => { setCanal(e.target.value); setCodLista(listaSugerida(parceiros.find((p) => p.id === cliente), e.target.value)) }}>
             {CANAIS.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </label>
+        <label className="field"><span>Lista de preço</span>
+          <select className="input" value={codLista} onChange={(e) => setCodLista(e.target.value)}>
+            {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}</option>)}
           </select>
         </label>
       </div>
@@ -297,7 +310,7 @@ function NovoBipando({ indice, parceiros, onVoltar }) {
             <div className="appv-item-info">
               <b>{item.produto.ref} · {item.produto.nome}</b>
               <span><i className="dot-cor" style={{ background: item.cor?.hex || '#ddd' }} />{item.cor?.nome} · nº {item.numero}</span>
-              <span>{brl(precoPorCanal(item.produto, canal))} o par</span>
+              <span>{brl(preco(item.produto))} o par</span>
             </div>
             <div className="appv-qtd">
               <button className="btn icon-btn" onClick={() => mudar(item.id, -1)} aria-label="Menos um">−</button>

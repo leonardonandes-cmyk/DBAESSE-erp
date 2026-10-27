@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { listarListas } from '../lib/precos.js'
 import { CANAIS, TIPOS_PARCEIRO, salvarParceiro } from '../lib/parceiros.js'
 
 export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo }) {
@@ -14,9 +15,12 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     cidade: parceiro?.cidade || '',
     uf: parceiro?.uf || '',
     canal: parceiro?.canal || '',
+    lista: parceiro?.lista || '',
     observacoes: parceiro?.observacoes || '',
     ativo: parceiro?.ativo ?? true,
   }))
+  const [listas, setListas] = useState([])
+  useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -77,7 +81,14 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
               {CANAIS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
-          <label className="field span-3"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Prazo combinado, preferências, transportadora…" /></label>
+          <label className="field">
+            <span>Lista de preço</span>
+            <select className="input" value={f.lista} onChange={set('lista')}>
+              <option value="">Pelo canal</option>
+              {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}</option>)}
+            </select>
+          </label>
+          <label className="field span-2"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Prazo combinado, preferências, transportadora…" /></label>
         </div>
 
         {editando && (

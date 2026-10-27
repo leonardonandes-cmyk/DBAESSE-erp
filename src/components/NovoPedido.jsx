@@ -1,31 +1,41 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import { brl } from '../lib/format.js'
 import { CANAIS } from '../lib/parceiros.js'
 import { criarPedido } from '../lib/pedidos.js'
+import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 
 export default function NovoPedido({ produtos, cores, parceiros, saldos, onFechar, onSalvo }) {
   const clientes = useMemo(
     () => parceiros.filter((p) => p.ativo && (p.tipos.includes('cliente') || p.tipos.includes('revendedora'))),
     [parceiros]
   )
-  const [f, setF] = useState({ parceiro_id: '', canal: 'Atacado', previsao: '', observacoes: '', desconto: '', status: 'orcamento' })
+  const [f, setF] = useState({ parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', desconto: '', status: 'orcamento' })
+  const [listas, setListas] = useState([])
+  useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
+  const listaAtual = listas.find((l) => l.codigo === f.lista)
   const [itens, setItens] = useState([]) // { sku_id, sku, numero, quantidade, preco_unit, produto, cor }
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const set = (k) => (e) => {
     const v = e.target.value
+    let novo = { ...f, [k]: v }
     if (k === 'parceiro_id') {
       const c = clientes.find((x) => x.id === v)
-      setF({ ...f, parceiro_id: v, canal: c?.canal || f.canal })
-    } else setF({ ...f, [k]: v })
+      novo = { ...novo, canal: c?.canal || f.canal }
+      novo.lista = listaSugerida(c, novo.canal)
+    }
+    if (k === 'canal') novo.lista = listaSugerida(clientes.find((x) => x.id === f.parceiro_id), v)
+    setF(novo)
+    // trocou a lista: reprecifica os itens já lançados
+    if (novo.lista !== f.lista) {
+      const l = listas.find((x) => x.codigo === novo.lista)
+      setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoNaLista(i.produto, l) })))
+    }
   }
 
-  const precoPadrao = (p) => {
-    const varejo = ['Shopee', 'TikTok Shop', 'Mercado Livre', 'Instagram', 'Loja / varejo'].includes(f.canal)
-    return Number((varejo ? p.preco_varejo : p.preco_atacado) ?? p.preco_atacado ?? 0)
-  }
+  const precoPadrao = (p) => precoNaLista(p, listaAtual)
 
   function adicionar(linhas) {
     const mapa = Object.fromEntries(itens.map((i) => [i.sku_id, i]))
@@ -93,6 +103,12 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
             <span>Canal</span>
             <select className="input" value={f.canal} onChange={set('canal')}>
               {CANAIS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+          <label className="field">
+            <span>Lista de preço</span>
+            <select className="input" value={f.lista} onChange={set('lista')}>
+              {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}{Number(l.acrescimo) ? ` (+${Number(l.acrescimo).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})` : ''}</option>)}
             </select>
           </label>
           <label className="field"><span>Previsão de entrega</span><input type="date" value={f.previsao} onChange={set('previsao')} /></label>

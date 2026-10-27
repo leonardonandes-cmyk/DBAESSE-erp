@@ -3,6 +3,7 @@ import Icon from '../components/Icon.jsx'
 import NovoModelo from '../components/NovoModelo.jsx'
 import FichaConsumo from '../components/FichaConsumo.jsx'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
+import { listarListas, precoNaLista } from '../lib/precos.js'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
 import { brl } from '../lib/format.js'
@@ -23,6 +24,8 @@ export default function Produtos() {
   const [erro, setErro] = useState('')
   const [filtro, setFiltro] = useState('Todos')
   const [busca, setBusca] = useState('')
+  const [listas, setListas] = useState([])
+  useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const [selRef, setSelRef] = useState(null)
   const [corSel, setCorSel] = useState(null)
   const [aba, setAba] = useState(ABAS[0])
@@ -191,10 +194,16 @@ export default function Produtos() {
                   </dl>
                 ) : aba === 'Preços' ? (
                   <dl className="dados">
-                    <dt>Atacado</dt><dd>{sel.preco_atacado != null ? brl(sel.preco_atacado) : '—'}</dd>
-                    <dt>Varejo</dt><dd>{sel.preco_varejo != null ? brl(sel.preco_varejo) : '—'}</dd>
+                    {listas.map((l) => (
+                      <Fragment key={l.codigo}>
+                        <dt>{l.nome}</dt>
+                        <dd><b>{sel.preco_atacado != null ? brl(precoNaLista(sel, l)) : '—'}</b>
+                          {Number(l.acrescimo) > 0 && <span className="card-sub"> · atacado + {brl(l.acrescimo)}</span>}
+                          {l.base === 'varejo' && <span className="card-sub"> · preço FERALCCI</span>}</dd>
+                      </Fragment>
+                    ))}
                     <dt />
-                    <dd className="card-sub">Para alterar, clique em Editar modelo. O preço de atacado entra sozinho nos pedidos.</dd>
+                    <dd className="card-sub">Atacado e varejo mudam em Editar modelo; os acréscimos das listas, em Configurações.</dd>
                   </dl>
                 ) : (
                   <>

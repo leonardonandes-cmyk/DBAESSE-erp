@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { baixarBackup } from '../lib/backup.js'
 import { listarSetores, salvarSetor } from '../lib/producao.js'
+import { listarListas, salvarLista } from '../lib/precos.js'
+import { brl } from '../lib/format.js'
 import { supabase } from '../lib/supabase.js'
 
 const PAPEIS = [
@@ -11,6 +13,7 @@ const PAPEIS = [
 
 export default function Configuracoes() {
   const [setores, setSetores] = useState([])
+  const [listas, setListas] = useState([])
   const [novoSetor, setNovoSetor] = useState('')
   const [usuarios, setUsuarios] = useState([])
   const [souAdmin, setSouAdmin] = useState(false)
@@ -20,12 +23,14 @@ export default function Configuracoes() {
 
   async function carregar() {
     try {
-      const [s, u, eu] = await Promise.all([
+      const [s, u, eu, ls] = await Promise.all([
         listarSetores(),
         supabase.from('perfis').select('id,nome,papel,criado_em').order('criado_em'),
         supabase.rpc('sou_admin'),
+        listarListas(),
       ])
       setSetores(s)
+      setListas(ls)
       if (u.error) throw u.error
       setUsuarios(u.data)
       setSouAdmin(Boolean(eu.data))
@@ -33,6 +38,10 @@ export default function Configuracoes() {
   }
   useEffect(() => { carregar() }, [])
 
+  async function salvarL(l, campos) {
+    setErro('')
+    try { await salvarLista(l.id, { ...l, ...campos }); aviso('Lista salva'); carregar() } catch (e) { setErro(e.message) }
+  }
   const aviso = (t) => { setMsg(t); setTimeout(() => setMsg(''), 2500) }
 
   async function salvarS(s) {
@@ -114,6 +123,29 @@ export default function Configuracoes() {
             <b>Para cadastrar alguém:</b> no Supabase, abra <b>Authentication → Users → Add user → Create new user</b>, informe o e-mail e uma senha e marque <b>Auto Confirm User</b>. A pessoa aparece aqui como Operador.
           </div>
         </div>
+      </section>
+
+      <section className="card">
+        <div className="card-head"><div><h2>Listas de preço</h2><div className="card-sub">Preço do pedido = preço-base do modelo + acréscimo. O cliente usa a lista do cadastro dele; sem lista, vai pelo canal.</div></div></div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Lista</th><th>Base</th><th className="r">Acréscimo por par</th><th>Quando usar</th></tr></thead>
+            <tbody>
+              {listas.map((l) => (
+                <tr key={l.id}>
+                  <td><b>{l.nome}</b></td>
+                  <td style={{ color: 'var(--muted)' }}>{l.base === 'varejo' ? 'Preço varejo (FERALCCI)' : 'Preço atacado'}</td>
+                  <td className="r">
+                    <input className="input input-sm" type="number" step="0.01" min="0" defaultValue={l.acrescimo} style={{ width: 110, textAlign: 'right' }}
+                      onBlur={(e) => Number(e.target.value) !== Number(l.acrescimo) && salvarL(l, { acrescimo: e.target.value })} aria-label={`Acréscimo ${l.nome}`} />
+                  </td>
+                  <td style={{ color: 'var(--muted)' }}>{l.descricao || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="footnote" style={{ marginTop: 8 }}>Ex.: modelo com atacado {brl(59.9)} → Variado e Drop saem {brl(64.9)} com acréscimo de {brl(5)}.</p>
       </section>
 
       <section className="card">
