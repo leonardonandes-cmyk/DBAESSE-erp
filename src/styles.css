@@ -502,3 +502,10 @@ td.clickable { cursor: pointer; }
 .receita-dados { display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
 .receita-dados dt { color: var(--muted); }
 .receita-dados dd { margin: 0; font-weight: 500; }
+
+/* Entrega do pedido */
+.entrega { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; background: var(--surface-2, #faf9f7); }
+.entrega-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.entrega p { margin: 0; font-size: 14px; color: var(--ink); }
+.entrega p small { color: var(--muted); }
+.entrega textarea { resize: vertical; font: inherit; padding: 10px 14px; line-height: 1.45; min-height: 64px; }

@@ -12,7 +12,7 @@ export const STATUS_PEDIDO = {
 export const FLUXO = ['orcamento', 'aprovado', 'producao', 'separacao', 'faturado', 'entregue']
 export const ABERTOS = ['orcamento', 'aprovado', 'producao', 'separacao']
 
-const CAMPOS = 'id,numero,canal,lista,status,previsao,desconto,observacoes,estoque_baixado,criado_em,separado_em,parceiro_id,parceiros(nome),pedido_itens(quantidade,preco_unit,sku_id,separado)'
+const CAMPOS = 'id,numero,canal,lista,status,previsao,desconto,observacoes,endereco_entrega,estoque_baixado,criado_em,separado_em,parceiro_id,parceiros(nome),pedido_itens(quantidade,preco_unit,sku_id,separado)'
 
 export function totaisPedido(p) {
   const pares = (p.pedido_itens || []).reduce((t, i) => t + i.quantidade, 0)
@@ -42,11 +42,11 @@ export async function carregarItens(pedidoId) {
 
 // itens: [{ sku_id, quantidade, preco_unit }]
 // separado = true: pedido montado bipando os pares (app) — já nasce separado
-export async function criarPedido({ parceiro_id, canal, lista, previsao, observacoes, desconto, status, itens, separado = false }) {
+export async function criarPedido({ parceiro_id, canal, lista, previsao, observacoes, endereco_entrega, desconto, status, itens, separado = false }) {
   if (!itens.length) throw new Error('Adicione pelo menos um item ao pedido.')
   const { data: ped, error } = await supabase
     .from('pedidos')
-    .insert({ parceiro_id: parceiro_id || null, canal, lista: lista || null, previsao: previsao || null, observacoes: observacoes || null, desconto: Number(desconto) || 0, status: status || 'orcamento', separado_em: separado ? new Date().toISOString() : null })
+    .insert({ parceiro_id: parceiro_id || null, canal, lista: lista || null, previsao: previsao || null, observacoes: observacoes || null, endereco_entrega: endereco_entrega?.trim() || null, desconto: Number(desconto) || 0, status: status || 'orcamento', separado_em: separado ? new Date().toISOString() : null })
     .select('id,numero')
     .single()
   if (error) throw error
@@ -75,10 +75,10 @@ export async function mudarStatus(pedidoId, status) {
   if (error) throw error
 }
 
-export async function salvarDadosPedido(pedidoId, { previsao, observacoes, desconto }) {
+export async function salvarDadosPedido(pedidoId, { previsao, observacoes, desconto, endereco_entrega }) {
   const { error } = await supabase
     .from('pedidos')
-    .update({ previsao: previsao || null, observacoes: observacoes || null, desconto: Number(desconto) || 0 })
+    .update({ previsao: previsao || null, observacoes: observacoes || null, endereco_entrega: endereco_entrega?.trim() || null, desconto: Number(desconto) || 0 })
     .eq('id', pedidoId)
   if (error) throw error
 }

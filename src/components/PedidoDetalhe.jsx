@@ -3,6 +3,7 @@ import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import TituloForm from './TituloForm.jsx'
 import { titulosDoPedido } from '../lib/financeiro.js'
 import { brl, dataBR, hojeISO, numeroPedido } from '../lib/format.js'
+import { enderecoCompleto } from '../lib/parceiros.js'
 import { FLUXO, STATUS_PEDIDO, atrasado, carregarItens, mudarStatus, salvarDadosPedido, totaisPedido } from '../lib/pedidos.js'
 
 export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou }) {
@@ -10,7 +11,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [copiado, setCopiado] = useState(false)
-  const [dados, setDados] = useState({ previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', desconto: pedido.desconto || 0 })
+  const [dados, setDados] = useState({ previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || 0 })
   const [editando, setEditando] = useState(false)
   const [titulos, setTitulos] = useState(null)
   const [gerar, setGerar] = useState(false)
@@ -49,12 +50,16 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
     try { await salvarDadosPedido(pedido.id, dados); setEditando(false); await onMudou(true) } catch (e) { setErro(e.message) } finally { setOcupado(false) }
   }
 
+  const enderecoCadastro = enderecoCompleto(parceiros.find((x) => x.id === pedido.parceiro_id))
+  const entrega = pedido.endereco_entrega || enderecoCadastro
+
   function copiarResumo() {
     const linhas = [
       `*Pedido ${numeroPedido(pedido.numero)}* · ${pedido.parceiros?.nome || 'Sem cliente'}`,
       ...grupos.map((g) => `${g.produto?.ref} ${g.produto?.nome} · ${g.cor?.nome}: ${g.itens.map((i) => `${i.skus.numero}/${i.quantidade}`).join('  ')}`),
       `Total: ${pares} pares · ${brl(total)}`,
       pedido.previsao ? `Previsão: ${dataBR(pedido.previsao)}` : null,
+      entrega ? `Entrega: ${entrega}` : null,
     ].filter(Boolean)
     navigator.clipboard?.writeText(linhas.join('\n')).then(() => { setCopiado(true); setTimeout(() => setCopiado(false), 2000) })
   }
@@ -111,11 +116,13 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
           <div className="form-grid">
             <label className="field"><span>Previsão</span><input type="date" value={dados.previsao} onChange={(e) => setDados({ ...dados, previsao: e.target.value })} /></label>
             <label className="field"><span>Desconto (R$)</span><input type="number" step="0.01" min="0" value={dados.desconto} onChange={(e) => setDados({ ...dados, desconto: e.target.value })} /></label>
+            <label className="field span-3"><span>Endereço de entrega <small style={{ color: 'var(--muted)' }}>(vazio = endereço do cadastro)</small></span><textarea className="input" rows={2} value={dados.endereco_entrega} placeholder={enderecoCadastro} onChange={(e) => setDados({ ...dados, endereco_entrega: e.target.value })} /></label>
             <label className="field span-3"><span>Observações</span><input value={dados.observacoes} onChange={(e) => setDados({ ...dados, observacoes: e.target.value })} /></label>
           </div>
         ) : (
           <dl className="dados">
             <dt>Previsão</dt><dd>{pedido.previsao ? dataBR(pedido.previsao) : '—'}</dd>
+            <dt>Entrega</dt><dd>{entrega || '—'}{pedido.endereco_entrega ? <span className="pill warn" style={{ marginLeft: 8 }}>diferente do cadastro</span> : entrega ? <small style={{ color: 'var(--muted)' }}> · do cadastro</small> : null}</dd>
             <dt>Observações</dt><dd>{pedido.observacoes || '—'}</dd>
           </dl>
         )}

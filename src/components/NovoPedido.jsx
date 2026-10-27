@@ -3,7 +3,7 @@ import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import ParceiroForm from './ParceiroForm.jsx'
 import { brl } from '../lib/format.js'
-import { CANAIS } from '../lib/parceiros.js'
+import { CANAIS, enderecoCompleto } from '../lib/parceiros.js'
 import { criarPedido } from '../lib/pedidos.js'
 import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 
@@ -14,7 +14,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
     () => [...novos, ...parceiros].filter((p, i, a) => p.ativo && (p.tipos.includes('cliente') || p.tipos.includes('revendedora')) && a.findIndex((x) => x.id === p.id) === i),
     [parceiros, novos]
   )
-  const [f, setF] = useState({ parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', desconto: '', status: 'orcamento' })
+  const [f, setF] = useState({ parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento' })
+  const [outroEndereco, setOutroEndereco] = useState(false)
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const listaAtual = listas.find((l) => l.codigo === f.lista)
@@ -26,7 +27,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
     let novo = { ...f, [k]: v }
     if (k === 'parceiro_id') {
       const c = clientes.find((x) => x.id === v)
-      novo = { ...novo, canal: c?.canal || f.canal }
+      novo = { ...novo, canal: c?.canal || f.canal, endereco_entrega: '' }
+      setOutroEndereco(false)
       novo.lista = listaSugerida(c, novo.canal)
     }
     if (k === 'canal') novo.lista = listaSugerida(clientes.find((x) => x.id === f.parceiro_id), v)
@@ -156,6 +158,28 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
           </div>
         )}
 
+        {f.parceiro_id && (() => {
+          const cliente = clientes.find((x) => x.id === f.parceiro_id)
+          const doCadastro = enderecoCompleto(cliente)
+          return (
+            <div className="entrega">
+              <div className="entrega-head">
+                <span className="eyebrow">Entrega</span>
+                <label className="check">
+                  <input type="checkbox" checked={outroEndereco} onChange={(e) => {
+                    setOutroEndereco(e.target.checked)
+                    setF((x) => ({ ...x, endereco_entrega: e.target.checked ? doCadastro : '' }))
+                  }} />
+                  Entregar em outro endereço
+                </label>
+              </div>
+              {outroEndereco
+                ? <textarea className="input" rows={2} value={f.endereco_entrega} onChange={set('endereco_entrega')} aria-label="Endereço de entrega desta venda" placeholder="Rua, número, complemento, bairro, cidade/UF, CEP" autoFocus />
+                : <p>{doCadastro || 'Cliente sem endereço no cadastro'} <small>· do cadastro</small></p>}
+            </div>
+          )
+        })()}
+
         <label className="field"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Forma de pagamento, transportadora, embalagem…" /></label>
 
         {erro && <p className="form-error" role="alert">{erro}</p>}
@@ -180,7 +204,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
             setNovos((n) => [novo, ...n])
             const canal = novo.canal || f.canal
             const lista = listaSugerida(novo, canal)
-            setF((x) => ({ ...x, parceiro_id: novo.id, canal, lista }))
+            setF((x) => ({ ...x, parceiro_id: novo.id, canal, lista, endereco_entrega: '' }))
+            setOutroEndereco(false)
             const l = listas.find((x) => x.codigo === lista)
             setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoNaLista(i.produto, l) })))
           }} />
