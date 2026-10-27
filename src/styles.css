@@ -962,3 +962,38 @@ td.vazio { color: var(--muted); padding: 28px !important; }
   .fb-linha { grid-template-columns: minmax(0, 1fr) 70px 46px; } .fb-bar { display: none; } .fb-acoes { opacity: 1; }
 }
 .fc-resumo .ft-barra { background: #2B2A28; gap: 2px; } .fc-tile i { box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
+
+/* ---------- Botões de abas/opções em relevo ---------- */
+.segmented { background: transparent; padding: 0; gap: 8px; flex-wrap: wrap; }
+.segmented button {
+  height: 38px; padding: 0 16px; border-radius: 10px; color: var(--ink-2); font-weight: 600;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F6F4F0 100%);
+  border: 1px solid #DEDAD3;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 2px 0 #D6D1C8, 0 4px 10px -6px rgba(20,18,15,.25);
+  transition: transform .08s, box-shadow .08s, background .15s;
+}
+.segmented button:hover:not(:disabled) { border-color: #CFC9BF; transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 3px 0 #D6D1C8, 0 8px 14px -8px rgba(20,18,15,.3); }
+.segmented button:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 #D6D1C8, 0 2px 6px -4px rgba(20,18,15,.25); }
+.segmented button.on {
+  color: #fff; border-color: #151515;
+  background: linear-gradient(180deg, #2A2927 0%, #151515 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.45);
+}
+.segmented button:disabled { opacity: .45; box-shadow: none; }
+/* abas principais um pouco maiores */
+.lojas-abas { gap: 10px; padding: 2px 2px 6px; }
+.lojas-abas button { height: 42px; padding: 0 20px; font-size: 14px; }
+/* opções pequenas dentro de cartões continuam compactas */
+.painel-filtros .segmented button, .card-head .segmented button, .seletor-periodo .segmented button { height: 32px; padding: 0 12px; font-size: 13px; }
+/* chips e botões claros com o mesmo relevo (mais leve) */
+.chip, .btn:not(.btn-dark):not(.link-btn):not(.icon-btn) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F7F5F1 100%);
+  border-color: #DEDAD3;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 2px 0 #DDD8CF, 0 4px 10px -7px rgba(20,18,15,.22);
+  transition: transform .08s, box-shadow .08s;
+}
+.chip:hover, .btn:not(.btn-dark):not(.link-btn):not(.icon-btn):hover:not(:disabled) { transform: translateY(-1px); }
+.chip:active, .btn:not(.btn-dark):active { transform: translateY(1px); box-shadow: 0 1px 0 #DDD8CF; }
+.chip.on { background: linear-gradient(180deg, #2A2927 0%, #151515 100%); border-color: #151515; color: #fff; box-shadow: 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.4); }
+.btn-dark { background: linear-gradient(180deg, #2A2927 0%, #151515 100%); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 2px 0 #000, 0 6px 14px -6px rgba(0,0,0,.4); }
+.btn-dark:active { transform: translateY(1px); box-shadow: 0 1px 0 #000; }

@@ -95,7 +95,7 @@ export default function Estoque() {
           <span className="sr-only">Buscar</span>
           <input type="search" placeholder="Buscar por REF, nome ou cor" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </label>
-        <div className="segmented" role="tablist" aria-label="Local do estoque" style={{ background: 'var(--line)' }}>
+        <div className="segmented" role="tablist" aria-label="Local do estoque">
           {[['', 'Total'], ['bulk', 'Bulk'], ['pick', 'Pick']].map(([k, l]) => (
             <button key={k} role="tab" aria-selected={vista === k} className={vista === k ? 'on' : ''} onClick={() => setVista(k)}>{l}</button>
           ))}
