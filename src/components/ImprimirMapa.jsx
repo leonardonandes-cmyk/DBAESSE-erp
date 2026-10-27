@@ -26,7 +26,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
   const linhaEmpresa = empresa ? [empresa.razao_social, empresa.cnpj && `CNPJ ${empresa.cnpj}`, empresa.telefone, empresa.cidade && `${empresa.cidade}${empresa.uf ? `/${empresa.uf}` : ''}`].filter(Boolean).join(' · ') : ''
   const Marca = ({ titulo, sub }) => (
     <div className="pr-marca">
-      <div className="pr-logo"><b>D B A E S S E</b>{linhaEmpresa && <small>{linhaEmpresa}</small>}</div>
+      <div className="pr-logo"><b>DBAESSE</b>{linhaEmpresa && <small>{linhaEmpresa}</small>}</div>
       <div className="pr-doc"><b>{titulo}</b>{sub && <small>{sub}</small>}</div>
     </div>
   )
@@ -116,7 +116,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
       {pagina.map(({ o, b }) => (
         <article key={o.id} className="pr-ficha">
           <div className="pr-ficha-topo">
-            <span className="pr-ficha-logo">D B A E S S E</span>
+            <span className="pr-ficha-logo">DBAESSE</span>
             <b>CONTROLE DE PRODUÇÃO</b>
             <span className="pr-ficha-modelo">{(b.produto?.tipo || '').toUpperCase()}</span>
             <span className="pr-ficha-op">{numeroOP(o.numero)}</span>
