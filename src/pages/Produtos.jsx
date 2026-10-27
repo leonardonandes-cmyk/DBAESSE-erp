@@ -128,7 +128,7 @@ export default function Produtos() {
                           onClick={() => { setSelRef(p.ref); setCorSel(null) }}>
                           <td>
                             <div className="prod-cell">
-                              <FotoProduto key={p.id} p={p} size={30} />
+                              <FotoProduto key={p.id} p={p} size={30} className="padrao" />
                               <div><b>{p.nome}</b><span>REF {p.ref}{p.tipo ? ` · ${p.tipo}` : ''}</span></div>
                             </div>
                           </td>

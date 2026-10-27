@@ -18,6 +18,7 @@ import Simulador from './pages/Simulador.jsx'
 import TabelaPrecos from './pages/TabelaPrecos.jsx'
 import MargemLojas from './pages/MargemLojas.jsx'
 import Indicadores from './pages/Indicadores.jsx'
+import FichasTecnicas from './pages/FichasTecnicas.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
@@ -31,6 +32,7 @@ export const MODULOS = [
   { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações' },
   { to: '/compras', icon: 'compras', label: 'Compras', grupo: 'Operações' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
+  { to: '/fichas', icon: 'ficha', label: 'Fichas técnicas', grupo: 'Operações', sub: true },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro' },
   { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
   { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
@@ -79,8 +81,8 @@ export default function App() {
             <div className="nav-grupo" key={g || 'inicio'}>
               {g && <div className="nav-titulo">{g}</div>}
               {MODULOS.filter((m) => (m.grupo || '') === g).map((m) => (
-                <NavLink key={m.to} to={m.to} end={m.to === '/'}>
-                  <Icon name={m.icon} />
+                <NavLink key={m.to} to={m.to} end={m.to === '/'} className={m.sub ? 'sub' : undefined}>
+                  <Icon name={m.icon} size={m.sub ? 16 : 18} />
                   <span>{m.label}</span>
                   {m.fase && <span className="soon">Em breve</span>}
                 </NavLink>
@@ -116,6 +118,7 @@ export default function App() {
           <Route path="/compras" element={<Compras />} />
           <Route path="/relatorios" element={<Indicadores />} />
           <Route path="/indicadores" element={<Indicadores />} />
+          <Route path="/fichas" element={<FichasTecnicas />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao />} />
           <Route path="/app" element={<AppVendas />} />
