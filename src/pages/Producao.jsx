@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ProdutoCelula, { FotoProduto } from '../components/FotoProduto.jsx'
 import Icon from '../components/Icon.jsx'
 import GerarOPs from '../components/GerarOPs.jsx'
 import OPDetalhe from '../components/OPDetalhe.jsx'
@@ -165,9 +166,14 @@ export default function Producao() {
                   return (
                     <tr key={o.id} className="clickable" onClick={() => setAberta(o)} style={o.status === 'cancelada' ? { opacity: 0.5 } : undefined}>
                       <td>
-                        <b>{numeroOP(o.numero)} · {o.produtos?.ref} {o.produtos?.nome}</b>
-                        {o.prioridade === 'urgente' && <span className="pill bad" style={{ marginLeft: 6 }}>Urgente</span>}<br />
-                        <span style={{ fontSize: 12, color: 'var(--muted)' }}>{o.cores?.nome}{o.pedidos ? ` · PV-${String(o.pedidos.numero).padStart(4, '0')}` : ' · estoque'}{!OP_ABERTAS.includes(o.status) ? ` · ${st.label}` : ''}</span>
+                        <div className="prod-cell">
+                          <FotoProduto p={o.produtos} className="sm" size={18} />
+                          <div>
+                            <b>{numeroOP(o.numero)} · {o.produtos?.ref} {o.produtos?.nome}</b>
+                            {o.prioridade === 'urgente' && <span className="pill bad" style={{ marginLeft: 6 }}>Urgente</span>}
+                            <span><i className="dot-cor" style={{ background: o.cores?.hex || '#ddd' }} />{o.cores?.nome}{o.pedidos ? ` · PV-${String(o.pedidos.numero).padStart(4, '0')}` : ' · estoque'}{!OP_ABERTAS.includes(o.status) ? ` · ${st.label}` : ''}</span>
+                          </div>
+                        </div>
                       </td>
                       <td className="r"><b style={{ fontWeight: 600 }}>{paresOP(o)}</b></td>
                       {setores.map((s) => {

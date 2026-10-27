@@ -3,12 +3,12 @@ import { supabase } from './supabase.js'
 // Cada aba do backup: nome da aba + tabela/visão + colunas
 const ABAS = [
   ['Produtos', 'produtos', 'ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,preco_atacado,preco_varejo,foto_url'],
-  ['SKUs e estoque', 'estoque_saldos', 'sku,numero,saldo'],
+  ['SKUs e estoque', 'estoque_saldos', 'sku,numero,saldo,saldo_bulk,saldo_pick'],
   ['Cores', 'cores', 'nome,sigla,hex'],
   ['Clientes e fornecedores', 'parceiros', 'nome,tipos,documento,telefone,email,cep,endereco,cidade,uf,canal,observacoes,ativo'],
   ['Pedidos', 'pedidos', 'numero,canal,status,previsao,desconto,observacoes,criado_em,parceiros(nome)'],
   ['Itens dos pedidos', 'pedido_itens', 'quantidade,preco_unit,pedidos(numero),skus(sku)'],
-  ['Movimentos de estoque', 'estoque_movimentos', 'criado_em,tipo,quantidade,motivo,observacao,skus(sku)'],
+  ['Movimentos de estoque', 'estoque_movimentos', 'criado_em,local,tipo,quantidade,motivo,observacao,skus(sku)'],
   ['Financeiro', 'titulos', 'tipo,descricao,categoria,valor,vencimento,parcela,pago_em,valor_pago,forma,observacao,parceiros(nome)'],
   ['Ordens de producao', 'ordens_producao', 'numero,status,prioridade,prazo,observacao,concluida_em,criado_em,produtos(ref),cores(nome)'],
   ['Materiais', 'materiais', 'nome,categoria,unidade,por_numero,custo,estoque_minimo,ativo'],

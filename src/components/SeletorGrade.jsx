@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { FotoProduto } from './FotoProduto.jsx'
 
 /*
   Escolhe MODELO + COR e digita a quantidade por NÚMERO (grade).
@@ -61,12 +62,15 @@ export default function SeletorGrade({ produtos, cores, saldos, onAdicionar, rot
       </div>
 
       {prod && (
+        <div className="seletor-prod">
+        <FotoProduto p={prod} />
         <div className="chips">
           {coresProd.map((c) => (
             <button type="button" key={c.id} className={`color-tag ${c.id === corId ? 'on' : ''}`} onClick={() => { setCorId(c.id); setQtd({}) }}>
               <span className="dot" style={{ background: c.hex || '#ddd' }} />{c.nome}
             </button>
           ))}
+        </div>
         </div>
       )}
 

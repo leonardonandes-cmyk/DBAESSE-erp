@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import { criarOP } from '../lib/producao.js'
 import { numeroPedido } from '../lib/format.js'
@@ -37,7 +38,7 @@ export default function OPForm({ produtos, cores, saldos, pedidosAbertos, onFech
 
         {linhas.length > 0 && (
           <div className="preview" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-            <b>{prod.ref} · {prod.nome} · {cor?.nome}</b>
+            <ProdutoCelula p={prod} linha2={<><i className="dot-cor" style={{ background: cor?.hex || '#ddd' }} />{cor?.nome}</>} />
             <div className="grade-mini">{linhas.map((l) => <span key={l.sku_id}><small>{l.numero}</small>{l.quantidade}</span>)}</div>
             <span>{total} pares</span>
           </div>

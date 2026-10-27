@@ -169,6 +169,8 @@ tr.selected td { background: #FAF7F3; }
 .split > .detail { flex: 2 1 360px; display: flex; flex-direction: column; gap: 20px; }
 .thumb { width: 52px; height: 64px; border-radius: 8px; background: #F1EFEB; display: grid; place-items: center; flex: none; color: var(--faint); }
 .thumb.lg { width: 112px; height: 140px; border-radius: 12px; }
+.thumb.sm { width: 40px; height: 48px; border-radius: 7px; }
+.prod-cell .dot-cor { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .prod-cell { display: flex; align-items: center; gap: 14px; }
 .prod-cell b { display: block; }
 .prod-cell span { font-size: 12px; color: var(--muted); }
@@ -362,3 +364,7 @@ td.clickable { cursor: pointer; }
 .sheet a { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 6px; border-radius: 14px; font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--surface-2); text-align: center; }
 .sheet a.active { background: var(--ink); color: #fff; }
 @media (max-width: 860px) { .page-head .actions .btn { height: 40px; padding: 0 14px; font-size: 13px; } }
+
+/* seletor de grade com foto do modelo */
+.seletor-prod { display: flex; align-items: center; gap: 14px; }
+.seletor-prod .chips { flex: 1; }

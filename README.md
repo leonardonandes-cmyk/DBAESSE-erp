@@ -35,6 +35,14 @@ npm run dev
 Configurações: setores da produção, permissões dos usuários e botão "Baixar backup" (Excel com tudo).
 
 ## Banco (Supabase)
-Scripts em `supabase/` na ordem (001…008). Já aplicados no projeto dbaesse-erp.
+Scripts em `supabase/` na ordem (001…009). Já aplicados no projeto dbaesse-erp.
 Toda tabela tem empresa_id + regras de acesso (RLS) + histórico (antes/depois).
 Movimento de estoque (produto ou material) não se apaga: corrige-se com ajuste.
+
+## Estoque: Bulk e Pick
+- **Bulk**: caixas master fechadas (grade fechada). Produção entra aqui.
+- **Pick**: pares avulsos para separar pedido variado.
+- **Replenishment**: abrir master e passar pares do Bulk para o Pick.
+- Faturar tira primeiro do Pick e o que faltar do Bulk; cancelar devolve ao mesmo local.
+
+Toda tela que mostra produto mostra a foto (ou o desenho do tipo): componente `FotoProduto`.

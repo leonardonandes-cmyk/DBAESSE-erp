@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import { brl } from '../lib/format.js'
 import { CANAIS } from '../lib/parceiros.js'
@@ -119,7 +120,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
                   const falta = g.itens.reduce((t, i) => t + Math.max(0, i.quantidade - Math.max(0, saldos?.[i.sku_id] ?? 0)), 0)
                   return (
                     <tr key={g.chave}>
-                      <td><b>{g.produto.ref} · {g.produto.nome}</b><br /><span className="card-sub">{g.cor?.nome}</span></td>
+                      <td><ProdutoCelula p={g.produto} linha2={<><i className="dot-cor" style={{ background: g.cor?.hex || '#ddd' }} />{g.cor?.nome}</>} /></td>
                       <td>
                         <div className="grade-mini">{g.itens.map((i) => <span key={i.sku_id}><small>{i.numero}</small>{i.quantidade}</span>)}</div>
                         {falta > 0 && <span className="pill warn" style={{ marginTop: 6 }}>Faltam {falta} em estoque · produzir</span>}

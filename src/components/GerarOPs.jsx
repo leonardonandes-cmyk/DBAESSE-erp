@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import { criarOP } from '../lib/producao.js'
 import { numeroPedido } from '../lib/format.js'
 
@@ -49,7 +50,7 @@ export default function GerarOPs({ sugestoes, onFechar, onSalvo }) {
                 {sugestoes.map((s) => (
                   <tr key={s.chave} className="clickable" onClick={() => alternar(s.chave)}>
                     <td><input type="checkbox" checked={marcadas.has(s.chave)} onChange={() => alternar(s.chave)} onClick={(e) => e.stopPropagation()} aria-label="Gerar esta OP" /></td>
-                    <td><b>{s.produto.ref} · {s.produto.nome}</b><br /><span className="card-sub">{s.cor?.nome}</span></td>
+                    <td><ProdutoCelula p={s.produto} linha2={<><i className="dot-cor" style={{ background: s.cor?.hex || '#ddd' }} />{s.cor?.nome}</>} /></td>
                     <td><div className="grade-mini">{s.itens.map((i) => <span key={i.sku_id}><small>{i.numero}</small>{i.quantidade}</span>)}</div></td>
                     <td className="r"><b>{s.itens.reduce((t, i) => t + i.quantidade, 0)}</b></td>
                     <td style={{ color: 'var(--muted)' }}>{s.pedidos.map(numeroPedido).join(', ')}</td>

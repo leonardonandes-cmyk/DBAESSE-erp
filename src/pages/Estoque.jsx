@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import ProdutoCelula, { FotoProduto } from '../components/FotoProduto.jsx'
 import Icon from '../components/Icon.jsx'
 import MovimentoModal from '../components/MovimentoModal.jsx'
-import { listarSaldos, saldoPorSku, ultimosMovimentos } from '../lib/estoque.js'
+import { LOCAIS, listarSaldos, saldoPorSku, ultimosMovimentos } from '../lib/estoque.js'
 import { dataHoraBR, inteiro } from '../lib/format.js'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 
@@ -10,7 +11,7 @@ const TIPO_MOV = {
   saida: { label: 'Saída', tom: 'warn' },
   ajuste: { label: 'Ajuste', tom: 'neutral' },
 }
-const MOTIVO = { producao: 'Produção', venda: 'Venda', inventario: 'Inventário', cancelamento: 'Pedido cancelado' }
+const MOTIVO = { producao: 'Produção', venda: 'Venda', inventario: 'Inventário', cancelamento: 'Pedido cancelado', replenishment: 'Replenishment' }
 
 export default function Estoque() {
   const [produtos, setProdutos] = useState([])
@@ -21,6 +22,7 @@ export default function Estoque() {
   const [erro, setErro] = useState('')
   const [busca, setBusca] = useState('')
   const [soComSaldo, setSoComSaldo] = useState(false)
+  const [vista, setVista] = useState('') // '' = total · 'bulk' · 'pick'
   const [modal, setModal] = useState(null)
 
   async function carregar() {
@@ -31,7 +33,8 @@ export default function Estoque() {
   }
   useEffect(() => { carregar() }, [])
 
-  const mapaSaldo = useMemo(() => saldoPorSku(saldos), [saldos])
+  const mapaSaldo = useMemo(() => saldoPorSku(saldos, vista || undefined), [saldos, vista])
+  const mapas = useMemo(() => ({ total: saldoPorSku(saldos), bulk: saldoPorSku(saldos, 'bulk'), pick: saldoPorSku(saldos, 'pick') }), [saldos])
   const corPorId = useMemo(() => Object.fromEntries(cores.map((c) => [c.id, c])), [cores])
 
   const numeros = useMemo(() => {
@@ -59,7 +62,8 @@ export default function Estoque() {
   }, [produtos, mapaSaldo, corPorId, busca, soComSaldo])
 
   const totalPares = saldos.reduce((t, s) => t + Math.max(0, s.saldo), 0)
-  const zerados = saldos.filter((s) => s.saldo <= 0).length
+  const paresBulk = saldos.reduce((t, s) => t + Math.max(0, s.saldo_bulk || 0), 0)
+  const paresPick = saldos.reduce((t, s) => t + Math.max(0, s.saldo_pick || 0), 0)
   const negativos = saldos.filter((s) => s.saldo < 0).length
 
   return (
@@ -71,6 +75,7 @@ export default function Estoque() {
         </div>
         <div className="actions">
           <button className="btn" onClick={() => setModal('inventario')}>Inventário / ajuste</button>
+          <button className="btn" onClick={() => setModal('transferencia')}>Replenishment</button>
           <button className="btn btn-dark" onClick={() => setModal('entrada')}><Icon name="mais" size={16} stroke={2} />Entrada de produção</button>
         </div>
       </header>
@@ -79,8 +84,8 @@ export default function Estoque() {
 
       <section className="grid-kpi">
         <div className="card kpi"><span className="kpi-label">Pares em estoque</span><span className="kpi-value">{inteiro(totalPares)}</span></div>
-        <div className="card kpi"><span className="kpi-label">SKUs cadastrados</span><span className="kpi-value">{inteiro(saldos.length)}</span></div>
-        <div className="card kpi"><span className="kpi-label">SKUs zerados</span><span className="kpi-value" style={zerados ? { color: 'var(--accent)' } : undefined}>{inteiro(zerados)}</span></div>
+        <div className="card kpi"><span className="kpi-label">Bulk</span><span className="kpi-value">{inteiro(paresBulk)}</span><span className="kpi-note">{LOCAIS.bulk.desc}</span></div>
+        <div className="card kpi"><span className="kpi-label">Pick</span><span className="kpi-value">{inteiro(paresPick)}</span><span className="kpi-note">{LOCAIS.pick.desc}</span></div>
         <div className="card kpi"><span className="kpi-label">Saldo negativo</span><span className="kpi-value" style={negativos ? { color: 'var(--bad)' } : undefined}>{inteiro(negativos)}</span><span className="kpi-note">vendeu sem ter lançado entrada</span></div>
       </section>
 
@@ -90,6 +95,11 @@ export default function Estoque() {
           <span className="sr-only">Buscar</span>
           <input type="search" placeholder="Buscar por REF, nome ou cor" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </label>
+        <div className="segmented" role="tablist" aria-label="Local do estoque" style={{ background: 'var(--line)' }}>
+          {[['', 'Total'], ['bulk', 'Bulk'], ['pick', 'Pick']].map(([k, l]) => (
+            <button key={k} role="tab" aria-selected={vista === k} className={vista === k ? 'on' : ''} onClick={() => setVista(k)}>{l}</button>
+          ))}
+        </div>
         <div className="chips">
           <button className={`chip ${!soComSaldo ? 'on' : ''}`} onClick={() => setSoComSaldo(false)}>Todos</button>
           <button className={`chip ${soComSaldo ? 'on' : ''}`} onClick={() => setSoComSaldo(true)}>Só com saldo</button>
@@ -111,10 +121,7 @@ export default function Estoque() {
               {linhas.map((l) => (
                 <tr key={l.chave}>
                   <td>
-                    <div className="prod-cell">
-                      <span className="dot" style={{ background: l.cor?.hex || '#ddd', width: 14, height: 14 }} />
-                      <div><b>{l.p.ref} · {l.p.nome}</b><span>{l.cor?.nome}</span></div>
-                    </div>
+                    <ProdutoCelula p={l.p} linha2={<><i className="dot-cor" style={{ background: l.cor?.hex || '#ddd' }} />{l.cor?.nome}</>} />
                   </td>
                   {numeros.map((n) => {
                     const v = l.grade[n]
@@ -144,7 +151,7 @@ export default function Estoque() {
         ) : (
           <div className="table-wrap">
             <table style={{ minWidth: 560 }}>
-              <thead><tr><th>Quando</th><th>SKU</th><th>Tipo</th><th className="r">Qtd</th><th>Motivo</th><th>Obs.</th></tr></thead>
+              <thead><tr><th>Quando</th><th>SKU</th><th>Local</th><th>Tipo</th><th className="r">Qtd</th><th>Motivo</th><th>Obs.</th></tr></thead>
               <tbody>
                 {movs.map((m) => {
                   const t = TIPO_MOV[m.tipo]
@@ -153,6 +160,7 @@ export default function Estoque() {
                     <tr key={m.id}>
                       <td style={{ color: 'var(--muted)' }}>{dataHoraBR(m.criado_em)}</td>
                       <td className="mono">{m.skus?.sku}</td>
+                      <td>{LOCAIS[m.local]?.label || '—'}</td>
                       <td><span className={`pill ${t.tom}`}>{t.label}</span></td>
                       <td className="r" style={{ fontWeight: 600, color: sinal < 0 ? 'var(--bad)' : 'var(--ok)' }}>{sinal > 0 ? '+' : ''}{sinal}</td>
                       <td>{MOTIVO[m.motivo] || m.motivo || '—'}</td>
@@ -167,7 +175,7 @@ export default function Estoque() {
       </section>
 
       {modal && (
-        <MovimentoModal modo={modal} produtos={produtos} cores={cores} saldos={mapaSaldo}
+        <MovimentoModal modo={modal} produtos={produtos} cores={cores} saldos={mapas}
           onFechar={() => setModal(null)} onSalvo={() => { setModal(null); carregar() }} />
       )}
     </>

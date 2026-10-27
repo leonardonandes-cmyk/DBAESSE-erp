@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import { dataBR, dataHoraBR, numeroPedido } from '../lib/format.js'
 import { STATUS_OP, atrasadaOP, atualizarEtapa, cancelarOP, concluirOP, numeroOP, paresOP } from '../lib/producao.js'
 
@@ -54,12 +55,18 @@ ${op.op_etapas.map((e) => `<tr><td style="text-align:left"><b>${setorPorId[e.set
         <div className="modal-head">
           <div>
             <div className="eyebrow">{op.pedidos ? `Pedido ${numeroPedido(op.pedidos.numero)}` : 'Estoque / reposição'} · criada em {dataBR(op.criado_em)}</div>
-            <h2>{numeroOP(op.numero)} · {op.produtos.ref} {op.produtos.nome}</h2>
+            <div className="prod-cell">
+              <FotoProduto p={op.produtos} />
+              <div>
+                <h2>{numeroOP(op.numero)} · {op.produtos.ref} {op.produtos.nome}</h2>
+                <span><i className="dot-cor" style={{ background: op.cores?.hex || '#ddd' }} />{op.cores?.nome}</span>
             <div className="chips" style={{ marginTop: 8 }}>
               <span className={`pill ${st.tom}`}>{st.label}</span>
               {op.prioridade === 'urgente' && <span className="pill bad">Urgente</span>}
               {atrasadaOP(op) && <span className="pill bad">Atrasada</span>}
               {op.estoque_lancado && <span className="pill neutral">Entrou no estoque</span>}
+            </div>
+              </div>
             </div>
           </div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
