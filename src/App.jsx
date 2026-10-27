@@ -15,6 +15,7 @@ import Relatorios from './pages/Relatorios.jsx'
 import Configuracoes from './pages/Configuracoes.jsx'
 import EmBreve from './pages/EmBreve.jsx'
 import AppVendas from './pages/AppVendas.jsx'
+import Simulador from './pages/Simulador.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
@@ -96,6 +97,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Painel usuario={EMPRESA.usuario} />} />
           <Route path="/produtos" element={<Produtos />} />
+          <Route path="/simulador" element={<Simulador />} />
           <Route path="/pedidos" element={<Pedidos />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/clientes" element={<Clientes />} />

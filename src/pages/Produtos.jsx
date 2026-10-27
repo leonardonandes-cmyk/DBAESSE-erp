@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import NovoModelo from '../components/NovoModelo.jsx'
@@ -80,7 +81,7 @@ export default function Produtos() {
           <h1>Produtos</h1>
         </div>
         <div className="actions">
-          <button className="btn" title="Em breve">Importar planilha</button>
+          <Link className="btn" to="/simulador">Simular custo</Link>
           <button className="btn btn-dark" onClick={() => setNovo(true)}><Icon name="mais" size={16} stroke={2} />Novo modelo</button>
         </div>
       </header>
