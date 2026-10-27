@@ -9,18 +9,7 @@ import { listarFichaConsumo } from '../lib/compras.js'
 import { custosPorProduto, margemNaLista, pct, tomMargem } from '../lib/custos.js'
 import { listarListas, precoNaLista } from '../lib/precos.js'
 import { FotoProduto } from '../components/FotoProduto.jsx'
-
-const PERIODOS = [
-  { id: 'mes', label: 'Este mês' }, { id: '30', label: '30 dias' }, { id: '90', label: '90 dias' },
-  { id: 'ano', label: 'Este ano' }, { id: 'tudo', label: 'Tudo' },
-]
-function inicioPeriodo(id) {
-  const d = new Date(); d.setHours(0, 0, 0, 0)
-  if (id === 'mes') return new Date(d.getFullYear(), d.getMonth(), 1)
-  if (id === 'ano') return new Date(d.getFullYear(), 0, 1)
-  if (id === 'tudo') return new Date(2000, 0, 1)
-  d.setDate(d.getDate() - Number(id)); return d
-}
+import SeletorPeriodo, { periodoPadrao, resolverPeriodo } from '../components/SeletorPeriodo.jsx'
 
 function Barras({ itens, fmt = inteiro, vazio = 'Sem dados no período.' }) {
   if (!itens.length) return <p className="card-sub" style={{ margin: 0 }}>{vazio}</p>
@@ -41,7 +30,8 @@ function Barras({ itens, fmt = inteiro, vazio = 'Sem dados no período.' }) {
 export default function Relatorios() {
   const [dados, setDados] = useState(null)
   const [erro, setErro] = useState('')
-  const [periodo, setPeriodo] = useState('mes')
+  const [periodo, setPeriodo] = useState(() => periodoPadrao('mes'))
+  const per = useMemo(() => resolverPeriodo(periodo), [periodo])
 
   useEffect(() => {
     Promise.all([listarPedidos(), listarProdutos(), listarSaldos(), listarOPs(), listarSetores(), listarTitulos(), listarFichaConsumo(), listarListas()])
@@ -51,8 +41,8 @@ export default function Relatorios() {
 
   const r = useMemo(() => {
     if (!dados) return null
-    const ini = inicioPeriodo(periodo)
-    const dentro = (iso) => iso && new Date(iso.length === 10 ? `${iso}T12:00:00` : iso) >= ini
+    const { ini, fim } = per
+    const dentro = (iso) => { if (!iso) return false; const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso); return d >= ini && d <= fim }
     const { pedidos, produtos, saldos, ops, setores, titulos } = dados
     const skuProd = {}
     produtos.forEach((p) => p.skus.forEach((s) => { skuProd[s.id] = p }))
@@ -120,18 +110,16 @@ export default function Relatorios() {
       paresProd, opsConc: concluidas.length, leadMedio, perdas, totalPerda,
       recebido, pago, despesas: Object.entries(despCat).map(([rotulo, valor]) => ({ rotulo, valor })).sort((a, b) => b.valor - a.valor),
     }
-  }, [dados, periodo])
+  }, [dados, per])
 
   return (
     <>
       <header className="page-head">
         <div>
-          <div className="eyebrow">Vendas, estoque, produção e caixa</div>
+          <div className="eyebrow">Vendas, estoque, produção e caixa · {per.rotulo}</div>
           <h1>Relatórios</h1>
         </div>
-        <div className="segmented">
-          {PERIODOS.map((p) => <button key={p.id} className={periodo === p.id ? 'on' : ''} onClick={() => setPeriodo(p.id)}>{p.label}</button>)}
-        </div>
+        <SeletorPeriodo valor={periodo} onChange={setPeriodo} />
       </header>
 
       {erro && <p className="form-error" role="alert">{erro}</p>}

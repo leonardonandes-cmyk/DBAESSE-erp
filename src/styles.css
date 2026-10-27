@@ -719,3 +719,74 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .vbar-col:nth-last-child(-n+4) .vbar-tip { left: auto; right: 0; transform: none; }
 .vbar-tip { visibility: hidden; } .vbar-col:hover .vbar-tip, .vbar-col:focus .vbar-tip { visibility: visible; }
 .main { overflow-x: clip; }
+
+/* ---------- Gráficos (dashboard) ---------- */
+.graf { position: relative; width: 100%; }
+.graf svg { display: block; overflow: visible; }
+.graf-grade { stroke: var(--line-soft); stroke-width: 1; }
+.graf-eixo { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.graf-mira { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; opacity: .35; }
+.graf-apaga { opacity: .35; transition: opacity .15s; }
+.graf-vazio { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; pointer-events: none; }
+.graf-tip { position: absolute; transform: translate(-50%, -100%); background: #151515; color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 12px; pointer-events: none;
+  display: grid; gap: 3px; min-width: 150px; box-shadow: 0 12px 28px -10px rgba(0,0,0,.45); z-index: 6; white-space: nowrap; }
+.graf-tip b { display: block; font-weight: 600; color: #cfc9c0; font-size: 11px; }
+.graf-tip b::first-letter { text-transform: uppercase; }
+.graf-tip-val { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.graf-tip small { color: #bdb7ae; }
+.graf-tip-linha { display: flex; align-items: center; gap: 6px; color: #e8e4de; }
+.graf-tip-linha i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.graf-tip-linha em { margin-left: auto; padding-left: 12px; font-style: normal; font-weight: 600; color: #fff; }
+.legenda-graf { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: -6px 0 10px; font-size: 12px; color: var(--ink-2); }
+.legenda-graf span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda-graf i { width: 10px; height: 10px; border-radius: 3px; }
+
+.rosca { display: grid; justify-items: center; gap: 16px; }
+.rosca svg { overflow: visible; }
+.rosca-valor { font-size: 20px; font-weight: 700; fill: var(--ink); letter-spacing: -.02em; }
+.rosca-rotulo { font-size: 11px; fill: var(--muted); }
+.rosca-legenda { width: 100%; display: grid; gap: 2px; }
+.rosca-item { display: grid; grid-template-columns: 12px 1fr auto 40px; gap: 10px; align-items: center; border: 0; background: transparent; padding: 6px 8px; border-radius: 8px; text-align: left; font-size: 13px; }
+.rosca-item:hover, .rosca-item.on { background: var(--surface-2); }
+.rosca-item i { width: 12px; height: 12px; border-radius: 4px; }
+.rosca-item b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.rosca-item em { font-style: normal; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+.kpis-cor { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.kpi-cor { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px 12px; position: relative; overflow: hidden; }
+.kpi-cor::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--kc); }
+.kpi-cor .kpi-note em { font-style: normal; color: var(--muted); }
+.chip-var { display: inline-block; padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+.chip-var.sobe { background: var(--ok-soft); color: var(--ok); } .chip-var.desce { background: var(--bad-soft); color: var(--bad); } .chip-var.neutro { background: var(--neutral-soft); color: var(--muted); font-weight: 600; }
+.spark { width: 100%; display: block; margin-top: 2px; }
+
+.hbars { display: grid; gap: 6px; }
+.hbar { display: grid; grid-template-columns: 120px 1fr 84px; gap: 12px; align-items: center; border: 0; background: transparent; padding: 6px 8px; border-radius: 8px; text-align: left; font-size: 13px; }
+.hbar:hover, .hbar.on { background: var(--surface-2); }
+.hbar-nome { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar-trilho { height: 12px; border-radius: 6px; background: var(--line-soft); overflow: hidden; }
+.hbar-trilho i { display: block; height: 100%; border-radius: 6px; }
+.hbar b { text-align: right; font-variant-numeric: tabular-nums; }
+
+.semana-graf { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; height: 200px; align-items: end; }
+.semana-col { display: grid; grid-template-rows: auto 1fr auto; height: 100%; gap: 6px; text-align: center; }
+.semana-val { font-size: 11px; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; }
+.semana-trilho { display: flex; align-items: flex-end; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.semana-trilho i { display: block; width: 100%; background: linear-gradient(180deg, #6250d6, #2a78d6); border-radius: 8px 8px 0 0; }
+.semana-nome { font-size: 12px; color: var(--muted); text-transform: capitalize; }
+
+.rank { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.rank.r1 { background: #F3E3B5; color: #8a6410; } .rank.r2 { background: #E6E6E6; color: #555; } .rank.r3 { background: #F0D9C6; color: #8A5A32; }
+.canal-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.canal-tag i { width: 8px; height: 8px; border-radius: 50%; }
+
+.seletor-periodo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seletor-periodo .segmented button { height: 34px; padding: 0 12px; }
+.seletor-periodo .input { height: 42px; width: auto; min-width: 170px; }
+.periodo-livre { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+.periodo-livre .input { min-width: 150px; }
+.ind-filtros .field:first-child { flex: 1 1 100%; max-width: none; }
+@media (max-width: 760px) { .hbar { grid-template-columns: 90px 1fr 70px; } .semana-graf { gap: 5px; height: 170px; } .periodo-livre { flex-wrap: wrap; } }
+
+.ind-filtros .segmented { width: max-content; }
+@media (max-width: 760px) { .kpis-cor { grid-template-columns: 1fr 1fr; gap: 10px; } .kpi-cor { padding: 14px 14px 10px; } .kpi-cor .kpi2-valor { font-size: 19px; } .kpi-cor .kpi-note em { display: none; } }

@@ -9,6 +9,7 @@ import { listarParceiros } from '../lib/parceiros.js'
 import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, totaisPedido } from '../lib/pedidos.js'
 import { listarProdutos } from '../lib/produtos.js'
 import { listarTitulos, situacao } from '../lib/financeiro.js'
+import { BarrasEmpilhadas, Rosca, Sparkline, corCanal, ordenarCanais } from '../components/Graficos.jsx'
 
 const TOM_ALERTA = {
   bad: { background: 'var(--bad-soft)', color: 'var(--bad)' },
@@ -105,7 +106,7 @@ export default function Painel({ usuario }) {
   // gráfico + canais, no período escolhido
   const serie = useMemo(() => {
     if (!calc) return null
-    const ps = montarPeriodos(periodo).map((x) => ({ ...x, valor: 0, pares: 0, pedidos: 0 }))
+    const ps = montarPeriodos(periodo).map((x) => ({ ...x, valor: 0, pares: 0, pedidos: 0, partes: {}, partesPares: {} }))
     const ini = ps[0].ini, fim = ps[ps.length - 1].fim
     const canais = {}
     calc.vendidos.forEach((p) => {
@@ -113,7 +114,11 @@ export default function Painel({ usuario }) {
       if (d < ini || d >= fim) return
       const t = totaisPedido(p)
       const alvo = ps.find((x) => d >= x.ini && d < x.fim)
-      if (alvo) { alvo.valor += t.total; alvo.pares += t.pares; alvo.pedidos += 1 }
+      if (alvo) {
+        alvo.valor += t.total; alvo.pares += t.pares; alvo.pedidos += 1
+        const k = p.canal || 'Sem canal'
+        alvo.partes[k] = (alvo.partes[k] || 0) + t.total; alvo.partesPares[k] = (alvo.partesPares[k] || 0) + t.pares
+      }
       const c = (canais[p.canal || 'Sem canal'] ||= { canal: p.canal || 'Sem canal', valor: 0, pares: 0, pedidos: 0 })
       c.valor += t.total; c.pares += t.pares; c.pedidos += 1
     })
@@ -121,7 +126,7 @@ export default function Painel({ usuario }) {
     return {
       ps, max: Math.max(1, ...ps.map((x) => x[medida])),
       total, totalPares: ps.reduce((t, x) => t + x.pares, 0), totalPedidos: ps.reduce((t, x) => t + x.pedidos, 0),
-      canais: Object.values(canais).sort((a, b) => b.valor - a.valor).map((c) => ({ ...c, pct: total ? c.valor / total : 0 })),
+      canais: ordenarCanais(Object.keys(canais)).map((k) => ({ ...canais[k], cor: corCanal(k), pct: total ? canais[k].valor / total : 0 })),
     }
   }, [calc, periodo, medida])
 
@@ -184,7 +189,7 @@ export default function Painel({ usuario }) {
       {erro && <p className="form-error" role="alert">Não consegui ler o banco: {erro}</p>}
 
       <section className="painel-kpis" aria-label="Indicadores">
-        <Kpi icone="financeiro" rotulo="Faturamento no mês" valor={calc ? brl(calc.fatMes) : '—'}
+        <Kpi spark={serie?.ps.map((x) => x.valor)} icone="financeiro" rotulo="Faturamento no mês" valor={calc ? brl(calc.fatMes) : '—'}
           nota={calc && (variacao != null
             ? <span className={variacao >= 0 ? 'sobe' : 'desce'}>{variacao >= 0 ? '↑' : '↓'} {Math.abs(Math.round(variacao * 100))}% <em>vs. mês anterior até hoje</em></span>
             : `${inteiro(calc.paresMes)} pares faturados`)} />
@@ -212,21 +217,11 @@ export default function Painel({ usuario }) {
               </div>
             </div>
           </div>
-          <div className="vbars" role="img" aria-label={`Vendas faturadas por ${periodo === 'semanas' ? 'semana' : 'mês'}`}>
-            {serie?.ps.map((x, i) => {
-              const v = x[medida]
-              const ultimo = i === serie.ps.length - 1
-              return (
-                <div className="vbar-col" key={i} tabIndex={0}>
-                  <span className="vbar-tip"><b>{x.titulo}</b>{brl(x.valor)} · {inteiro(x.pares)} pares · {x.pedidos} pedidos</span>
-                  {(ultimo || v === serie.max) && v > 0 && <span className="vbar-val">{fmtMedida(v)}</span>}
-                  <div className={`vbar ${ultimo ? 'ultimo' : ''}`} style={{ height: `${(v / serie.max) * 100}%` }} />
-                </div>
-              )
-            })}
-            {serie && serie.totalPedidos === 0 && <div className="bars-vazio">O gráfico aparece quando houver pedidos faturados no período.</div>}
-          </div>
-          <div className="vbar-rotulos">{serie?.ps.map((x, i) => <span key={i}>{x.rotulo}</span>)}</div>
+          <div className="legenda-graf">{serie?.canais.map((c) => <span key={c.canal}><i style={{ background: c.cor }} />{c.canal}</span>)}</div>
+          {serie && <BarrasEmpilhadas altura={330} fmt={medida === 'valor' ? brl : (v) => `${inteiro(v)} pares`} fmtEixo={medida === 'valor' ? (v) => (v >= 1000 ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil` : inteiro(v)) : inteiro}
+            series={serie.canais.map((c) => ({ id: c.canal, nome: c.canal, cor: c.cor }))}
+            periodos={serie.ps.map((x) => ({ rotulo: x.rotulo, titulo: x.titulo, partes: medida === 'valor' ? x.partes : x.partesPares }))}
+            vazio="O gráfico aparece quando houver pedidos faturados no período." />}
         </div>
 
         <div className="card">
@@ -234,16 +229,8 @@ export default function Painel({ usuario }) {
             <div><h2>Vendas por canal</h2><div className="card-sub">mesmo período do gráfico</div></div>
             <Link to="/indicadores" className="link">Ver mais</Link>
           </div>
-          {serie && serie.canais.length === 0 && <p className="card-sub" style={{ margin: 0 }}>Sem vendas faturadas no período.</p>}
-          <div className="canais-lista">
-            {serie?.canais.map((c) => (
-              <div className="canal-linha" key={c.canal} title={`${c.canal}: ${brl(c.valor)} · ${c.pares} pares · ${c.pedidos} pedidos`}>
-                <div className="canal-topo"><b>{c.canal}</b><span>{brlCurto(c.valor)} <em>{Math.round(c.pct * 100)}%</em></span></div>
-                <div className="meter"><i style={{ width: `${(c.valor / serie.canais[0].valor) * 100}%` }} /></div>
-                <small>{c.pedidos} pedidos · {inteiro(c.pares)} pares</small>
-              </div>
-            ))}
-          </div>
+          {serie && <Rosca tamanho={170} fmt={medida === 'valor' ? brlCurto : (v) => `${inteiro(v)} pares`} rotuloCentro={medida === 'valor' ? 'faturado' : 'pares'}
+            fatias={serie.canais.map((c) => ({ id: c.canal, nome: c.canal, cor: c.cor, valor: medida === 'valor' ? c.valor : c.pares }))} />}
         </div>
       </section>
 
@@ -312,13 +299,14 @@ export default function Painel({ usuario }) {
   )
 }
 
-function Kpi({ icone, rotulo, valor, nota, para, link }) {
+function Kpi({ icone, rotulo, valor, nota, para, link, spark }) {
   return (
     <div className="card kpi2">
       <span className="kpi2-ico"><Icon name={icone} size={18} /></span>
       <span className="kpi-label">{rotulo}</span>
       <span className="kpi2-valor">{valor}</span>
       <span className="kpi-note">{nota || ' '}</span>
+      {spark && <Sparkline valores={spark} cor="#8A5A32" />}
       {para && <Link to={para} className="kpi2-link">{link} →</Link>}
     </div>
   )
