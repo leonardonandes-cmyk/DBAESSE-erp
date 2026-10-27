@@ -48,6 +48,22 @@ export default function App() {
   const [perfil, setPerfil] = useState(null)
   const [mais, setMais] = useState(false)
 
+  // Grade: Enter pula para o próximo número (em qualquer tela). No último, vai para o botão de confirmar.
+  useEffect(() => {
+    function aoTeclar(e) {
+      const el = e.target
+      if (e.key !== 'Enter' || !(el instanceof HTMLInputElement) || !el.hasAttribute('data-grade')) return
+      e.preventDefault()
+      const escopo = el.closest('.modal, .card, form, .print-root') || document.body
+      const campos = [...escopo.querySelectorAll('input[data-grade]')].filter((x) => !x.disabled && x.offsetParent !== null)
+      const prox = campos[campos.indexOf(el) + (e.shiftKey ? -1 : 1)]
+      if (prox) { prox.focus(); prox.select?.() }
+      else { const ok = escopo.querySelector('[data-grade-ok]'); if (ok) ok.focus(); else el.blur() }
+    }
+    document.addEventListener('keydown', aoTeclar)
+    return () => document.removeEventListener('keydown', aoTeclar)
+  }, [])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessao(data.session))
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSessao(s))

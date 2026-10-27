@@ -93,7 +93,7 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
                         </td>
                         {nums.map((n) => (
                           <td key={n} className="c">
-                            <input className="input input-sm mapa-q" inputMode="numeric" value={c.grade[n] ?? ''} aria-label={`Número ${n}`}
+                            <input className="input input-sm mapa-q" inputMode="numeric" enterKeyHint="next" data-grade value={c.grade[n] ?? ''} aria-label={`Número ${n}`}
                               onChange={(e) => mudarBloco(i, (x) => ({ ...x, cores: x.cores.map((y) => (y.k === c.k ? { ...y, grade: { ...y.grade, [n]: e.target.value.replace(/\D/g, '') } } : y)) }))} />
                           </td>
                         ))}

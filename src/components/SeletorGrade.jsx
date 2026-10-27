@@ -80,7 +80,7 @@ export default function SeletorGrade({ produtos, cores, saldos, onAdicionar, rot
             {skusCor.map((s) => (
               <label key={s.id} className="grade-cel">
                 <span className="grade-num">{s.numero}</span>
-                <input type="number" inputMode="numeric" min={modo === 'contagem' ? 0 : 1} value={qtd[s.id] ?? ''}
+                <input type="number" inputMode="numeric" enterKeyHint="next" data-grade min={modo === 'contagem' ? 0 : 1} value={qtd[s.id] ?? ''}
                   onChange={(e) => setQtd({ ...qtd, [s.id]: e.target.value })} placeholder={modo === 'contagem' ? 'contado' : '0'} />
                 {saldos && <span className="grade-saldo">saldo {saldos[s.id] ?? 0}</span>}
               </label>
@@ -88,7 +88,7 @@ export default function SeletorGrade({ produtos, cores, saldos, onAdicionar, rot
           </div>
           <div className="actions" style={{ justifyContent: 'space-between' }}>
             <span className="card-sub" style={{ margin: 0 }}>{modo === 'contagem' ? 'Digite o que foi contado; o sistema calcula a diferença.' : `${total} pares nesta cor`}</span>
-            <button type="button" className="btn" onClick={adicionar}>{rotulo}</button>
+            <button type="button" className="btn" data-grade-ok onClick={adicionar}>{rotulo}</button>
           </div>
         </>
       )}
