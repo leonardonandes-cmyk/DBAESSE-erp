@@ -587,3 +587,6 @@ td.clickable { cursor: pointer; }
 .alerta-faixa { display: block; font-size: 11px; color: #9a6514 !important; margin-top: 3px; }
 .regras-tit { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; font-weight: 600; }
 .lojas-abas button { white-space: nowrap; flex: 0 0 auto; }
+.loja-logo { display: inline-block; object-fit: contain; vertical-align: middle; margin-right: 8px; flex: none; }
+.lojas-abas button, .lojas-kpi .kpi-label, .modal-head h2:has(.loja-logo) { display: inline-flex; align-items: center; }
+.lojas-tab th .loja-logo { margin-right: 6px; vertical-align: -4px; }

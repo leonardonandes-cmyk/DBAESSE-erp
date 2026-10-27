@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
+import LojaLogo from '../components/LojaLogo.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { listarFichaConsumo } from '../lib/compras.js'
 import { custosPorProduto, pct } from '../lib/custos.js'
@@ -101,7 +102,7 @@ export default function MargemLojas() {
         <button role="tab" className={aba === 'geral' ? 'on' : ''} onClick={() => setAba('geral')}>Visão geral</button>
         {canais.map((c) => (
           <button key={c.id} role="tab" className={aba === c.codigo ? 'on' : ''} onClick={() => setAba(c.codigo)}>
-            <i className="loja-dot" style={{ background: c.cor }} />{c.nome}
+            <LojaLogo canal={c} size={18} />{c.nome}
           </button>
         ))}
       </div>
@@ -110,7 +111,7 @@ export default function MargemLojas() {
         {(canal ? kpis.filter((k) => k.c.id === canal.id) : kpis).map((k) => (
           <Fragment key={k.c.id}>
             <div className="card kpi">
-              <span className="kpi-label"><i className="loja-dot" style={{ background: k.c.cor }} />{canal ? 'Margem média' : k.c.nome}</span>
+              <span className="kpi-label"><LojaLogo canal={k.c} size={20} />{canal ? 'Margem média' : k.c.nome}</span>
               <span className="kpi-value"><span className={`pill ${tomMeta(k.margem, Number(k.c.margem_alvo))} pill-lg`}>{pct(k.margem)}</span></span>
               <span className="kpi-note">meta {pct(Number(k.c.margem_alvo))} · {k.abaixo} de {k.n} abaixo</span>
             </div>
@@ -138,7 +139,7 @@ export default function MargemLojas() {
           {!canal ? (
             <table className="lojas-tab">
               <thead className="tinted">
-                <tr><th>Modelo</th><th className="r">Custo</th><th className="r">Varejo</th>{canais.map((c) => <th key={c.id} className="r"><i className="loja-dot" style={{ background: c.cor }} />{c.nome}</th>)}</tr>
+                <tr><th>Modelo</th><th className="r">Custo</th><th className="r">Varejo</th>{canais.map((c) => <th key={c.id} className="r"><LojaLogo canal={c} size={18} />{c.nome}</th>)}</tr>
               </thead>
               <tbody>
                 {carregando && <tr><td colSpan={canais.length + 3} className="vazio">Carregando…</td></tr>}
@@ -242,7 +243,7 @@ function RegrasLoja({ canal, onFechar, onSalvo }) {
     <div className="modal-bg" onClick={onFechar}>
       <form className="modal modal-lg" onClick={(e) => e.stopPropagation()} onSubmit={salvar}>
         <div className="modal-head">
-          <div><div className="eyebrow">Taxas e despesas</div><h2><i className="loja-dot lg" style={{ background: canal.cor }} />{canal.nome}</h2></div>
+          <div><div className="eyebrow">Taxas e despesas</div><h2><LojaLogo canal={canal} size={28} />{canal.nome}</h2></div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
 
