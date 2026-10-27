@@ -596,7 +596,7 @@ td.clickable { cursor: pointer; }
 /* Logo DBAESSE: letras pretas sobre o branco, sans geométrica (linha Arezzo/Schutz) com leve relevo */
 .brand-word, .mobile-top .brand-word {
   font-family: 'Jost', 'Futura', 'Century Gothic', sans-serif; font-weight: 500; color: #0B0B0B;
-  letter-spacing: .32em; padding-left: .32em; line-height: 1; text-transform: uppercase;
+  letter-spacing: .14em; padding-left: .14em; line-height: 1; text-transform: uppercase;
   text-shadow: .03em .04em 0 #D4D1CB, .05em .07em .06em rgba(0,0,0,.12);
 }
 .brand { align-items: flex-start; }
@@ -604,12 +604,12 @@ td.clickable { cursor: pointer; }
 .brand .brand-sub { letter-spacing: .42em; margin-top: 2px; }
 .mobile-top .brand-word { font-size: 19px; padding-left: 0; }
 .login-card .brand { align-items: center; margin-bottom: 18px; }
-.login-card .brand-word { padding-left: .32em; }
+.login-card .brand-word { padding-left: .14em; }
 
 /* ---------- Menu escuro agrupado (padrão do Painel novo) ---------- */
 .sidebar { background: #0E0E0D; border-right: 0; color: #D8D3CB; padding: 30px 16px 18px; gap: 26px; }
 .sidebar .brand { align-items: center; text-align: center; padding: 0; }
-.sidebar .brand-word { color: #FFFFFF; text-shadow: none; font-size: 24px; padding-left: .32em; }
+.sidebar .brand-word { color: #FFFFFF; text-shadow: none; font-size: 26px; padding-left: .14em; }
 .sidebar .brand-sub { color: #8F8A82; }
 .sidebar .nav { gap: 18px; overflow-y: auto; min-height: 0; flex: 1; margin-right: -6px; padding-right: 6px; scrollbar-width: thin; scrollbar-color: #2A2926 transparent; }
 .nav-grupo { display: flex; flex-direction: column; gap: 2px; }
