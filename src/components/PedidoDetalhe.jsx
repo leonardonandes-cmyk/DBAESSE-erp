@@ -69,6 +69,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
             <div className="chips" style={{ marginTop: 8 }}>
               <span className={`pill ${st.tom}`}>{st.label}</span>
               {atrasado(pedido) && <span className="pill bad">Atrasado</span>}
+              {pedido.separado_em && <span className="pill ok">Separado no app</span>}
               {pedido.estoque_baixado && <span className="pill neutral">Estoque baixado</span>}
             </div>
           </div>

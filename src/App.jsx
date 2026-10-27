@@ -14,11 +14,13 @@ import Compras from './pages/Compras.jsx'
 import Relatorios from './pages/Relatorios.jsx'
 import Configuracoes from './pages/Configuracoes.jsx'
 import EmBreve from './pages/EmBreve.jsx'
+import AppVendas from './pages/AppVendas.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
   { to: '/', icon: 'painel', label: 'Painel' },
   { to: '/pedidos', icon: 'pedidos', label: 'Pedidos' },
+  { to: '/app', icon: 'leitor', label: 'App vendas' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos' },
   { to: '/estoque', icon: 'estoque', label: 'Estoque' },
   { to: '/clientes', icon: 'clientes', label: 'Clientes' },
@@ -29,7 +31,7 @@ export const MODULOS = [
   { to: '/configuracoes', icon: 'config', label: 'Configurações' },
 ]
 
-const TABBAR = ['/', '/pedidos', '/producao', '/estoque']
+const TABBAR = ['/', '/pedidos', '/app', '/estoque']
 
 const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Operador' }
 
@@ -102,6 +104,7 @@ export default function App() {
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao />} />
+          <Route path="/app" element={<AppVendas />} />
           {MODULOS.filter((m) => m.fase).map((m) => (
             <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />
           ))}
