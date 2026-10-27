@@ -91,10 +91,9 @@ export function alertaFaixa(custo, preco, canal) {
   return null
 }
 
-// cor da margem relativa à meta: +10 pts acima = azul · na meta = verde · até 10 abaixo = amarelo · 10+ abaixo = vermelho
+// cor da margem relativa à meta: na meta ou acima = verde · até 10 pts abaixo = amarelo · 10+ abaixo = vermelho
 export function tomMeta(margem, meta) {
   if (margem == null) return 'neutral'
-  if (margem >= meta + 0.1) return 'info'
   if (margem >= meta) return 'ok'
   if (margem > meta - 0.1) return 'warn'
   return 'bad'

@@ -153,6 +153,7 @@ export default function MargemLojas() {
                       return (
                         <td key={c.id} className={`r ${l.melhor === c.id ? 'melhor' : ''}`} title={l.melhor === c.id ? 'Loja que mais lucra com este modelo' : undefined}>
                           {r ? <>
+                            {l.melhor === c.id && <span className="melhor-tag" aria-label="Loja que mais lucra">★</span>}
                             <span className={`pill ${tomMeta(r.margem, r.meta)}`}>{pct(r.margem)}</span>
                             <small>{brl(r.lucro)}/par{r.proprio ? ' · preço próprio' : ''}</small>
                           </> : <span className="faint">—</span>}
@@ -205,7 +206,7 @@ export default function MargemLojas() {
       <p className="card-sub" style={{ margin: 0 }}>
         {canal
           ? <>Preço vazio = segue o varejo. Digite um preço para usar só nesta loja (apagar volta ao varejo). Clique no <b>preço p/ meta</b> para aplicá-lo. {canal.observacao && <>· {canal.observacao}</>}</>
-          : <>Margem por loja já descontando taxa da faixa, imposto 8,5% e despesas. Destaque = loja que mais lucra com o modelo. Cores em relação à meta: <span className="pill info">+10 pts</span> <span className="pill ok">na meta</span> <span className="pill warn">até 10 abaixo</span> <span className="pill bad">10+ abaixo</span></>}
+          : <>Margem por loja já descontando taxa da faixa, imposto 8,5% e despesas. ★ = loja que mais lucra com o modelo. Cores em relação à meta: <span className="pill ok">na meta ou acima</span> <span className="pill warn">até 10 abaixo</span> <span className="pill bad">10+ abaixo</span></>}
         {semFicha ? ` · ${semFicha} modelo(s) sem ficha técnica ficam sem margem.` : ''}
       </p>
 
