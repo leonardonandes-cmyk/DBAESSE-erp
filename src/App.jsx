@@ -18,23 +18,26 @@ import AppVendas from './pages/AppVendas.jsx'
 import Simulador from './pages/Simulador.jsx'
 import TabelaPrecos from './pages/TabelaPrecos.jsx'
 import MargemLojas from './pages/MargemLojas.jsx'
+import Indicadores from './pages/Indicadores.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
 export const MODULOS = [
-  { to: '/', icon: 'painel', label: 'Painel' },
-  { to: '/pedidos', icon: 'pedidos', label: 'Pedidos' },
-  { to: '/app', icon: 'leitor', label: 'App vendas' },
-  { to: '/produtos', icon: 'produtos', label: 'Produtos' },
-  { to: '/precos', icon: 'precos', label: 'Tabela de preços' },
-  { to: '/lojas', icon: 'loja', label: 'Margem por loja' },
-  { to: '/estoque', icon: 'estoque', label: 'Estoque' },
-  { to: '/clientes', icon: 'clientes', label: 'Clientes' },
-  { to: '/financeiro', icon: 'financeiro', label: 'Financeiro' },
-  { to: '/producao', icon: 'producao', label: 'Produção' },
-  { to: '/compras', icon: 'compras', label: 'Compras' },
-  { to: '/relatorios', icon: 'relatorios', label: 'Relatórios' },
-  { to: '/configuracoes', icon: 'config', label: 'Configurações' },
+  { to: '/', icon: 'painel', label: 'Visão geral', curto: 'Painel' },
+  { to: '/pedidos', icon: 'pedidos', label: 'Pedidos e vendas', curto: 'Pedidos', grupo: 'Comercial' },
+  { to: '/clientes', icon: 'clientes', label: 'Clientes', grupo: 'Comercial' },
+  { to: '/app', icon: 'leitor', label: 'App vendas', grupo: 'Comercial' },
+  { to: '/precos', icon: 'precos', label: 'Tabela de preços', grupo: 'Comercial' },
+  { to: '/lojas', icon: 'loja', label: 'Margem por loja', grupo: 'Comercial' },
+  { to: '/producao', icon: 'producao', label: 'Produção', grupo: 'Operações' },
+  { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações' },
+  { to: '/compras', icon: 'compras', label: 'Compras', grupo: 'Operações' },
+  { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
+  { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro' },
+  { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
+  { to: '/relatorios', icon: 'precos', label: 'Relatórios', grupo: 'Relatórios' },
+  { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
 ]
+const GRUPOS = [...new Set(MODULOS.map((m) => m.grupo || ''))]
 
 const TABBAR = ['/', '/pedidos', '/app', '/estoque']
 
@@ -74,13 +77,17 @@ export default function App() {
           <div className="brand-sub">Gestão</div>
         </div>
         <nav className="nav" aria-label="Menu principal">
-          {MODULOS.map((m) => (
-            <NavLink key={m.to} to={m.to} end={m.to === '/'}>
-              <Icon name={m.icon} />
-              <span>{m.label}</span>
-              {m.fase && <span className="soon">Em breve</span>}
-              {m.exemplo && <span className="soon">Exemplo</span>}
-            </NavLink>
+          {GRUPOS.map((g) => (
+            <div className="nav-grupo" key={g || 'inicio'}>
+              {g && <div className="nav-titulo">{g}</div>}
+              {MODULOS.filter((m) => (m.grupo || '') === g).map((m) => (
+                <NavLink key={m.to} to={m.to} end={m.to === '/'}>
+                  <Icon name={m.icon} />
+                  <span>{m.label}</span>
+                  {m.fase && <span className="soon">Em breve</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="user">
@@ -110,6 +117,7 @@ export default function App() {
           <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/compras" element={<Compras />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/indicadores" element={<Indicadores />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao />} />
           <Route path="/app" element={<AppVendas />} />
@@ -124,7 +132,7 @@ export default function App() {
         {MODULOS.filter((m) => TABBAR.includes(m.to)).map((m) => (
           <NavLink key={m.to} to={m.to} end={m.to === '/'}>
             <Icon name={m.icon} size={20} />
-            {m.label}
+            {m.curto || m.label}
           </NavLink>
         ))}
         <button type="button" className={mais ? 'active' : ''} onClick={() => setMais(true)}>
