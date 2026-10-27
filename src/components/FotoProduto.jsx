@@ -2,9 +2,11 @@ import { useState } from 'react'
 import Icon from './Icon.jsx'
 import { desenhoDoTipo } from '../lib/produtos.js'
 
-// Ordem: foto da COR (produtos.fotos[cor_id]) → foto principal do modelo → desenho do tipo → ícone
+// Com cor: só a foto DAQUELA cor (nunca a de outra cor, para não confundir) → desenho do tipo → ícone.
+// Sem cor (lista de modelos): foto principal do modelo.
 export function fotoDe(p, corId) {
-  return (corId && p?.fotos?.[corId]) || p?.foto_url || null
+  if (corId) return p?.fotos?.[corId] || null
+  return p?.foto_url || null
 }
 
 export function FotoProduto({ p, corId, size = 22, className = '' }) {
