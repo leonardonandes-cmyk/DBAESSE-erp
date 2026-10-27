@@ -4,6 +4,7 @@ import { FotoProduto } from './FotoProduto.jsx'
 import { dataBR, inteiro } from '../lib/format.js'
 import { corDaPalmilha, numeroMapa, regraPalmilha } from '../lib/mapas.js'
 import { supabase } from '../lib/supabase.js'
+import { carregarQR, qrSvg } from '../lib/qr.js'
 import { numeroOP, paresOP } from '../lib/producao.js'
 
 /*
@@ -12,6 +13,16 @@ import { numeroOP, paresOP } from '../lib/producao.js'
 */
 const POR_FOLHA_FICHAS = 4
 const POR_FOLHA_PALM = 6
+function QR({ texto }) {
+  const [svg, setSvg] = useState('')
+  useEffect(() => { carregarQR().then((q) => setSvg(qrSvg(q, texto))).catch(() => setSvg('')) }, [texto])
+  return (
+    <div className="pr-qr">
+      {svg ? <div className="pr-qr-img" dangerouslySetInnerHTML={{ __html: svg }} /> : <div className="pr-qr-img pr-qr-vazio">QR</div>}
+      <small>{texto}</small>
+    </div>
+  )
+}
 const fatiar = (lista, n) => Array.from({ length: Math.ceil(lista.length / n) || 0 }, (_, i) => lista.slice(i * n, i * n + n))
 const textoEscuro = (hex) => { const h = (hex || '#ffffff').replace('#', ''); const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (r * 299 + g * 587 + b * 114) / 1000 > 140 }
 
@@ -124,14 +135,15 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
           <div className="pr-ficha-corpo">
             <FotoProduto p={b.produto} corId={o.cor_id} size={66} />
             <div className="pr-ficha-info">
-              <span><small>Data</small><b>{dataBR(mapa.data)}</b></span>
-              <span><small>Ref.</small><b className="grande">{b.produto?.ref}</b></span>
-              <span><small>Marca</small><b>{mapa.marca || '—'}</b></span>
-              <span><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
-              <span><small>Pedido(s)</small><b>{mapa.pedido || '—'}</b></span>
-              <span><small>Prev. ent.</small><b>{dataBR(mapa.previsao)}</b></span>
-              <span className="largo"><small>Cliente</small><b>{mapa.cliente || '—'}</b></span>
+              <span className="pr-dest-box"><small>Ref.</small><b>{b.produto?.ref}</b></span>
+              <span className="pr-dest-box"><small>Mapa</small><b>{numeroMapa(mapa.numero)}</b></span>
+              <span className="pr-dest-box"><small>Pedido(s)</small><b>{mapa.pedido || '—'}</b></span>
+              <span className="c1"><small>Data</small><b>{dataBR(mapa.data)}</b></span>
+              <span className="c1"><small>Prev. ent.</small><b>{dataBR(mapa.previsao)}</b></span>
+              <span className="c2"><small>Marca</small><b>{mapa.marca || '—'}</b></span>
+              <span className="c2"><small>Cliente</small><b>{mapa.cliente || '—'}</b></span>
             </div>
+            <QR texto={numeroOP(o.numero)} />
           </div>
           <div className="pr-ficha-grade">
             <span className="pr-ficha-cor">{o.cores?.nome}</span>

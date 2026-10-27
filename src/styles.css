@@ -1135,3 +1135,32 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .pr-doc b { font-family: 'Jost', var(--font); font-size: 12pt; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #8A5A32; }
 .pr-doc small { font-size: 8pt; color: #555; letter-spacing: .08em; text-transform: uppercase; }
 .pr-ficha-logo { font-family: 'Jost', var(--font); font-size: 11pt; font-weight: 600; letter-spacing: .12em; padding-right: 3mm; margin-right: 1mm; border-right: 1.5px solid #111; }
+/* ficha: REF, MAPA e PEDIDO em destaque + QR Code para bipar */
+.pr-ficha-corpo { grid-template-columns: auto 1fr auto; }
+.pr-ficha-info { grid-template-columns: repeat(3, 1fr); gap: 1.5mm 3mm; }
+.pr-dest-box { border: 1.5px solid #111; border-radius: 1.5mm; padding: 1mm 2mm; }
+.pr-dest-box b { font-size: 17pt !important; line-height: 1.05; font-family: 'Jost', var(--font); font-weight: 600; }
+.pr-ficha-info .largo3 { grid-column: span 3; }
+.pr-qr { display: grid; justify-items: center; gap: .8mm; }
+.pr-qr-img { width: 27mm; height: 27mm; }
+.pr-qr-img svg { width: 100%; height: 100%; display: block; }
+.pr-qr-vazio { border: 1px dashed #999; display: grid; place-items: center; color: #999; font-size: 9pt; }
+.pr-qr small { font-size: 8pt; font-weight: 700; letter-spacing: .06em; }
+/* app: bipar ficha de produção */
+.appv-prod { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; padding: 16px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); }
+.appv-prod > div { display: grid; gap: 4px; }
+.appv-prod b { font-size: 18px; }
+.appv-prod small { color: var(--muted); font-size: 13px; }
+.appv-prod .btn { justify-self: start; margin-top: 6px; }
+.appv-prod-op { font-size: 12px; color: var(--muted); font-weight: 600; }
+.appv-prod.ok { border-color: var(--ok); background: var(--ok-soft); }
+.appv-prod.fim { border-color: #2a78d6; background: var(--info-soft); }
+.appv-prod.aviso { border-color: #eda100; background: #FFF7E0; }
+.appv-prod.erro { border-color: var(--bad); background: var(--bad-soft); }
+.appv-hist { display: grid; gap: 6px; font-size: 13px; }
+.appv-hist > div { display: flex; gap: 6px; align-items: baseline; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; }
+.appv-hist small { margin-left: auto; color: var(--muted); }
+.pr-ficha-info { grid-template-columns: repeat(6, 1fr) !important; }
+.pr-ficha-info .pr-dest-box { grid-column: span 2; }
+.pr-ficha-info .c1 { grid-column: span 1; } .pr-ficha-info .c2 { grid-column: span 2; }
+.pr-ficha-info .c2 b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

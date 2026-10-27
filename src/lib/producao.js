@@ -145,3 +145,32 @@ export async function diasDeTrabalho() {
   const { data } = await supabase.from('empresas').select('dias_trabalho').limit(1).maybeSingle()
   return data?.dias_trabalho?.length ? data.dias_trabalho : [1, 2, 3, 4, 5]
 }
+
+/*
+  Leitura da ficha (QR "OP-0017"): conclui a etapa atual e passa a OP para o próximo setor.
+  Proteção: a mesma OP lida de novo em menos de 1 minuto não avança (evita leitura dupla).
+*/
+export const codigoFicha = (numero) => numeroOP(numero)
+export function numeroDoCodigo(codigo) {
+  const m = String(codigo || '').match(/OP[-\s]?0*(\d+)/i)
+  return m ? Number(m[1]) : null
+}
+export async function buscarOPPorNumero(numero) {
+  const { data, error } = await supabase.from('ordens_producao').select(CAMPOS).eq('numero', numero).maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  return { ...data, op_itens: (data.op_itens || []).sort((a, b) => a.skus.numero - b.skus.numero), op_etapas: (data.op_etapas || []).sort((a, b) => a.ordem - b.ordem) }
+}
+export async function avancarOP(op, { forcar = false } = {}) {
+  if (!OP_ABERTAS.includes(op.status)) throw new Error(op.status === 'concluida' ? 'Esta OP já foi concluída.' : 'Esta OP está cancelada.')
+  const etapas = op.op_etapas
+  const atual = etapas.find((e) => e.status !== 'concluida')
+  if (!atual) return { fim: true }
+  const ultimaFeita = [...etapas].reverse().find((e) => e.status === 'concluida' && e.fim)
+  if (!forcar && ultimaFeita && Date.now() - new Date(ultimaFeita.fim).getTime() < 60000) return { repetida: true, etapa: ultimaFeita }
+  const agora = new Date().toISOString()
+  await atualizarEtapa(atual.id, { status: 'concluida', inicio: atual.inicio || agora, fim: agora, qtd_ok: paresOP(op) - Number(atual.qtd_perda || 0) })
+  const prox = etapas.find((e) => e.ordem > atual.ordem && e.status !== 'concluida')
+  if (prox) await atualizarEtapa(prox.id, { status: 'em_curso', inicio: agora })
+  return { concluiu: atual, proxima: prox || null, fim: !prox }
+}
