@@ -28,7 +28,7 @@ function montarLinha({ cab, itens, insumos, corPorId: corPorIdAtual }) {
   return {
     prestador_id: cab.prestador_id || null, prestador: cab.prestador?.trim() || null,
     data: cab.data, previsao: cab.previsao || null, observacao: cab.observacao?.trim() || null,
-    itens: limpos, insumos: insumos.filter((i) => i.descricao?.trim()).map((i) => ({ descricao: i.descricao.trim(), quantidade: (i.quantidade || '').trim() })),
+    itens: limpos, insumos: insumos.filter((i) => i.descricao?.trim()).map((i) => ({ descricao: i.descricao.trim(), quantidade: `${limpos.reduce((t, it) => t + totalItem(it), 0)} pares` })),
   }
 }
 

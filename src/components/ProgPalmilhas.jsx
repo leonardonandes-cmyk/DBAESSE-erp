@@ -162,7 +162,7 @@ function NovaProgPalmilha({ cores, regra, prog, onFechar, onSalvo }) {
             {insumos.map((m, i) => (
               <div key={i} className="palm-insumo">
                 <input className="input input-sm" value={m.descricao} onChange={(e) => setInsumos((xs) => xs.map((y, j) => (j === i ? { ...y, descricao: e.target.value } : y)))} placeholder={['Ex.: Palmilha base salto', 'Ex.: Napa Floater nude', 'Ex.: EVA 2mm'][i] || 'Material'} />
-                <input className="input input-sm" value={m.quantidade} onChange={(e) => setInsumos((xs) => xs.map((y, j) => (j === i ? { ...y, quantidade: e.target.value } : y)))} placeholder="Qtd (ex.: 3 m, 120 pares)" />
+                <input className="input input-sm" value={m.descricao?.trim() ? `${inteiro(total)} pares` : ''} readOnly tabIndex={-1} title="Fecha com a quantidade de palmilhas" placeholder="= pares da programação" />
               </div>
             ))}
           </div>
@@ -232,7 +232,7 @@ function ImprimirPalmilha({ prog, corPorId, regra, onFechar }) {
               <thead><tr><th style={{ textAlign: 'left' }}>Material</th><th>Quantidade</th><th>Conferido</th></tr></thead>
               <tbody>
                 {[...(prog.insumos || []), ...Array.from({ length: Math.max(0, 4 - (prog.insumos || []).length) }, () => ({ descricao: '', quantidade: '' }))].map((m, i) => (
-                  <tr key={i}><td style={{ textAlign: 'left' }}>{m.descricao || ' '}</td><td>{m.quantidade}</td><td>☐</td></tr>
+                  <tr key={i}><td style={{ textAlign: 'left' }}>{m.descricao || ' '}</td><td>{m.descricao ? <b>{inteiro(total)} pares</b> : ''}</td><td>☐</td></tr>
                 ))}
               </tbody>
             </table>
