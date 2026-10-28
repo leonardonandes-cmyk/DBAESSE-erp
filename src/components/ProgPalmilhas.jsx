@@ -4,7 +4,8 @@ import Icon from './Icon.jsx'
 import { dataBR, hojeISO, inteiro } from '../lib/format.js'
 import { listarParceiros } from '../lib/parceiros.js'
 import { supabase } from '../lib/supabase.js'
-import { NUMEROS_PALMILHA, STATUS_PALMILHA, TIPOS_PALMILHA, atualizarProgPalmilha, criarProgPalmilha, excluirProgPalmilha, listarProgPalmilha, mudarStatusPalmilha, numeroPalmilha, totalItem, totalProg } from '../lib/palmilhas.js'
+import { regraPalmilha } from '../lib/mapas.js'
+import { NUMEROS_PALMILHA, STATUS_PALMILHA, TIPOS_PALMILHA, agruparPalmilha, atualizarProgPalmilha, corPalmilhaDoItem, criarProgPalmilha, excluirProgPalmilha, listarProgPalmilha, mudarStatusPalmilha, numeroPalmilha, totalItem, totalProg } from '../lib/palmilhas.js'
 
 /* Programação de PALMILHA para estoque: relação para o prestador (tipo · cor × grade + materiais que vão junto) */
 export default function ProgPalmilhas({ cores }) {
@@ -16,6 +17,8 @@ export default function ProgPalmilhas({ cores }) {
   async function carregar() { try { setLista(await listarProgPalmilha()) } catch (e) { setErro(e.message) } }
   useEffect(() => { carregar() }, [])
   const corPorId = useMemo(() => Object.fromEntries(cores.map((c) => [c.id, c])), [cores])
+  const [regra, setRegra] = useState([{ chave: 'SALTO BLOCO', posicao: 2 }, { chave: '*', posicao: 1 }])
+  useEffect(() => { regraPalmilha().then(setRegra).catch(() => {}) }, [])
 
   async function status(p, s) {
     try { await mudarStatusPalmilha(p.id, s); await carregar() } catch (e) { setErro(e.message) }
@@ -48,7 +51,7 @@ export default function ProgPalmilhas({ cores }) {
               </header>
               <div className="palm-card-tipos">
                 {tipos.map((t) => <span key={t}>{t.replace('PALMILHA ', '')}</span>)}
-                {p.itens.map((i, k) => <em key={k} className="palm-card-cor"><i style={{ background: corPorId[i.cor_id]?.hex || '#ddd' }} />{corPorId[i.cor_id]?.nome || 'sem cor'} · {totalItem(i)}</em>)}
+                {agruparPalmilha(p.itens, corPorId, regra).map((g, k) => <em key={k} className="palm-card-cor"><i style={{ background: g.cor.hex || '#ddd' }} />{g.cor.nome || 'sem cor'} · {totalItem(g)}</em>)}
               </div>
               <div className="mapa-card-dados">
                 <span><small>Data</small>{dataBR(p.data)}</span>
@@ -65,16 +68,16 @@ export default function ProgPalmilhas({ cores }) {
           )
         })}
       </div>
-      {nova && <NovaProgPalmilha cores={cores} onFechar={() => setNova(false)} onSalvo={async (r) => { setNova(false); const l = await listarProgPalmilha(); setLista(l); const p = l.find((x) => x.id === r.id); if (p) setImprimir(p) }} />}
-      {editar && <NovaProgPalmilha cores={cores} prog={editar} onFechar={() => setEditar(null)} onSalvo={async (r) => { setEditar(null); const l = await listarProgPalmilha(); setLista(l); const p = l.find((x) => x.id === r.id); if (p) setImprimir(p) }} />}
-      {imprimir && <ImprimirPalmilha prog={imprimir} corPorId={corPorId} onFechar={() => setImprimir(null)} />}
+      {nova && <NovaProgPalmilha cores={cores} regra={regra} onFechar={() => setNova(false)} onSalvo={async (r) => { setNova(false); const l = await listarProgPalmilha(); setLista(l); const p = l.find((x) => x.id === r.id); if (p) setImprimir(p) }} />}
+      {editar && <NovaProgPalmilha cores={cores} regra={regra} prog={editar} onFechar={() => setEditar(null)} onSalvo={async (r) => { setEditar(null); const l = await listarProgPalmilha(); setLista(l); const p = l.find((x) => x.id === r.id); if (p) setImprimir(p) }} />}
+      {imprimir && <ImprimirPalmilha prog={imprimir} corPorId={corPorId} regra={regra} onFechar={() => setImprimir(null)} />}
     </>
   )
 }
 
 const novaLinha = (tipo = TIPOS_PALMILHA[1]) => ({ k: Math.random().toString(36).slice(2), tipo, cor_id: '', obs: '', grade: {} })
 
-function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
+function NovaProgPalmilha({ cores, regra, prog, onFechar, onSalvo }) {
   const editando = Boolean(prog)
   const [cab, setCab] = useState(() => (prog
     ? { prestador: prog.prestador || '', data: prog.data || hojeISO(), previsao: prog.previsao || '', observacao: prog.observacao || '' }
@@ -92,6 +95,7 @@ function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
   const [salvando, setSalvando] = useState(false)
   useEffect(() => { listarParceiros().then(setParceiros).catch(() => {}) }, [])
   const ordenadas = useMemo(() => [...cores].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), [cores])
+  const corPorId = useMemo(() => Object.fromEntries(cores.map((c) => [c.id, c])), [cores])
   const mudar = (k, fn) => setLinhas((ls) => ls.map((l) => (l.k === k ? fn(l) : l)))
   const total = linhas.reduce((t, l) => t + totalItem(l), 0)
 
@@ -131,6 +135,7 @@ function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
                         <option value="">Cor…</option>
                         {ordenadas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                       </select>
+                      {(() => { const cp = corPalmilhaDoItem(l, corPorId, regra); return cp.composta ? <small className="palm-regra">→ palmilha <b>{cp.nome}</b> ({l.tipo.includes('SALTO') ? 'penúltima cor' : 'última cor'})</small> : null })()}
                       <input className="input input-sm palm-obs" value={l.obs} onChange={(e) => mudar(l.k, (x) => ({ ...x, obs: e.target.value }))} placeholder="OBS (gota, napa…)" />
                     </td>
                     {NUMEROS_PALMILHA.map((n) => (
@@ -180,7 +185,7 @@ function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
 
 const textoEscuro = (hex) => { const h = (hex || '#ffffff').replace('#', ''); const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (r * 299 + g * 587 + b * 114) / 1000 > 140 }
 
-function ImprimirPalmilha({ prog, corPorId, onFechar }) {
+function ImprimirPalmilha({ prog, corPorId, regra, onFechar }) {
   const [empresa, setEmpresa] = useState(null)
   useEffect(() => {
     supabase.from('empresas').select('nome,razao_social,cnpj,telefone,cidade,uf').limit(1).maybeSingle().then(({ data }) => setEmpresa(data || null)).catch(() => {})
@@ -190,6 +195,7 @@ function ImprimirPalmilha({ prog, corPorId, onFechar }) {
   const nums = [...new Set(prog.itens.flatMap((i) => Object.keys(i.grade).map(Number)))].sort((a, b) => a - b)
   const tipos = [...new Set(prog.itens.map((i) => i.tipo))]
   const total = totalProg(prog)
+  const grupos = agruparPalmilha(prog.itens, corPorId, regra)
 
   return createPortal(
     <div className="print-root">
@@ -220,8 +226,8 @@ function ImprimirPalmilha({ prog, corPorId, onFechar }) {
             </table>
           </header>
 
-          {tipos.map((tipo) => prog.itens.filter((i) => i.tipo === tipo).map((it, k) => {
-            const c = corPorId[it.cor_id]; const hex = c?.hex || '#FFFFFF'
+          {tipos.map((tipo) => grupos.filter((i) => i.tipo === tipo).map((it, k) => {
+            const c = it.cor; const hex = c?.hex || '#FFFFFF'
             return (
               <article key={`${tipo}${k}`} className="pr-tira">
                 <div className="pr-tira-topo"><span>{dataBR(prog.data)}</span><b>{tipo}</b><span>{numeroPalmilha(prog.numero)} · {prog.prestador || ''}</span></div>
@@ -232,6 +238,7 @@ function ImprimirPalmilha({ prog, corPorId, onFechar }) {
                   </tbody>
                 </table>
                 {it.obs && <div className="pr-tira-obs">{it.obs}</div>}
+                {it.origens.length > 0 && <div className="pr-tira-origem">Palmilha da cor: {[...new Set(it.origens)].join(' · ')}</div>}
               </article>
             )
           }))}
