@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
-import { dataBR, dataHoraBR, numeroPedido } from '../lib/format.js'
+import { dataBR, dataHoraBR, numeroPedido, rotuloNum } from '../lib/format.js'
 import { STATUS_OP, atrasadaOP, atualizarEtapa, cancelarOP, concluirOP, numeroOP, paresOP } from '../lib/producao.js'
 
 const ST_ETAPA = { pendente: { label: 'Pendente', tom: 'neutral' }, em_curso: { label: 'Em curso', tom: 'warn' }, concluida: { label: 'Concluída', tom: 'ok' } }
@@ -74,7 +74,7 @@ ${op.op_etapas.map((e) => `<tr><td style="text-align:left"><b>${setorPorId[e.set
 
         <div className="preview" style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
           <span className="dot" style={{ background: op.cores?.hex || '#ddd', width: 16, height: 16 }} /><b>{op.cores?.nome}</b>
-          <div className="grade-mini">{op.op_itens.map((i) => <span key={i.id}><small>{i.skus.numero}</small>{i.quantidade}</span>)}</div>
+          <div className="grade-mini">{op.op_itens.map((i) => <span key={i.id}><small>{rotuloNum(i.skus.numero)}</small>{i.quantidade}</span>)}</div>
           <span><b>{pares}</b> pares · prazo {op.prazo ? dataBR(op.prazo) : '—'}</span>
         </div>
         {op.observacao && <p className="card-sub" style={{ margin: 0 }}>{op.observacao}</p>}

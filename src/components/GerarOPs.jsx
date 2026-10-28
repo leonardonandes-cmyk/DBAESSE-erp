@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import { criarOP } from '../lib/producao.js'
-import { numeroPedido } from '../lib/format.js'
+import { numeroPedido, rotuloNum } from '../lib/format.js'
 
 /* Lista o que falta produzir para atender os pedidos e cria as OPs marcadas */
 export default function GerarOPs({ sugestoes, onFechar, onSalvo }) {
@@ -51,7 +51,7 @@ export default function GerarOPs({ sugestoes, onFechar, onSalvo }) {
                   <tr key={s.chave} className="clickable" onClick={() => alternar(s.chave)}>
                     <td><input type="checkbox" checked={marcadas.has(s.chave)} onChange={() => alternar(s.chave)} onClick={(e) => e.stopPropagation()} aria-label="Gerar esta OP" /></td>
                     <td><ProdutoCelula p={s.produto} cor={s.cor} linha2={<><i className="dot-cor" style={{ background: s.cor?.hex || '#ddd' }} />{s.cor?.nome}</>} /></td>
-                    <td><div className="grade-mini">{s.itens.map((i) => <span key={i.sku_id}><small>{i.numero}</small>{i.quantidade}</span>)}</div></td>
+                    <td><div className="grade-mini">{s.itens.map((i) => <span key={i.sku_id}><small>{rotuloNum(i.numero)}</small>{i.quantidade}</span>)}</div></td>
                     <td className="r"><b>{s.itens.reduce((t, i) => t + i.quantidade, 0)}</b></td>
                     <td style={{ color: 'var(--muted)' }}>{s.pedidos.map(numeroPedido).join(', ')}</td>
                   </tr>

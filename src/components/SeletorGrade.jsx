@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { rotuloNum } from '../lib/format.js'
 import { FotoProduto } from './FotoProduto.jsx'
 
 /*
@@ -79,7 +80,7 @@ export default function SeletorGrade({ produtos, cores, saldos, onAdicionar, rot
           <div className="grade-input">
             {skusCor.map((s) => (
               <label key={s.id} className="grade-cel">
-                <span className="grade-num">{s.numero}</span>
+                <span className="grade-num">{rotuloNum(s.numero)}</span>
                 <input type="number" inputMode="numeric" enterKeyHint="next" data-grade min={modo === 'contagem' ? 0 : 1} value={qtd[s.id] ?? ''}
                   onChange={(e) => setQtd({ ...qtd, [s.id]: e.target.value })} placeholder={modo === 'contagem' ? 'contado' : '0'} />
                 {saldos && <span className="grade-saldo">saldo {saldos[s.id] ?? 0}</span>}

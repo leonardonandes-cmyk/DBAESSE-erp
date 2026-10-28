@@ -9,7 +9,7 @@ import { listarFichaConsumo } from '../lib/compras.js'
 import { custosPorProduto, margemNaLista, pct, tomMargem } from '../lib/custos.js'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
-import { brl } from '../lib/format.js'
+import { brl, rotuloNum } from '../lib/format.js'
 
 
 const STATUS = {
@@ -30,7 +30,7 @@ export default function Produtos() {
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const [custos, setCustos] = useState({}) // produto_id -> custo do par (ficha técnica)
-  useEffect(() => { listarFichaConsumo().then((l) => setCustos(custosPorProduto(l))).catch(() => {}) }, [])
+  useEffect(() => { Promise.all([listarFichaConsumo(), listarProdutos()]).then(([l, p]) => setCustos(custosPorProduto(l, p))).catch(() => {}) }, [])
   const [selRef, setSelRef] = useState(null)
   const [corSel, setCorSel] = useState(null)
   const [aba, setAba] = useState(ABAS[0])
@@ -133,7 +133,7 @@ export default function Produtos() {
                             </div>
                           </td>
                           <td><div className="dots">{coresDo(p).map((c) => <span key={c.id} className="dot" title={c.nome} style={{ background: c.hex || '#ddd' }} />)}</div></td>
-                          <td style={{ color: 'var(--ink-2)' }}>{p.grade_de} ao {p.grade_ate}</td>
+                          <td style={{ color: 'var(--ink-2)' }}>{rotuloNum(p.grade_de)} ao {rotuloNum(p.grade_ate)}</td>
                           <td className="r" style={{ color: custos[p.id] ? 'var(--ink-2)' : 'var(--faint)' }}>{custos[p.id] ? brl(custos[p.id]) : '—'}</td>
                           <td className="r"><b style={{ fontWeight: 600 }}>{p.skus.reduce((t, s) => t + (saldos[s.id] || 0), 0)}</b></td>
                           <td><span className={`pill ${st.tom}`}>{st.label}</span></td>
@@ -155,7 +155,7 @@ export default function Produtos() {
                   <div style={{ minWidth: 0 }}>
                     <div className="eyebrow">REF {sel.ref}{sel.tipo ? ` · ${sel.tipo}` : ''}</div>
                     <h2>{sel.nome}</h2>
-                    <div className="card-sub">Grade {sel.grade_de} ao {sel.grade_ate} · {coresSel.length} {coresSel.length === 1 ? 'cor' : 'cores'}</div>
+                    <div className="card-sub">Grade {rotuloNum(sel.grade_de)} ao {rotuloNum(sel.grade_ate)} · {coresSel.length} {coresSel.length === 1 ? 'cor' : 'cores'}</div>
                   </div>
                 </div>
 
@@ -182,7 +182,7 @@ export default function Produtos() {
                       <tbody>
                         {grade.map((g) => (
                           <tr key={g.id}>
-                            <td className="size">{g.numero}</td>
+                            <td className="size">{rotuloNum(g.numero)}</td>
                             <td className="mono">{g.sku}</td>
                             <td style={{ color: 'var(--muted)' }}>{g.ean || 'Aguardando GS1'}</td>
                             <td className="r" style={{ fontWeight: 700, color: (saldos[g.id] || 0) < 0 ? 'var(--bad)' : (saldos[g.id] || 0) === 0 ? 'var(--faint)' : 'var(--ink)' }}>{saldos[g.id] || 0}</td>
@@ -200,7 +200,7 @@ export default function Produtos() {
                 ) : aba === 'Preços e margem' ? (
                   <div style={{ display: 'grid', gap: 10 }}>
                     <div className="preview" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                      <span>Custo do par (ficha técnica): <b>{custos[sel.id] ? brl(custos[sel.id]) : 'sem ficha'}</b></span>
+                      <span>{sel.origem === 'revenda' ? 'Custo do par (compra de revenda)' : 'Custo do par (ficha técnica)'}: <b>{custos[sel.id] ? brl(custos[sel.id]) : 'sem ficha'}</b></span>
                       <button className="link-btn" onClick={() => setAba('Ficha técnica')}>ver ficha</button>
                     </div>
                     <div className="table-wrap">

@@ -78,8 +78,8 @@ export default function Indicadores() {
       .then(([pe, pr]) => { setPedidos(pe); setProdutos(pr) })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
-    Promise.all([listarSaldos(), listarOPs(), listarSetores(), listarTitulos(), listarFichaConsumo(), listarListas()])
-      .then(([saldos, ops, setores, titulos, ficha, listas]) => setExtra({ saldos, ops, setores, titulos, custos: custosPorProduto(ficha), listas }))
+    Promise.all([listarSaldos(), listarOPs(), listarSetores(), listarTitulos(), listarFichaConsumo(), listarListas(), listarProdutos()])
+      .then(([saldos, ops, setores, titulos, ficha, listas, prods]) => setExtra({ saldos, ops, setores, titulos, custos: custosPorProduto(ficha, prods), listas }))
       .catch((e) => setErro(e.message))
   }, [])
 

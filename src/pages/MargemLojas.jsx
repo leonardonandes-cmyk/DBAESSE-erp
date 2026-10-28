@@ -35,7 +35,7 @@ export default function MargemLojas() {
       setProdutos(p.filter((x) => x.status !== 'inativo'))
       setCanais(c.filter((x) => x.ativo))
       setProprios(Object.fromEntries(pc.map((x) => [`${x.produto_id}|${x.canal_id}`, Number(x.preco)])))
-      setCustos(custosPorProduto(f))
+      setCustos(custosPorProduto(f, p))
     } catch (e) { setErro(e.message) } finally { setCarregando(false) }
   }
   useEffect(() => { carregar() }, [])

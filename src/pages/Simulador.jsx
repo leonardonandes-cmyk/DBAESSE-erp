@@ -33,7 +33,7 @@ export default function Simulador() {
 
   useEffect(() => {
     Promise.all([listarSimulacoes(), listarProdutos(), listarMateriais(), listarListas(), listarFichaConsumo()])
-      .then(([s, p, m, l, f]) => { setSims(s); setProdutos(p); setMateriais(m); setListas(l); setCustoModelo(custosPorProduto(f)) })
+      .then(([s, p, m, l, f]) => { setSims(s); setProdutos(p); setMateriais(m); setListas(l); setCustoModelo(custosPorProduto(f, p)) })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
   }, [])

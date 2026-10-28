@@ -3,7 +3,7 @@ import ProdutoCelula, { FotoProduto } from '../components/FotoProduto.jsx'
 import Icon from '../components/Icon.jsx'
 import MovimentoModal from '../components/MovimentoModal.jsx'
 import { LOCAIS, listarSaldos, saldoPorSku, ultimosMovimentos } from '../lib/estoque.js'
-import { dataHoraBR, inteiro } from '../lib/format.js'
+import { dataHoraBR, inteiro, rotuloNum } from '../lib/format.js'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 
 const TIPO_MOV = {
@@ -112,7 +112,7 @@ export default function Estoque() {
             <thead className="tinted">
               <tr>
                 <th>Modelo · cor</th>
-                {numeros.map((n) => <th key={n} className="c">{n}</th>)}
+                {numeros.map((n) => <th key={n} className="c">{rotuloNum(n)}</th>)}
                 <th className="r">Total</th>
               </tr>
             </thead>

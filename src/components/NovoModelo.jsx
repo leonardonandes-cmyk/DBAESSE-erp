@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import { numerosDaGrade, rotuloNum } from '../lib/format.js'
 import { atualizarProduto, codigoSku, criarCor, criarProduto } from '../lib/produtos.js'
 
-const TIPOS = ['Papete', 'Salto bloco', 'Rasteira', 'Ana bela', 'Sapatilha', 'Mocassim', 'Fisherman', 'Plataforma', 'Sandália', 'Tênis', 'Bota']
+const TIPOS = ['EVA', 'Papete', 'Salto bloco', 'Rasteira', 'Ana bela', 'Sapatilha', 'Mocassim', 'Fisherman', 'Plataforma', 'Sandália', 'Tênis', 'Bota']
 
 // Serve para CRIAR (sem `produto`) e para EDITAR (com `produto`)
 export default function NovoModelo({ produto, cores, onFechar, onSalvo, onCorCriada }) {
@@ -18,6 +19,8 @@ export default function NovoModelo({ produto, cores, onFechar, onSalvo, onCorCri
     status: produto?.status === 'rascunho' ? 'ativo' : produto?.status || 'ativo',
     precoAtacado: produto?.preco_atacado ?? '',
     precoVarejo: produto?.preco_varejo ?? '',
+    origem: produto?.origem || 'propria',
+    custoCompra: produto?.custo_compra ?? '',
   }))
   const [sel, setSel] = useState(coresAtuais)
   const [novaCor, setNovaCor] = useState('')
@@ -26,11 +29,7 @@ export default function NovoModelo({ produto, cores, onFechar, onSalvo, onCorCri
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const coresSel = cores.filter((c) => sel.includes(c.id))
-  const numeros = useMemo(() => {
-    const de = Number(f.gradeDe), ate = Number(f.gradeAte)
-    if (!de || !ate || ate < de || ate - de > 15) return []
-    return Array.from({ length: ate - de + 1 }, (_, i) => de + i)
-  }, [f.gradeDe, f.gradeAte])
+  const numeros = useMemo(() => numerosDaGrade(f.gradeDe, f.gradeAte), [f.gradeDe, f.gradeAte])
 
   const existentes = new Set((produto?.skus || []).map((s) => `${s.cor_id}|${s.numero}`))
   const novos = coresSel.reduce((t, c) => t + numeros.filter((n) => !existentes.has(`${c.id}|${n}`)).length, 0)
@@ -96,10 +95,18 @@ export default function NovoModelo({ produto, cores, onFechar, onSalvo, onCorCri
           </label>
           <label className="field"><span>Coleção</span><input value={f.colecao} onChange={set('colecao')} placeholder="Verão 27" /></label>
           <label className="field"><span>NCM</span><input value={f.ncm} onChange={set('ncm')} placeholder="6402.99.90" /></label>
-          <label className="field"><span>Grade de</span><input type="number" value={f.gradeDe} onChange={set('gradeDe')} /></label>
-          <label className="field"><span>até</span><input type="number" value={f.gradeAte} onChange={set('gradeAte')} /></label>
+          <label className="field"><span>Grade de <small style={{ color: 'var(--muted)' }}>(dupla: 3334)</small></span><input type="number" value={f.gradeDe} onChange={set('gradeDe')} /></label>
+          <label className="field"><span>até <small style={{ color: 'var(--muted)' }}>{numeros.length ? numeros.map(rotuloNum).join(' · ') : ''}</small></span><input type="number" value={f.gradeAte} onChange={set('gradeAte')} /></label>
           <label className="field"><span>Preço atacado (R$)</span><input type="number" step="0.01" min="0" value={f.precoAtacado} onChange={set('precoAtacado')} placeholder="59,90" /></label>
           <label className="field"><span>Preço varejo (R$)</span><input type="number" step="0.01" min="0" value={f.precoVarejo} onChange={set('precoVarejo')} placeholder="129,90" /></label>
+          <label className="field">
+            <span>Origem</span>
+            <select className="input" value={f.origem} onChange={set('origem')}>
+              <option value="propria">Fabricação própria</option>
+              <option value="revenda">Revenda (compra pronto)</option>
+            </select>
+          </label>
+          {f.origem === 'revenda' && <label className="field"><span>Custo de compra (R$)</span><input type="number" step="0.01" min="0" value={f.custoCompra} onChange={set('custoCompra')} placeholder="30,00" /></label>}
           <label className="field">
             <span>Situação</span>
             <select className="input" value={f.status} onChange={set('status')}>

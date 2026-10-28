@@ -4,7 +4,7 @@ import Leitor from '../components/Leitor.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import ParceiroForm from '../components/ParceiroForm.jsx'
 import { listarSaldos } from '../lib/estoque.js'
-import { brl, numeroPedido } from '../lib/format.js'
+import { brl, numeroPedido, rotuloNum } from '../lib/format.js'
 import { acharSku, avisar, criarIndice } from '../lib/leitura.js'
 import { CANAIS, listarParceiros } from '../lib/parceiros.js'
 import { carregarItens, criarPedido, listarPedidos, separarItem } from '../lib/pedidos.js'
@@ -210,7 +210,7 @@ function Separar({ pedido, indice, produtos, cores, onVoltar }) {
                 <div className="appv-nums">
                   {g.itens.map((i) => (
                     <span key={i.id} className={i.separado === i.quantidade ? 'ok' : i.separado > 0 ? 'meio' : ''}>
-                      <small>{i.skus.numero}</small>{i.separado}/{i.quantidade}
+                      <small>{rotuloNum(i.skus.numero)}</small>{i.separado}/{i.quantidade}
                     </span>
                   ))}
                 </div>
@@ -395,7 +395,7 @@ function Consulta({ indice, produtos, cores, onVoltar }) {
               const x = saldos[s.id]
               return (
                 <div key={s.id} className={s.numero === achado.numero ? 'on' : ''}>
-                  <small>{s.numero}</small>
+                  <small>{rotuloNum(s.numero)}</small>
                   <b>{x?.saldo ?? 0}</b>
                   <span>B {x?.saldo_bulk ?? 0} · P {x?.saldo_pick ?? 0}</span>
                 </div>

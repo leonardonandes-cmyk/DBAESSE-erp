@@ -1,5 +1,6 @@
 // Acesso ao banco para o cadastro de produtos — as telas só usam estas funções.
 import { supabase, todas } from './supabase.js'
+import { numerosDaGrade } from './format.js'
 
 export async function listarCores() {
   const { data, error } = await supabase.from('cores').select('id,nome,sigla,hex').order('nome')
@@ -10,7 +11,7 @@ export async function listarCores() {
 export async function listarProdutos() {
   return todas(() => supabase
     .from('produtos')
-    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,fotos,preco_atacado,preco_varejo,ficha,skus(id,cor_id,numero,sku,ean)')
+    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,fotos,preco_atacado,preco_varejo,ficha,origem,custo_compra,fornecedor_id,skus(id,cor_id,numero,sku,ean)')
     .order('ref'))
 }
 
@@ -45,10 +46,10 @@ export function codigoSku(ref, sigla, numero) {
 // Cria o modelo e gera todos os SKUs (cada cor × cada número da grade)
 const preco = (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.')))
 
-export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gradeAte, status, precoAtacado, precoVarejo, cores }) {
+export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gradeAte, status, precoAtacado, precoVarejo, origem, custoCompra, cores }) {
   const { data: prod, error } = await supabase
     .from('produtos')
-    .insert({ ref: ref.trim().toUpperCase(), nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status: status || 'ativo', preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo) })
+    .insert({ ref: ref.trim().toUpperCase(), nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status: status || 'ativo', preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo), origem: origem || 'propria', custo_compra: origem === 'revenda' ? preco(custoCompra) : null })
     .select()
     .single()
   if (error) {
@@ -57,7 +58,7 @@ export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gra
   }
   const linhas = []
   for (const c of cores) {
-    for (let n = gradeDe; n <= gradeAte; n++) {
+    for (const n of numerosDaGrade(gradeDe, gradeAte)) {
       linhas.push({ produto_id: prod.id, cor_id: c.id, numero: n, sku: codigoSku(prod.ref, c.sigla, n) })
     }
   }
@@ -73,16 +74,16 @@ export async function criarProduto({ ref, nome, tipo, colecao, ncm, gradeDe, gra
 }
 
 // Atualiza o modelo e cria só os SKUs que faltam (nunca apaga SKU — ele pode já estar em etiqueta)
-export async function atualizarProduto(produto, { nome, tipo, colecao, ncm, gradeDe, gradeAte, status, precoAtacado, precoVarejo, cores }) {
+export async function atualizarProduto(produto, { nome, tipo, colecao, ncm, gradeDe, gradeAte, status, precoAtacado, precoVarejo, origem, custoCompra, cores }) {
   const { error } = await supabase
     .from('produtos')
-    .update({ nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status, preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo) })
+    .update({ nome: nome.trim(), tipo, colecao: colecao || null, ncm: ncm || null, grade_de: gradeDe, grade_ate: gradeAte, status, preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo), origem: origem || 'propria', custo_compra: origem === 'revenda' ? preco(custoCompra) : null })
     .eq('id', produto.id)
   if (error) throw error
   const existentes = new Set(produto.skus.map((s) => `${s.cor_id}|${s.numero}`))
   const linhas = []
   for (const c of cores) {
-    for (let n = gradeDe; n <= gradeAte; n++) {
+    for (const n of numerosDaGrade(gradeDe, gradeAte)) {
       if (!existentes.has(`${c.id}|${n}`)) {
         linhas.push({ produto_id: produto.id, cor_id: c.id, numero: n, sku: codigoSku(produto.ref, c.sigla, n) })
       }

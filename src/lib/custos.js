@@ -34,9 +34,11 @@ export function custoFicha(linhas) {
 }
 
 // custo por produto (mapa produto_id -> custo) a partir de TODAS as linhas de ficha
-export function custosPorProduto(linhas) {
+// Produto de REVENDA (comprado pronto, ex.: EVA da FERALCCI): o custo é o preço de compra, não a ficha
+export function custosPorProduto(linhas, produtos = []) {
   const m = {}
   ;(linhas || []).forEach((l) => { m[l.produto_id] = (m[l.produto_id] || 0) + valorLinha(l) })
+  ;(produtos || []).forEach((p) => { if (p.origem === 'revenda' && p.custo_compra != null) m[p.id] = Number(p.custo_compra) })
   return m
 }
 

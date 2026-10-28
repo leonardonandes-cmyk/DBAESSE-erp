@@ -5,7 +5,7 @@ import ParceiroForm from './ParceiroForm.jsx'
 import { brl } from '../lib/format.js'
 import { CANAIS, enderecoCompleto } from '../lib/parceiros.js'
 import { atualizarPedido, carregarItens, criarPedido } from '../lib/pedidos.js'
-import { numeroPedido } from '../lib/format.js'
+import { numeroPedido, rotuloNum } from '../lib/format.js'
 import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 
 // Serve para CRIAR (sem `pedido`) e para CORRIGIR um pedido aberto (com `pedido`)
@@ -163,7 +163,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
                     <tr key={g.chave}>
                       <td><ProdutoCelula p={g.produto} cor={g.cor} linha2={<><i className="dot-cor" style={{ background: g.cor?.hex || '#ddd' }} />{g.cor?.nome}</>} /></td>
                       <td>
-                        <div className="grade-mini grade-edit">{g.itens.map((i) => <label key={i.sku_id}><small>{i.numero}</small><input inputMode="numeric" enterKeyHint="next" data-grade value={i.quantidade || ''} onChange={(e) => mudarQtd(i.sku_id, e.target.value)} aria-label={`Número ${i.numero}`} /></label>)}</div>
+                        <div className="grade-mini grade-edit">{g.itens.map((i) => <label key={i.sku_id}><small>{rotuloNum(i.numero)}</small><input inputMode="numeric" enterKeyHint="next" data-grade value={i.quantidade || ''} onChange={(e) => mudarQtd(i.sku_id, e.target.value)} aria-label={`Número ${i.numero}`} /></label>)}</div>
                         {falta > 0 && <span className="pill warn" style={{ marginTop: 6 }}>Faltam {falta} em estoque · produzir</span>}
                       </td>
                       <td className="r"><b>{qt}</b></td>

@@ -28,7 +28,7 @@ export default function TabelaPrecos() {
 
   useEffect(() => {
     Promise.all([listarProdutos(), listarListas(), listarFichaConsumo()])
-      .then(([p, l, f]) => { setProdutos(p); setListas(l); setCustos(custosPorProduto(f)) })
+      .then(([p, l, f]) => { setProdutos(p); setListas(l); setCustos(custosPorProduto(f, p)) })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
   }, [])

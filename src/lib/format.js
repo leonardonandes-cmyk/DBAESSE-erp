@@ -33,3 +33,19 @@ export function linkWhats(tel) {
   if (d.length <= 11) d = `55${d}`
   return `https://wa.me/${d}`
 }
+
+// Numeração dupla (EVA): guardada como 3334 → mostra "33/34". Número normal mostra igual.
+export const numDuplo = (n) => Number(n) >= 1000
+export const rotuloNum = (n) => (numDuplo(n) ? `${Math.floor(Number(n) / 100)}/${Number(n) % 100}` : String(n ?? ''))
+// números da grade: 34..39 ou, na dupla, 3334, 3536, 3738, 3940
+export function numerosDaGrade(de, ate) {
+  de = Number(de); ate = Number(ate)
+  if (!de || !ate || ate < de) return []
+  if (numDuplo(de)) {
+    const out = []
+    for (let a = Math.floor(de / 100); a <= Math.floor(ate / 100); a += 2) out.push(a * 100 + a + 1)
+    return out
+  }
+  if (ate - de > 15) return []
+  return Array.from({ length: ate - de + 1 }, (_, i) => de + i)
+}
