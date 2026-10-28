@@ -48,7 +48,7 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
     <div className="modal-bg" onClick={onFechar}>
       <div className="modal modal-xl" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <div><div className="eyebrow">Produção · programação</div><h2>Novo mapa de programação</h2></div>
+          <div><div className="eyebrow">Produção · programação</div><h2>Nova programação</h2></div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
 
@@ -127,7 +127,7 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
           <span><b>{blocos.length}</b> referências · <b>{inteiro(totalGeral)}</b> pares · <b>{blocos.reduce((t, b) => t + b.cores.filter((c) => totalLinha(c) > 0).length, 0)}</b> OPs (uma por cor)</span>
           <span className="actions">
             <button type="button" className="btn" onClick={onFechar}>Cancelar</button>
-            <button type="button" className="btn btn-dark" disabled={salvando || !totalGeral} onClick={salvar}>{salvando ? 'Criando as OPs…' : 'Salvar mapa e criar OPs'}</button>
+            <button type="button" className="btn btn-dark" disabled={salvando || !totalGeral} onClick={salvar}>{salvando ? 'Criando as OPs…' : 'Salvar programação e criar OPs'}</button>
           </span>
         </div>
       </div>

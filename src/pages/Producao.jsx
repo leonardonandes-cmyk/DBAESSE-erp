@@ -7,6 +7,10 @@ import OPDetalhe from '../components/OPDetalhe.jsx'
 import OPForm from '../components/OPForm.jsx'
 import Programacao from '../components/Programacao.jsx'
 import MapasLista from '../components/MapasLista.jsx'
+import NovoMapa from '../components/NovoMapa.jsx'
+import ImprimirMapa from '../components/ImprimirMapa.jsx'
+import { listarMapas } from '../lib/mapas.js'
+import { listarParceiros } from '../lib/parceiros.js'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
 import { dataBR, inteiro } from '../lib/format.js'
 import { ABERTOS, listarPedidos } from '../lib/pedidos.js'
@@ -23,6 +27,10 @@ const FILTROS = [
 const CEL = { concluida: { cls: 'ok', txt: 'OK' }, em_curso: { cls: 'cur', txt: 'Em curso' }, pendente: { cls: 'pend', txt: '—' } }
 
 export default function Producao({ visao = 'quadro' }) {
+  const [novaProg, setNovaProg] = useState(false)
+  const [parceirosProg, setParceirosProg] = useState(null)
+  const [imprimirProg, setImprimirProg] = useState(null)
+  const [versaoMapas, setVersaoMapas] = useState(0)
   const [ops, setOps] = useState([])
   const [setores, setSetores] = useState([])
   const [produtos, setProdutos] = useState([])
@@ -81,16 +89,25 @@ export default function Producao({ visao = 'quadro' }) {
   })
   const maxCarga = Math.max(1, ...carga.map((c) => c.pares))
 
+  async function abrirProg() {
+    if (!parceirosProg) setParceirosProg(await listarParceiros().catch(() => []))
+    setNovaProg(true)
+  }
+
   return (
     <>
+      {novaProg && <NovoMapa produtos={produtos} cores={cores} parceiros={parceirosProg || []} onFechar={() => setNovaProg(false)}
+        onSalvo={async (r) => { setNovaProg(false); await carregar(); setVersaoMapas((v) => v + 1); const m = (await listarMapas()).find((x) => x.id === r.id); if (m) setImprimirProg(m) }} />}
+      {imprimirProg && <ImprimirMapa mapa={imprimirProg} inicial="tudo" ops={ops.filter((o) => o.programacao_id === imprimirProg.id)} cores={cores} onFechar={() => setImprimirProg(null)} />}
       <header className="page-head">
         <div>
           <div className="eyebrow">Ordens de produção por grade</div>
           <h1>Produção</h1>
         </div>
         <div className="actions">
+          <button className="btn btn-sm" onClick={() => setNova(true)} title="Uma OP solta de um modelo e cor — para reposição ou exceção">OP avulsa</button>
           <button className="btn" onClick={abrirSugestoes}>Gerar dos pedidos</button>
-          <button className="btn btn-dark" onClick={() => setNova(true)}><Icon name="mais" size={16} stroke={2} />Nova ordem</button>
+          <button className="btn btn-dark" onClick={abrirProg}><Icon name="mais" size={16} stroke={2} />Nova programação</button>
         </div>
       </header>
 
@@ -103,7 +120,7 @@ export default function Producao({ visao = 'quadro' }) {
         <Link role="tab" to="/producao/bipar" className="aba-link">Bipar fichas</Link>
       </div>
 
-      {visao === 'mapas' ? <MapasLista ops={ops} produtos={produtos} cores={cores} onMudou={carregar} />
+      {visao === 'mapas' ? <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} />
         : visao === 'pcp' ? <Programacao ops={ops} setores={setores} onAbrir={setAberta} onMudou={carregar} /> : <>
       <section className="grid-kpi">
         <div className="card kpi"><span className="kpi-label">Ordens em aberto</span><span className="kpi-value">{inteiro(abertas.length)}</span></div>
@@ -145,7 +162,7 @@ export default function Producao({ visao = 'quadro' }) {
           <p>Crie uma OP por modelo e cor com a grade, ou gere automaticamente o que falta para atender os pedidos. Ao concluir, os pares entram no estoque sozinhos.</p>
           <div className="actions" style={{ justifyContent: 'center' }}>
             <button className="btn" onClick={abrirSugestoes}>Gerar dos pedidos</button>
-            <button className="btn btn-dark" onClick={() => setNova(true)}>Nova ordem</button>
+            <button className="btn btn-dark" onClick={abrirProg}>Nova programação</button>
           </div>
         </section>
       ) : (

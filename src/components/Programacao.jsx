@@ -116,7 +116,7 @@ export default function Programacao({ ops, setores, onAbrir, onMudou }) {
                     </tr>
                   )
                 })}
-                {p.fila.length === 0 && <tr><td colSpan={7} className="vazio">Nenhuma OP aberta. Crie em “Nova ordem” ou “Gerar dos pedidos”.</td></tr>}
+                {p.fila.length === 0 && <tr><td colSpan={7} className="vazio">Nenhuma OP aberta. Crie em “Nova programação”.</td></tr>}
               </tbody>
             </table>
           </div>
