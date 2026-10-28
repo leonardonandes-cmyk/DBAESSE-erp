@@ -10,6 +10,7 @@ import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, totaisPedido } from '.
 import { listarProdutos } from '../lib/produtos.js'
 import { listarTitulos, situacao } from '../lib/financeiro.js'
 import { listarMapas, situacaoMapa } from '../lib/mapas.js'
+import SeletorPeriodo, { periodoPadrao, resolverPeriodo } from '../components/SeletorPeriodo.jsx'
 import { BarrasEmpilhadas, Rosca, Sparkline, corCanal, ordenarCanais } from '../components/Graficos.jsx'
 
 const TOM_ALERTA = {
@@ -26,28 +27,37 @@ function inicioSemana(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setD
 const dd = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 const semAcento = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-// períodos do gráfico: 12 semanas ou 6 meses (pela data do pedido, como nos Relatórios)
-function montarPeriodos(tipo) {
-  const agora = new Date()
-  if (tipo === 'semanas') {
-    const base = inicioSemana(agora)
-    return Array.from({ length: 12 }, (_, i) => {
-      const ini = new Date(base); ini.setDate(ini.getDate() - 7 * (11 - i))
-      const fim = new Date(ini); fim.setDate(fim.getDate() + 7)
-      return { ini, fim, rotulo: dd(ini), titulo: `Semana de ${dd(ini)}` }
-    })
+// barras do gráfico dentro do período escolhido: por dia, semana, mês ou ano (auto = pelo tamanho do período)
+export const AGRUPAR = [['auto', 'Auto'], ['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês'], ['ano', 'Ano']]
+function agrupamentoAuto(dias) { return dias <= 31 ? 'dia' : dias <= 120 ? 'semana' : dias <= 800 ? 'mes' : 'ano' }
+function montarPeriodos({ ini, fim }, grupo) {
+  const out = []
+  let cur
+  if (grupo === 'dia') cur = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate())
+  else if (grupo === 'semana') cur = inicioSemana(ini)
+  else if (grupo === 'mes') cur = new Date(ini.getFullYear(), ini.getMonth(), 1)
+  else cur = new Date(ini.getFullYear(), 0, 1)
+  while (cur <= fim && out.length < 400) {
+    let prox
+    if (grupo === 'dia') prox = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + 1)
+    else if (grupo === 'semana') { prox = new Date(cur); prox.setDate(prox.getDate() + 7) }
+    else if (grupo === 'mes') prox = new Date(cur.getFullYear(), cur.getMonth() + 1, 1)
+    else prox = new Date(cur.getFullYear() + 1, 0, 1)
+    // a 1ª e a última barra respeitam o início/fim do período
+    const a = cur < ini ? ini : cur, b = prox > fim ? new Date(fim.getTime() + 1) : prox
+    const rotulo = grupo === 'dia' ? dd(cur) : grupo === 'semana' ? dd(cur) : grupo === 'mes' ? `${MESES[cur.getMonth()]}${cur.getMonth() === 0 || out.length === 0 ? `/${String(cur.getFullYear()).slice(2)}` : ''}` : String(cur.getFullYear())
+    const titulo = grupo === 'dia' ? dd(cur) + '/' + cur.getFullYear() : grupo === 'semana' ? `Semana de ${dd(cur)}` : grupo === 'mes' ? `${MESES[cur.getMonth()]}/${cur.getFullYear()}` : `Ano de ${cur.getFullYear()}`
+    out.push({ ini: a, fim: b, rotulo, titulo })
+    cur = prox
   }
-  return Array.from({ length: 6 }, (_, i) => {
-    const ini = new Date(agora.getFullYear(), agora.getMonth() - (5 - i), 1)
-    const fim = new Date(ini.getFullYear(), ini.getMonth() + 1, 1)
-    return { ini, fim, rotulo: MESES[ini.getMonth()], titulo: `${MESES[ini.getMonth()]}/${ini.getFullYear()}` }
-  })
+  return out
 }
 
 export default function Painel({ usuario }) {
   const [dados, setDados] = useState(null)
   const [erro, setErro] = useState('')
-  const [periodo, setPeriodo] = useState('semanas')
+  const [periodo, setPeriodo] = useState(() => periodoPadrao('90'))
+  const [grupo, setGrupo] = useState('auto')
   const [medida, setMedida] = useState('valor')
   const [busca, setBusca] = useState('')
 
@@ -112,8 +122,10 @@ export default function Painel({ usuario }) {
   // gráfico + canais, no período escolhido
   const serie = useMemo(() => {
     if (!calc) return null
-    const ps = montarPeriodos(periodo).map((x) => ({ ...x, valor: 0, pares: 0, pedidos: 0, partes: {}, partesPares: {} }))
-    const ini = ps[0].ini, fim = ps[ps.length - 1].fim
+    const res = resolverPeriodo(periodo)
+    const g = grupo === 'auto' ? agrupamentoAuto(res.dias) : grupo
+    const ps = montarPeriodos(res, g).map((x) => ({ ...x, valor: 0, pares: 0, pedidos: 0, partes: {}, partesPares: {} }))
+    const ini = res.ini, fim = new Date(res.fim.getTime() + 1)
     const canais = {}
     calc.vendidos.forEach((p) => {
       const d = new Date(p.criado_em)
@@ -130,11 +142,12 @@ export default function Painel({ usuario }) {
     })
     const total = Object.values(canais).reduce((t, c) => t + c.valor, 0)
     return {
+      rotulo: res.rotulo, grupo: g,
       ps, max: Math.max(1, ...ps.map((x) => x[medida])),
       total, totalPares: ps.reduce((t, x) => t + x.pares, 0), totalPedidos: ps.reduce((t, x) => t + x.pedidos, 0),
       canais: ordenarCanais(Object.keys(canais)).map((k) => ({ ...canais[k], cor: corCanal(k), pct: total ? canais[k].valor / total : 0 })),
     }
-  }, [calc, periodo, medida])
+  }, [calc, periodo, grupo, medida])
 
   const resultados = useMemo(() => {
     const q = semAcento(busca.trim())
@@ -217,17 +230,19 @@ export default function Painel({ usuario }) {
           <div className="card-head">
             <div>
               <h2>Vendas faturadas</h2>
-              <div className="card-sub">{serie ? `${fmtMedida(medida === 'valor' ? serie.total : serie.totalPares)} em ${serie.totalPedidos} pedidos · ${periodo === 'semanas' ? 'últimas 12 semanas' : 'últimos 6 meses'}` : ' '}</div>
+              <div className="card-sub">{serie ? `${fmtMedida(medida === 'valor' ? serie.total : serie.totalPares)} em ${serie.totalPedidos} pedidos · ${serie.rotulo}` : ' '}</div>
             </div>
             <div className="painel-filtros">
               <div className="segmented" role="group" aria-label="Medida">
                 <button className={medida === 'valor' ? 'on' : ''} onClick={() => setMedida('valor')}>R$</button>
                 <button className={medida === 'pares' ? 'on' : ''} onClick={() => setMedida('pares')}>Pares</button>
               </div>
-              <div className="segmented" role="group" aria-label="Período">
-                <button className={periodo === 'semanas' ? 'on' : ''} onClick={() => setPeriodo('semanas')}>12 semanas</button>
-                <button className={periodo === 'meses' ? 'on' : ''} onClick={() => setPeriodo('meses')}>6 meses</button>
-              </div>
+            </div>
+          </div>
+          <div className="painel-periodo">
+            <SeletorPeriodo valor={periodo} onChange={setPeriodo} />
+            <div className="segmented" role="group" aria-label="Agrupar por">
+              {AGRUPAR.map(([id, l]) => <button key={id} className={grupo === id ? 'on' : ''} onClick={() => setGrupo(id)} title={id === 'auto' && serie ? `Agora: por ${serie.grupo === 'mes' ? 'mês' : serie.grupo}` : undefined}>{l}</button>)}
             </div>
           </div>
           <div className="legenda-graf">{serie?.canais.map((c) => <span key={c.canal}><i style={{ background: c.cor }} />{c.canal}</span>)}</div>
