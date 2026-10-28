@@ -31,6 +31,7 @@ export const MODULOS = [
   { to: '/lojas', icon: 'loja', label: 'Margem por loja', grupo: 'Comercial' },
   { to: '/producao', icon: 'producao', label: 'Produção', grupo: 'Operações', exato: true },
   { to: '/producao/mapas', icon: 'ficha', label: 'Mapas e corte', grupo: 'Operações', sub: true },
+  { to: '/producao/palmilhas', icon: 'ficha', label: 'Palmilhas', grupo: 'Operações', sub: true },
   { to: '/producao/pcp', icon: 'relatorios', label: 'Programação (PCP)', grupo: 'Operações', sub: true },
   { to: '/producao/bipar', icon: 'leitor', label: 'Bipar fichas', grupo: 'Operações', sub: true },
   { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações' },
@@ -142,6 +143,7 @@ export default function App() {
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao visao="quadro" />} />
           <Route path="/producao/mapas" element={<Producao visao="mapas" />} />
+          <Route path="/producao/palmilhas" element={<Producao visao="palmilhas" />} />
           <Route path="/producao/pcp" element={<Producao visao="pcp" />} />
           <Route path="/producao/bipar" element={<BiparProducao />} />
           <Route path="/app" element={<AppVendas />} />

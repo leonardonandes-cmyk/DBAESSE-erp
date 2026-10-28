@@ -1230,3 +1230,16 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .mapa-card.sit-atrasado { border: 2px solid #A3261C; }
 .alert-row.forte { background: #FBEDEB; margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 10px; }
 .alert-row.forte .alert-title { color: #A3261C; font-weight: 800; }
+/* programação de palmilha */
+.palm-card-tipos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.palm-card-tipos > span:not(.palm-card-cores) { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.palm-card-cores { display: inline-flex; gap: 3px; margin-left: 4px; } .palm-card-cores i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); }
+.palm-cab { grid-template-columns: 2fr 1fr 1fr; }
+.palm-grade select { min-width: 130px; } .palm-obs { margin-top: 4px; width: 100%; }
+.palm-insumos { display: grid; gap: 8px; } .palm-insumo { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.pr-palm-mat { margin-top: 4mm; display: grid; gap: 2mm; } .pr-palm-mat > b { font-size: 11pt; text-transform: uppercase; letter-spacing: .04em; }
+.pr-palm-mat td { height: 7mm; }
+.pr-assin { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-top: 14mm; font-size: 9pt; text-align: center; }
+.pr-assin span { border-top: 1px solid #111; padding-top: 2mm; }
+.palm-insumo .input, .palm-obs, .palm-grade select { width: 100%; max-width: none; text-align: left; }
+.palm-grade td:first-child { width: 150px; } .palm-grade td:nth-child(2) { width: 210px; }

@@ -7,6 +7,7 @@ import OPDetalhe from '../components/OPDetalhe.jsx'
 import OPForm from '../components/OPForm.jsx'
 import Programacao from '../components/Programacao.jsx'
 import MapasLista from '../components/MapasLista.jsx'
+import ProgPalmilhas from '../components/ProgPalmilhas.jsx'
 import NovoMapa from '../components/NovoMapa.jsx'
 import ImprimirMapa from '../components/ImprimirMapa.jsx'
 import { listarMapas } from '../lib/mapas.js'
@@ -116,11 +117,13 @@ export default function Producao({ visao = 'quadro' }) {
       <div className="segmented lojas-abas" role="tablist">
         <Link role="tab" to="/producao" className={`aba-link ${visao === 'quadro' ? 'on' : ''}`}>Quadro de ordens</Link>
         <Link role="tab" to="/producao/mapas" className={`aba-link ${visao === 'mapas' ? 'on' : ''}`}>Mapas e folhas de corte</Link>
+        <Link role="tab" to="/producao/palmilhas" className={`aba-link ${visao === 'palmilhas' ? 'on' : ''}`}>Palmilhas</Link>
         <Link role="tab" to="/producao/pcp" className={`aba-link ${visao === 'pcp' ? 'on' : ''}`}>Programação (PCP)</Link>
         <Link role="tab" to="/producao/bipar" className="aba-link">Bipar fichas</Link>
       </div>
 
-      {visao === 'mapas' ? <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} />
+      {visao === 'palmilhas' ? <ProgPalmilhas cores={cores} />
+        : visao === 'mapas' ? <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} />
         : visao === 'pcp' ? <Programacao ops={ops} setores={setores} onAbrir={setAberta} onMudou={carregar} /> : <>
       <section className="grid-kpi">
         <div className="card kpi"><span className="kpi-label">Ordens em aberto</span><span className="kpi-value">{inteiro(abertas.length)}</span></div>
