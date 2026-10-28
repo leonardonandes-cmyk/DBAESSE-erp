@@ -227,7 +227,7 @@ function ImprimirPalmilha({ prog, corPorId, onFechar }) {
                 <div className="pr-tira-topo"><span>{dataBR(prog.data)}</span><b>{tipo}</b><span>{numeroPalmilha(prog.numero)} · {prog.prestador || ''}</span></div>
                 <table className="pr-tab">
                   <tbody>
-                    <tr><th rowSpan={2} className="pr-tira-cor" style={{ background: hex, color: textoEscuro(hex) ? '#151515' : '#fff' }}>{c?.nome || '—'}</th>{nums.map((n) => <th key={n}>{n}</th>)}<th>Total</th></tr>
+                    <tr><th rowSpan={2} className={`pr-tira-cor${String(c?.nome || '').length > 16 ? ' longa' : ''}`} style={{ background: hex, color: textoEscuro(hex) ? '#151515' : '#fff' }}>{c?.nome || '—'}</th>{nums.map((n) => <th key={n}>{n}</th>)}<th>Total</th></tr>
                     <tr>{nums.map((n) => <td key={n}>{it.grade[n] || ''}</td>)}<td><b>{totalItem(it)}</b></td></tr>
                   </tbody>
                 </table>

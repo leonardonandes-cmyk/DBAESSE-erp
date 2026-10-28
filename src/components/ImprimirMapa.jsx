@@ -185,7 +185,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
             <div className="pr-tira-topo"><span>{dataBR(mapa.data)}</span><b>PALMILHA {p.modelo}</b><span>Pedido {mapa.pedido || '—'} · Ref. {[...p.refs].join(', ')}</span></div>
             <table className="pr-tab">
               <tbody>
-                <tr><th rowSpan={2} className="pr-tira-cor" style={{ background: hex, color: textoEscuro(hex) ? '#151515' : '#fff' }}>{p.cor}</th>{numsGerais.map((n) => <th key={n}>{n}</th>)}<th>Total</th></tr>
+                <tr><th rowSpan={2} className={`pr-tira-cor${String(p.cor || '').length > 16 ? ' longa' : ''}`} style={{ background: hex, color: textoEscuro(hex) ? '#151515' : '#fff' }}>{p.cor}</th>{numsGerais.map((n) => <th key={n}>{n}</th>)}<th>Total</th></tr>
                 <tr>{numsGerais.map((n) => <td key={n}>{p.grade[n] || ''}</td>)}<td><b>{p.total}</b></td></tr>
               </tbody>
             </table>

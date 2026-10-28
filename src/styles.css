@@ -1256,3 +1256,7 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 /* grades de digitação: números com largura igual; a coluna da cor fica com a sobra */
 .mapa-grade th.c, .mapa-grade td.c, .mapa-grade th.r, .mapa-grade td.r { width: 1%; white-space: nowrap; }
 .palm-grade td:nth-child(2), .palm-grade th:nth-child(2) { width: auto; }
+/* tiras de palmilha: cor com largura fixa (cor composta quebra linha) → grades alinhadas entre as tiras */
+.pr-tira .pr-tab { table-layout: fixed; }
+.pr-tira .pr-tira-cor { width: 46mm; white-space: normal; word-break: break-word; line-height: 1.15; padding: 1.5mm 2mm; }
+.pr-tira .pr-tira-cor.longa { font-size: 10pt !important; }
