@@ -88,6 +88,7 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
         <span><small>Prev. entrega</small><b>{dataBR(mapa.previsao)}</b></span>
         <span className="pr-dest"><small>Qtd pares</small><b>{inteiro(total)}</b></span>
       </div>
+      <div className="pr-cab-qr"><QR texto={numeroMapa(mapa.numero)} /><small>Bipe para ver o mapa inteiro ou concluir o lote</small></div>
     </header>
   )
 

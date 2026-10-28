@@ -1193,3 +1193,28 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .pr-cab-dados { align-items: end; }
 .pr-cab-dest { border: 1.8px solid #111; border-radius: 1.8mm; padding: 1mm 3mm 1.2mm; }
 .pr-cab-dest b { font-family: 'Jost', var(--font); font-size: 19pt !important; font-weight: 600; line-height: 1.05; }
+.pr-cab { position: relative; }
+.pr-cab:has(.pr-cab-qr) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 5mm; }
+.pr-cab:has(.pr-cab-qr) > .pr-marca, .pr-cab:has(.pr-cab-qr) > .pr-cab-dados { grid-column: 1; }
+.pr-cab-qr { grid-column: 2; grid-row: 1 / span 2; display: grid; justify-items: center; align-content: center; gap: .5mm; width: 27mm; }
+.pr-cab-qr .pr-qr-img { width: 24mm; height: 24mm; }
+.pr-cab-qr > small { font-size: 6.5pt; color: #555; text-align: center; line-height: 1.2; }
+/* QR do mapa no Bipar: lote inteiro */
+.mapa-lote { display: grid; gap: 10px; padding: 16px; border-radius: 16px; border: 2px solid #151515; background: var(--surface); }
+.mapa-lote header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.mapa-lote header > div { display: grid; gap: 2px; }
+.mapa-lote header b { font-family: 'Jost', var(--font); font-size: 26px; font-weight: 600; line-height: 1; }
+.mapa-lote header small { color: var(--muted); font-size: 13px; }
+.mapa-lote-prog { position: relative; height: 26px; border-radius: 8px; background: var(--line-soft); overflow: hidden; }
+.mapa-lote-prog i { position: absolute; inset: 0 auto 0 0; background: var(--ok); opacity: .25; }
+.mapa-lote-prog span { position: relative; display: block; text-align: center; line-height: 26px; font-size: 12.5px; font-weight: 600; }
+.mapa-lote-setor { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.mapa-lote-setor > div { display: grid; gap: 3px; min-width: 0; }
+.mapa-lote-setor small { color: var(--muted); font-size: 12px; }
+.mapa-lote-setor.pronto { border-color: var(--ok); background: var(--ok-soft); }
+.mapa-lote-ops { display: flex; gap: 4px; flex-wrap: wrap; }
+@media (max-width: 600px) { .mapa-lote-setor { flex-direction: column; align-items: stretch; } }
+.pr-cab-dados b { white-space: nowrap; }
+.pr-cab-dados { gap: 2mm 4mm; }
+.pr-cab:has(.pr-cab-qr) .pr-cab-dados { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 2mm 5mm; min-width: 0; }
+.pr-cab-qr { overflow: hidden; }

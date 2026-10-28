@@ -174,3 +174,18 @@ export async function avancarOP(op, { forcar = false } = {}) {
   if (prox) await atualizarEtapa(prox.id, { status: 'em_curso', inicio: agora })
   return { concluiu: atual, proxima: prox || null, fim: !prox }
 }
+
+// QR do mapa ("MP-0002"): consulta o lote inteiro e permite avançar/concluir várias OPs de uma vez
+export function numeroMapaDoCodigo(codigo) {
+  const m = String(codigo || '').match(/MP[-\s]?0*(\d+)/i)
+  return m ? Number(m[1]) : null
+}
+export async function buscarMapaComOPs(numero) {
+  const { data: mapa, error } = await supabase.from('programacoes').select('id,numero,pedido,cliente,marca,data,previsao').eq('numero', numero).maybeSingle()
+  if (error) throw error
+  if (!mapa) return null
+  const { data, error: e2 } = await supabase.from('ordens_producao').select(CAMPOS).eq('programacao_id', mapa.id).order('numero')
+  if (e2) throw e2
+  const ops = (data || []).map((o) => ({ ...o, op_itens: (o.op_itens || []).sort((a, b) => a.skus.numero - b.skus.numero), op_etapas: (o.op_etapas || []).sort((a, b) => a.ordem - b.ordem) }))
+  return { mapa, ops }
+}
