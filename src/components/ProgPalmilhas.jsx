@@ -5,7 +5,7 @@ import { dataBR, hojeISO, inteiro } from '../lib/format.js'
 import { listarParceiros } from '../lib/parceiros.js'
 import { supabase } from '../lib/supabase.js'
 import { regraPalmilha } from '../lib/mapas.js'
-import { NUMEROS_PALMILHA, STATUS_PALMILHA, TIPOS_PALMILHA, agruparPalmilha, atualizarProgPalmilha, corPalmilhaDoItem, criarProgPalmilha, excluirProgPalmilha, listarProgPalmilha, mudarStatusPalmilha, numeroPalmilha, totalItem, totalProg } from '../lib/palmilhas.js'
+import { NUMEROS_PALMILHA, STATUS_PALMILHA, TIPOS_PALMILHA, agruparPalmilha, atualizarProgPalmilha, corComposta, corUnicaDoItem, criarProgPalmilha, excluirProgPalmilha, listarProgPalmilha, mudarStatusPalmilha, numeroPalmilha, totalItem, totalProg } from '../lib/palmilhas.js'
 
 /* Programação de PALMILHA para estoque: relação para o prestador (tipo · cor × grade + materiais que vão junto) */
 export default function ProgPalmilhas({ cores }) {
@@ -83,7 +83,7 @@ function NovaProgPalmilha({ cores, regra, prog, onFechar, onSalvo }) {
     ? { prestador: prog.prestador || '', data: prog.data || hojeISO(), previsao: prog.previsao || '', observacao: prog.observacao || '' }
     : { prestador: '', data: hojeISO(), previsao: '', observacao: '' }))
   const [linhas, setLinhas] = useState(() => (prog?.itens?.length
-    ? prog.itens.map((it) => ({ ...novaLinha(it.tipo), cor_id: it.cor_id || '', obs: it.obs || '', grade: Object.fromEntries(Object.entries(it.grade || {}).map(([n, q]) => [n, String(q)])) }))
+    ? prog.itens.map((it) => ({ ...novaLinha(it.tipo), cor_id: corUnicaDoItem(it, cores, regra), obs: it.obs || '', grade: Object.fromEntries(Object.entries(it.grade || {}).map(([n, q]) => [n, String(q)])) }))
     : [novaLinha()]))
   const [insumos, setInsumos] = useState(() => {
     const base = (prog?.insumos || []).map((i) => ({ descricao: i.descricao || '', quantidade: i.quantidade || '' }))
@@ -94,7 +94,8 @@ function NovaProgPalmilha({ cores, regra, prog, onFechar, onSalvo }) {
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   useEffect(() => { listarParceiros().then(setParceiros).catch(() => {}) }, [])
-  const ordenadas = useMemo(() => [...cores].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), [cores])
+  // palmilha é sempre de UMA cor: cores compostas (com "/") não aparecem
+  const ordenadas = useMemo(() => cores.filter((c) => !corComposta(c.nome)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), [cores])
   const corPorId = useMemo(() => Object.fromEntries(cores.map((c) => [c.id, c])), [cores])
   const mudar = (k, fn) => setLinhas((ls) => ls.map((l) => (l.k === k ? fn(l) : l)))
   const total = linhas.reduce((t, l) => t + totalItem(l), 0)
@@ -103,7 +104,7 @@ function NovaProgPalmilha({ cores, regra, prog, onFechar, onSalvo }) {
     setErro(''); setSalvando(true)
     try {
       const p = parceiros.find((x) => x.nome.toLowerCase() === cab.prestador.trim().toLowerCase())
-      const dados = { cab: { ...cab, prestador_id: p?.id || (editando && cab.prestador === prog.prestador ? prog.prestador_id : null) }, itens: linhas, insumos }
+      const dados = { cab: { ...cab, prestador_id: p?.id || (editando && cab.prestador === prog.prestador ? prog.prestador_id : null) }, itens: linhas, insumos, corPorId }
       onSalvo(editando ? await atualizarProgPalmilha(prog.id, dados) : await criarProgPalmilha(dados))
     } catch (e) { setErro(e.message); setSalvando(false) }
   }
@@ -135,7 +136,6 @@ function NovaProgPalmilha({ cores, regra, prog, onFechar, onSalvo }) {
                         <option value="">Cor…</option>
                         {ordenadas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                       </select>
-                      {(() => { const cp = corPalmilhaDoItem(l, corPorId, regra); return cp.composta ? <small className="palm-regra">→ palmilha <b>{cp.nome}</b> ({l.tipo.includes('SALTO') ? 'penúltima cor' : 'última cor'})</small> : null })()}
                       <input className="input input-sm palm-obs" value={l.obs} onChange={(e) => mudar(l.k, (x) => ({ ...x, obs: e.target.value }))} placeholder="OBS (gota, napa…)" />
                     </td>
                     {NUMEROS_PALMILHA.map((n) => (

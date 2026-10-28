@@ -18,12 +18,13 @@ export async function listarProgPalmilha() {
   return data
 }
 
-function montarLinha({ cab, itens, insumos }) {
+function montarLinha({ cab, itens, insumos, corPorId: corPorIdAtual }) {
   const limpos = itens
     .map((it) => ({ tipo: it.tipo, cor_id: it.cor_id, obs: (it.obs || '').trim(), grade: Object.fromEntries(Object.entries(it.grade).filter(([, q]) => Number(q) > 0).map(([n, q]) => [n, Number(q)])) }))
     .filter((it) => totalItem(it) > 0)
   if (!limpos.length) throw new Error('Digite a grade de pelo menos uma palmilha.')
   if (limpos.some((it) => !it.cor_id)) throw new Error('Escolha a cor de todas as linhas com quantidade.')
+  if (corPorIdAtual && limpos.some((it) => corComposta(corPorIdAtual[it.cor_id]?.nome))) throw new Error('Palmilha é de uma cor só — troque as cores compostas (com "/") por uma cor única.')
   return {
     prestador_id: cab.prestador_id || null, prestador: cab.prestador?.trim() || null,
     data: cab.data, previsao: cab.previsao || null, observacao: cab.observacao?.trim() || null,
@@ -79,4 +80,15 @@ export function agruparPalmilha(itens, corPorId, regra) {
     g.set(k, atual)
   })
   return [...g.values()]
+}
+
+export const corComposta = (nome) => String(nome || '').includes('/')
+
+// programação antiga com cor composta: ao corrigir, já troca pela cor única da palmilha (pela regra)
+export function corUnicaDoItem(item, cores, regra) {
+  const corPorId = Object.fromEntries(cores.map((c) => [c.id, c]))
+  const c = corPorId[item.cor_id]
+  if (!c || !corComposta(c.nome)) return item.cor_id || ''
+  const nome = corPalmilhaDoItem(item, corPorId, regra).nome.trim().toLowerCase()
+  return cores.find((x) => x.nome.trim().toLowerCase() === nome)?.id || ''
 }
