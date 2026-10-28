@@ -4,24 +4,39 @@ import SeletorGrade from './SeletorGrade.jsx'
 import ParceiroForm from './ParceiroForm.jsx'
 import { brl } from '../lib/format.js'
 import { CANAIS, enderecoCompleto } from '../lib/parceiros.js'
-import { criarPedido } from '../lib/pedidos.js'
+import { atualizarPedido, carregarItens, criarPedido } from '../lib/pedidos.js'
+import { numeroPedido } from '../lib/format.js'
 import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 
-export default function NovoPedido({ produtos, cores, parceiros, saldos, onFechar, onSalvo }) {
+// Serve para CRIAR (sem `pedido`) e para CORRIGIR um pedido aberto (com `pedido`)
+export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido, onFechar, onSalvo }) {
+  const editando = Boolean(pedido)
   const [novos, setNovos] = useState([]) // clientes cadastrados agora, dentro da venda
   const [cadastrar, setCadastrar] = useState(false)
   const clientes = useMemo(
     () => [...novos, ...parceiros].filter((p, i, a) => p.ativo && (p.tipos.includes('cliente') || p.tipos.includes('revendedora')) && a.findIndex((x) => x.id === p.id) === i),
     [parceiros, novos]
   )
-  const [f, setF] = useState({ parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento' })
-  const [outroEndereco, setOutroEndereco] = useState(false)
+  const [f, setF] = useState(() => (pedido
+    ? { parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status }
+    : { parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento' }))
+  const [outroEndereco, setOutroEndereco] = useState(Boolean(pedido?.endereco_entrega))
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const listaAtual = listas.find((l) => l.codigo === f.lista)
   const [itens, setItens] = useState([]) // { sku_id, sku, numero, quantidade, preco_unit, produto, cor }
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
+  // corrigindo: carrega os itens do pedido
+  useEffect(() => {
+    if (!pedido) return
+    const prodPorId = Object.fromEntries(produtos.map((p) => [p.id, p]))
+    const corPorId = Object.fromEntries(cores.map((c) => [c.id, c]))
+    carregarItens(pedido.id).then((lista) => setItens(lista.map((i) => ({
+      sku_id: i.sku_id, sku: i.skus.sku, numero: i.skus.numero, quantidade: i.quantidade, preco_unit: i.preco_unit,
+      produto: prodPorId[i.skus.produto_id], cor: corPorId[i.skus.cor_id],
+    })))).catch((e) => setErro(e.message))
+  }, [pedido?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k) => (e) => {
     const v = e.target.value
     let novo = { ...f, [k]: v }
@@ -64,6 +79,10 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
   function precoGrupo(chave, valor) {
     setItens(itens.map((i) => (`${i.produto.id}|${i.cor?.id}` === chave ? { ...i, preco_unit: valor } : i)))
   }
+  function mudarQtd(skuId, valor) {
+    const q = Number(String(valor).replace(/\D/g, '')) || 0
+    setItens(itens.map((i) => (i.sku_id === skuId ? { ...i, quantidade: q } : i)))
+  }
   function removerGrupo(chave) {
     setItens(itens.filter((i) => `${i.produto.id}|${i.cor?.id}` !== chave))
   }
@@ -74,10 +93,11 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
 
   async function salvar() {
     setErro('')
-    if (!itens.length) return setErro('Adicione pelo menos um modelo ao pedido.')
+    const validos = itens.filter((i) => i.quantidade > 0)
+    if (!validos.length) return setErro('Adicione pelo menos um modelo ao pedido.')
     setSalvando(true)
     try {
-      const ped = await criarPedido({ ...f, itens })
+      const ped = editando ? await atualizarPedido(pedido.id, { ...f, itens: validos }) : await criarPedido({ ...f, itens: validos })
       onSalvo(ped)
     } catch (e) {
       setErro(e.message)
@@ -90,8 +110,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
       <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div>
-            <div className="eyebrow">Pedidos</div>
-            <h2>Novo pedido</h2>
+            <div className="eyebrow">Pedidos{editando ? ` · ${numeroPedido(pedido.numero)}` : ''}</div>
+            <h2>{editando ? 'Corrigir pedido' : 'Novo pedido'}</h2>
           </div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
@@ -117,13 +137,13 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
             </select>
           </label>
           <label className="field"><span>Previsão de entrega</span><input type="date" value={f.previsao} onChange={set('previsao')} /></label>
-          <label className="field">
+          {(!editando || pedido.status === 'orcamento') && <label className="field">
             <span>Situação inicial</span>
             <select className="input" value={f.status} onChange={set('status')}>
               <option value="orcamento">Orçamento</option>
               <option value="aprovado">Aprovado</option>
             </select>
-          </label>
+          </label>}
           <label className="field"><span>Desconto (R$)</span><input type="number" step="0.01" min="0" value={f.desconto} onChange={set('desconto')} /></label>
         </div>
 
@@ -143,7 +163,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
                     <tr key={g.chave}>
                       <td><ProdutoCelula p={g.produto} cor={g.cor} linha2={<><i className="dot-cor" style={{ background: g.cor?.hex || '#ddd' }} />{g.cor?.nome}</>} /></td>
                       <td>
-                        <div className="grade-mini">{g.itens.map((i) => <span key={i.sku_id}><small>{i.numero}</small>{i.quantidade}</span>)}</div>
+                        <div className="grade-mini grade-edit">{g.itens.map((i) => <label key={i.sku_id}><small>{i.numero}</small><input inputMode="numeric" enterKeyHint="next" data-grade value={i.quantidade || ''} onChange={(e) => mudarQtd(i.sku_id, e.target.value)} aria-label={`Número ${i.numero}`} /></label>)}</div>
                         {falta > 0 && <span className="pill warn" style={{ marginTop: 6 }}>Faltam {falta} em estoque · produzir</span>}
                       </td>
                       <td className="r"><b>{qt}</b></td>
@@ -192,7 +212,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, onFecha
           </div>
           <div className="actions">
             <button type="button" className="btn" onClick={onFechar}>Cancelar</button>
-            <button type="button" className="btn btn-dark" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando…' : 'Salvar pedido'}</button>
+            <button type="button" className="btn btn-dark" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando…' : editando ? 'Salvar correção' : 'Salvar pedido'}</button>
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { listarFichaConsumo } from '../lib/compras.js'
 import { custosPorProduto, margemNaLista, pct, tomMargem } from '../lib/custos.js'
 import { brl } from '../lib/format.js'
 import { listarListas, precoNaLista } from '../lib/precos.js'
-import { listarProdutos } from '../lib/produtos.js'
+import { listarProdutos, salvarPrecosModelo } from '../lib/produtos.js'
 
 /*
   Tabela de preços para consulta: todos os modelos × todas as listas.
@@ -24,6 +24,7 @@ export default function TabelaPrecos() {
   const [tipo, setTipo] = useState('Todos')
   const [interno, setInterno] = useState(() => lerPref('precos.interno', false))
   const [inativos, setInativos] = useState(false)
+  const [corrigir, setCorrigir] = useState(null)
 
   useEffect(() => {
     Promise.all([listarProdutos(), listarListas(), listarFichaConsumo()])
@@ -92,7 +93,7 @@ export default function TabelaPrecos() {
               {visiveis.map((p) => {
                 const c = custos[p.id]
                 return (
-                  <tr key={p.id} style={p.status === 'inativo' ? { opacity: 0.5 } : undefined}>
+                  <tr key={p.id} className="clickable" title="Clique para corrigir o preço" onClick={() => setCorrigir(p)} style={p.status === 'inativo' ? { opacity: 0.5 } : undefined}>
                     <td>
                       <div className="prod-cell">
                         <FotoProduto p={p} size={40} />
@@ -119,9 +120,45 @@ export default function TabelaPrecos() {
         </div>
       </section>
       <p className="card-sub no-print" style={{ margin: 0 }}>
-        Preços calculados pelas regras de Configurações → Listas de preço{semPreco ? ` · ${semPreco} modelo(s) sem preço de atacado cadastrado` : ''}.
+        Clique num modelo para corrigir o preço. Preços calculados pelas regras de Configurações → Listas de preço{semPreco ? ` · ${semPreco} modelo(s) sem preço de atacado cadastrado` : ''}.
         {interno && ' Margem já descontando as despesas de cada lista (imposto, comissão, frete, perda…).'}
       </p>
+      {corrigir && <CorrigirPreco produto={corrigir} listas={listas} onFechar={() => setCorrigir(null)}
+        onSalvo={(novo) => { setProdutos((ps) => ps.map((x) => (x.id === corrigir.id ? { ...x, ...novo } : x))); setCorrigir(null) }} />}
     </>
+  )
+}
+
+function CorrigirPreco({ produto, listas, onFechar, onSalvo }) {
+  const [f, setF] = useState({ precoAtacado: produto.preco_atacado ?? '', precoVarejo: produto.preco_varejo ?? '' })
+  const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const n = (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.')))
+  const previa = { ...produto, preco_atacado: n(f.precoAtacado), preco_varejo: n(f.precoVarejo) }
+  async function salvar(e) {
+    e.preventDefault(); setErro(''); setSalvando(true)
+    try { await salvarPrecosModelo(produto.id, f); onSalvo({ preco_atacado: previa.preco_atacado, preco_varejo: previa.preco_varejo }) } catch (er) { setErro(er.message); setSalvando(false) }
+  }
+  return (
+    <div className="modal-bg" onClick={onFechar}>
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={salvar}>
+        <div className="modal-head">
+          <div className="prod-cell"><FotoProduto p={produto} size={48} /><div><div className="eyebrow">REF {produto.ref}</div><h2 style={{ margin: 0 }}>Corrigir preço</h2></div></div>
+          <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
+        </div>
+        <div className="form-grid">
+          <label className="field"><span>Preço atacado (R$)</span><input type="number" step="0.01" min="0" autoFocus value={f.precoAtacado} onChange={(e) => setF({ ...f, precoAtacado: e.target.value })} /></label>
+          <label className="field"><span>Preço varejo · FERALCCI (R$)</span><input type="number" step="0.01" min="0" value={f.precoVarejo} onChange={(e) => setF({ ...f, precoVarejo: e.target.value })} /></label>
+        </div>
+        <div className="grade-mini" style={{ margin: '4px 0 12px' }}>
+          {listas.map((l) => <span key={l.codigo} style={{ minWidth: 90 }}><small>{l.nome}</small>{brl(precoNaLista(previa, l))}</span>)}
+        </div>
+        {erro && <p className="form-error" role="alert">{erro}</p>}
+        <div className="actions" style={{ justifyContent: 'flex-end' }}>
+          <button type="button" className="btn" onClick={onFechar}>Cancelar</button>
+          <button type="submit" className="btn btn-dark" disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar preço'}</button>
+        </div>
+      </form>
+    </div>
   )
 }

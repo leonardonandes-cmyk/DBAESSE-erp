@@ -28,6 +28,7 @@ export default function Pedidos() {
   const [busca, setBusca] = useState('')
   const [novo, setNovo] = useState(false)
   const [aberto, setAberto] = useState(null)
+  const [corrigir, setCorrigir] = useState(null)
 
   async function carregar() {
     try {
@@ -140,7 +141,12 @@ export default function Pedidos() {
       )}
       {aberto && (
         <PedidoDetalhe pedido={aberto} produtos={produtos} cores={cores} parceiros={parceiros}
-          onFechar={() => setAberto(null)} onMudou={depoisDeMudar} />
+          onFechar={() => setAberto(null)} onMudou={depoisDeMudar} onCorrigir={() => setCorrigir(aberto)} />
+      )}
+      {corrigir && (
+        <NovoPedido pedido={corrigir} produtos={produtos} cores={cores} parceiros={parceiros} saldos={saldos}
+          onFechar={() => setCorrigir(null)}
+          onSalvo={async () => { const id = corrigir.id; setCorrigir(null); const lista = await carregar(); setAberto(lista?.find((p) => p.id === id) || null) }} />
       )}
     </>
   )

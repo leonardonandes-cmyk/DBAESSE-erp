@@ -4,12 +4,13 @@ import Icon from './Icon.jsx'
 import { dataBR, hojeISO, inteiro } from '../lib/format.js'
 import { listarParceiros } from '../lib/parceiros.js'
 import { supabase } from '../lib/supabase.js'
-import { NUMEROS_PALMILHA, STATUS_PALMILHA, TIPOS_PALMILHA, criarProgPalmilha, listarProgPalmilha, mudarStatusPalmilha, numeroPalmilha, totalItem, totalProg } from '../lib/palmilhas.js'
+import { NUMEROS_PALMILHA, STATUS_PALMILHA, TIPOS_PALMILHA, atualizarProgPalmilha, criarProgPalmilha, excluirProgPalmilha, listarProgPalmilha, mudarStatusPalmilha, numeroPalmilha, totalItem, totalProg } from '../lib/palmilhas.js'
 
 /* Programação de PALMILHA para estoque: relação para o prestador (tipo · cor × grade + materiais que vão junto) */
 export default function ProgPalmilhas({ cores }) {
   const [lista, setLista] = useState(null)
   const [nova, setNova] = useState(false)
+  const [editar, setEditar] = useState(null)
   const [imprimir, setImprimir] = useState(null)
   const [erro, setErro] = useState('')
   async function carregar() { try { setLista(await listarProgPalmilha()) } catch (e) { setErro(e.message) } }
@@ -18,6 +19,10 @@ export default function ProgPalmilhas({ cores }) {
 
   async function status(p, s) {
     try { await mudarStatusPalmilha(p.id, s); await carregar() } catch (e) { setErro(e.message) }
+  }
+  async function excluir(p) {
+    if (!window.confirm(`Excluir a ${numeroPalmilha(p.numero)} (${p.prestador || 'sem prestador'})? Não dá para desfazer.`)) return
+    try { await excluirProgPalmilha(p.id); await carregar() } catch (e) { setErro(e.message) }
   }
 
   return (
@@ -43,7 +48,7 @@ export default function ProgPalmilhas({ cores }) {
               </header>
               <div className="palm-card-tipos">
                 {tipos.map((t) => <span key={t}>{t.replace('PALMILHA ', '')}</span>)}
-                <span className="palm-card-cores">{p.itens.map((i, k) => <i key={k} title={corPorId[i.cor_id]?.nome} style={{ background: corPorId[i.cor_id]?.hex || '#ddd' }} />)}</span>
+                {p.itens.map((i, k) => <em key={k} className="palm-card-cor"><i style={{ background: corPorId[i.cor_id]?.hex || '#ddd' }} />{corPorId[i.cor_id]?.nome || 'sem cor'} · {totalItem(i)}</em>)}
               </div>
               <div className="mapa-card-dados">
                 <span><small>Data</small>{dataBR(p.data)}</span>
@@ -53,12 +58,15 @@ export default function ProgPalmilhas({ cores }) {
                 <button className="btn btn-sm btn-dark" onClick={() => setImprimir(p)}>Imprimir relação</button>
                 {(p.status || 'aberta') === 'aberta' && <button className="btn btn-sm" onClick={() => status(p, 'recebida')}>Marcar recebida</button>}
                 {p.status === 'recebida' && <button className="btn btn-sm" onClick={() => status(p, 'aberta')}>Desfazer</button>}
+                <button className="btn btn-sm" onClick={() => setEditar(p)}>Corrigir</button>
+                {(p.status || 'aberta') === 'aberta' && <button className="link-btn link-perigo" onClick={() => excluir(p)}>Excluir</button>}
               </div>
             </article>
           )
         })}
       </div>
       {nova && <NovaProgPalmilha cores={cores} onFechar={() => setNova(false)} onSalvo={async (r) => { setNova(false); const l = await listarProgPalmilha(); setLista(l); const p = l.find((x) => x.id === r.id); if (p) setImprimir(p) }} />}
+      {editar && <NovaProgPalmilha cores={cores} prog={editar} onFechar={() => setEditar(null)} onSalvo={async (r) => { setEditar(null); const l = await listarProgPalmilha(); setLista(l); const p = l.find((x) => x.id === r.id); if (p) setImprimir(p) }} />}
       {imprimir && <ImprimirPalmilha prog={imprimir} corPorId={corPorId} onFechar={() => setImprimir(null)} />}
     </>
   )
@@ -66,10 +74,19 @@ export default function ProgPalmilhas({ cores }) {
 
 const novaLinha = (tipo = TIPOS_PALMILHA[1]) => ({ k: Math.random().toString(36).slice(2), tipo, cor_id: '', obs: '', grade: {} })
 
-function NovaProgPalmilha({ cores, onFechar, onSalvo }) {
-  const [cab, setCab] = useState({ prestador: '', data: hojeISO(), previsao: '', observacao: '' })
-  const [linhas, setLinhas] = useState([novaLinha()])
-  const [insumos, setInsumos] = useState([{ descricao: '', quantidade: '' }, { descricao: '', quantidade: '' }, { descricao: '', quantidade: '' }])
+function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
+  const editando = Boolean(prog)
+  const [cab, setCab] = useState(() => (prog
+    ? { prestador: prog.prestador || '', data: prog.data || hojeISO(), previsao: prog.previsao || '', observacao: prog.observacao || '' }
+    : { prestador: '', data: hojeISO(), previsao: '', observacao: '' }))
+  const [linhas, setLinhas] = useState(() => (prog?.itens?.length
+    ? prog.itens.map((it) => ({ ...novaLinha(it.tipo), cor_id: it.cor_id || '', obs: it.obs || '', grade: Object.fromEntries(Object.entries(it.grade || {}).map(([n, q]) => [n, String(q)])) }))
+    : [novaLinha()]))
+  const [insumos, setInsumos] = useState(() => {
+    const base = (prog?.insumos || []).map((i) => ({ descricao: i.descricao || '', quantidade: i.quantidade || '' }))
+    while (base.length < 3) base.push({ descricao: '', quantidade: '' })
+    return base
+  })
   const [parceiros, setParceiros] = useState([])
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -82,7 +99,8 @@ function NovaProgPalmilha({ cores, onFechar, onSalvo }) {
     setErro(''); setSalvando(true)
     try {
       const p = parceiros.find((x) => x.nome.toLowerCase() === cab.prestador.trim().toLowerCase())
-      onSalvo(await criarProgPalmilha({ cab: { ...cab, prestador_id: p?.id }, itens: linhas, insumos }))
+      const dados = { cab: { ...cab, prestador_id: p?.id || (editando && cab.prestador === prog.prestador ? prog.prestador_id : null) }, itens: linhas, insumos }
+      onSalvo(editando ? await atualizarProgPalmilha(prog.id, dados) : await criarProgPalmilha(dados))
     } catch (e) { setErro(e.message); setSalvando(false) }
   }
 
@@ -90,7 +108,7 @@ function NovaProgPalmilha({ cores, onFechar, onSalvo }) {
     <div className="modal-bg" onClick={onFechar}>
       <div className="modal modal-xl" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <div><div className="eyebrow">Produção · palmilha para estoque</div><h2>Nova programação de palmilha</h2></div>
+          <div><div className="eyebrow">Produção · palmilha para estoque{editando ? ` · ${numeroPalmilha(prog.numero)}` : ''}</div><h2>{editando ? 'Corrigir programação de palmilha' : 'Nova programação de palmilha'}</h2></div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
         <div className="mapa-cab palm-cab">
@@ -152,7 +170,7 @@ function NovaProgPalmilha({ cores, onFechar, onSalvo }) {
           <span><b>{linhas.filter((l) => totalItem(l) > 0).length}</b> linhas · <b>{inteiro(total)}</b> pares de palmilha</span>
           <span className="actions">
             <button type="button" className="btn" onClick={onFechar}>Cancelar</button>
-            <button type="button" className="btn btn-dark" data-grade-ok disabled={salvando || !total} onClick={salvar}>{salvando ? 'Salvando…' : 'Salvar e imprimir relação'}</button>
+            <button type="button" className="btn btn-dark" data-grade-ok disabled={salvando || !total} onClick={salvar}>{salvando ? 'Salvando…' : editando ? 'Salvar correção e imprimir' : 'Salvar e imprimir relação'}</button>
           </span>
         </div>
       </div>

@@ -60,6 +60,32 @@ export async function criarPedido({ parceiro_id, canal, lista, previsao, observa
   return ped
 }
 
+// Corrigir um pedido ainda aberto: cabeçalho + itens (grade, preço, cliente, lista).
+// Mantém o que já foi separado no app (até a nova quantidade).
+export async function atualizarPedido(pedidoId, { parceiro_id, canal, lista, previsao, observacoes, endereco_entrega, desconto, status, itens }) {
+  if (!itens.length) throw new Error('O pedido precisa ter pelo menos um item.')
+  const { data: atual, error: e0 } = await supabase.from('pedidos').select('status,estoque_baixado').eq('id', pedidoId).single()
+  if (e0) throw e0
+  if (atual.estoque_baixado || ['faturado', 'entregue', 'cancelado'].includes(atual.status)) throw new Error('Pedido faturado, entregue ou cancelado não pode ser corrigido.')
+  const { data: antigos, error: e1 } = await supabase.from('pedido_itens').select('sku_id,quantidade,preco_unit,separado').eq('pedido_id', pedidoId)
+  if (e1) throw e1
+  const sep = Object.fromEntries(antigos.map((i) => [i.sku_id, Number(i.separado) || 0]))
+  const campos = { parceiro_id: parceiro_id || null, canal, lista: lista || null, previsao: previsao || null, observacoes: observacoes || null, endereco_entrega: endereco_entrega?.trim() || null, desconto: Number(desconto) || 0 }
+  if (status && atual.status === 'orcamento') campos.status = status
+  const { error: e2 } = await supabase.from('pedidos').update(campos).eq('id', pedidoId)
+  if (e2) throw e2
+  const { error: e3 } = await supabase.from('pedido_itens').delete().eq('pedido_id', pedidoId)
+  if (e3) throw e3
+  const novos = itens.filter((i) => Number(i.quantidade) > 0).map((i) => ({ pedido_id: pedidoId, sku_id: i.sku_id, quantidade: Number(i.quantidade), preco_unit: Number(i.preco_unit) || 0, separado: Math.min(sep[i.sku_id] || 0, Number(i.quantidade)) }))
+  const { error: e4 } = await supabase.from('pedido_itens').insert(novos)
+  if (e4) {
+    // devolve como estava
+    await supabase.from('pedido_itens').insert(antigos.map((i) => ({ ...i, pedido_id: pedidoId })))
+    throw e4
+  }
+  return { id: pedidoId }
+}
+
 export async function mudarStatus(pedidoId, status) {
   if (status === 'faturado') {
     const { error } = await supabase.rpc('faturar_pedido', { p_pedido: pedidoId })

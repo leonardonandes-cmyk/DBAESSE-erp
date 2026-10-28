@@ -17,19 +17,35 @@ export async function listarProgPalmilha() {
   return data
 }
 
-export async function criarProgPalmilha({ cab, itens, insumos }) {
+function montarLinha({ cab, itens, insumos }) {
   const limpos = itens
     .map((it) => ({ tipo: it.tipo, cor_id: it.cor_id, obs: (it.obs || '').trim(), grade: Object.fromEntries(Object.entries(it.grade).filter(([, q]) => Number(q) > 0).map(([n, q]) => [n, Number(q)])) }))
     .filter((it) => totalItem(it) > 0)
   if (!limpos.length) throw new Error('Digite a grade de pelo menos uma palmilha.')
   if (limpos.some((it) => !it.cor_id)) throw new Error('Escolha a cor de todas as linhas com quantidade.')
-  const { data, error } = await supabase.from('programacoes_palmilha').insert({
+  return {
     prestador_id: cab.prestador_id || null, prestador: cab.prestador?.trim() || null,
     data: cab.data, previsao: cab.previsao || null, observacao: cab.observacao?.trim() || null,
     itens: limpos, insumos: insumos.filter((i) => i.descricao?.trim()).map((i) => ({ descricao: i.descricao.trim(), quantidade: (i.quantidade || '').trim() })),
-  }).select('id,numero').single()
+  }
+}
+
+export async function criarProgPalmilha(dados) {
+  const { data, error } = await supabase.from('programacoes_palmilha').insert(montarLinha(dados)).select('id,numero').single()
   if (error) throw error
   return data
+}
+
+// Corrigir uma programação já salva (mantém o número PL-0001)
+export async function atualizarProgPalmilha(id, dados) {
+  const { error } = await supabase.from('programacoes_palmilha').update(montarLinha(dados)).eq('id', id)
+  if (error) throw error
+  return { id }
+}
+
+export async function excluirProgPalmilha(id) {
+  const { error } = await supabase.from('programacoes_palmilha').delete().eq('id', id)
+  if (error) throw error
 }
 
 export async function mudarStatusPalmilha(id, status) {

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { FotoProduto } from './FotoProduto.jsx'
-import { criarMapa } from '../lib/mapas.js'
+import { atualizarMapa, criarMapa, numeroMapa, opTravada } from '../lib/mapas.js'
+import { STATUS_OP, numeroOP } from '../lib/producao.js'
 import { hojeISO, inteiro } from '../lib/format.js'
 
 /*
@@ -10,9 +11,27 @@ import { hojeISO, inteiro } from '../lib/format.js'
 */
 const novaCor = () => ({ k: Math.random().toString(36).slice(2), cor_id: '', grade: {} })
 
-export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, onSalvo }) {
-  const [cab, setCab] = useState({ pedido: '', cliente: '', parceiro_id: '', marca: 'SEM LOGO', data: hojeISO(), previsao: '', prioridade: 'normal', observacao: '' })
-  const [blocos, setBlocos] = useState([])
+// Serve para CRIAR (sem `mapa`) e para CORRIGIR uma programação salva (com `mapa` + `ops` dele)
+export default function NovoMapa({ produtos, cores, parceiros = [], mapa, ops = [], onFechar, onSalvo }) {
+  const editando = Boolean(mapa)
+  const opsMapa = useMemo(() => ops.filter((o) => o.status !== 'cancelada'), [ops])
+  const [cab, setCab] = useState(() => (mapa
+    ? { pedido: mapa.pedido || '', cliente: mapa.cliente || '', parceiro_id: mapa.parceiro_id || '', marca: mapa.marca || '', data: mapa.data || hojeISO(), previsao: mapa.previsao || '', prioridade: opsMapa[0]?.prioridade || 'normal', observacao: mapa.observacao || '' }
+    : { pedido: '', cliente: '', parceiro_id: '', marca: 'SEM LOGO', data: hojeISO(), previsao: '', prioridade: 'normal', observacao: '' }))
+  const [blocos, setBlocos] = useState(() => {
+    if (!mapa) return []
+    const porProd = new Map()
+    ;[...opsMapa].sort((a, b) => a.numero - b.numero).forEach((o) => {
+      const p = produtos.find((x) => x.id === o.produto_id)
+      if (!p) return
+      if (!porProd.has(p.id)) porProd.set(p.id, { k: Math.random().toString(36).slice(2), produto: p, obs: o.observacao || '', cores: [] })
+      porProd.get(p.id).cores.push({
+        k: o.id, op_id: o.id, numero: o.numero, status: o.status, travada: opTravada(o), cor_id: o.cor_id,
+        grade: Object.fromEntries((o.op_itens || []).map((i) => [i.skus.numero, String(i.quantidade)])),
+      })
+    })
+    return [...porProd.values()]
+  })
   const [escolha, setEscolha] = useState('')
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -39,7 +58,8 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
     setErro(''); setSalvando(true)
     try {
       const cli = clientes.find((c) => c.nome.toLowerCase() === cab.cliente.trim().toLowerCase())
-      const r = await criarMapa({ cab: { ...cab, parceiro_id: cli?.id || null }, blocos })
+      const cabF = { ...cab, parceiro_id: cli?.id || (editando && cab.cliente === mapa.cliente ? mapa.parceiro_id : null) }
+      const r = editando ? await atualizarMapa({ mapa, opsAtuais: opsMapa, cab: cabF, blocos }) : await criarMapa({ cab: cabF, blocos })
       onSalvo(r)
     } catch (e) { setErro(e.message); setSalvando(false) }
   }
@@ -48,10 +68,11 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
     <div className="modal-bg" onClick={onFechar}>
       <div className="modal modal-xl" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <div><div className="eyebrow">Produção · programação</div><h2>Nova programação</h2></div>
+          <div><div className="eyebrow">Produção · programação{editando ? ` · ${numeroMapa(mapa.numero)}` : ''}</div><h2>{editando ? 'Corrigir programação' : 'Nova programação'}</h2></div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
 
+        {editando && opsMapa.some(opTravada) && <p className="aviso-leve" style={{ margin: 0 }}>As cores que <b>já entraram em produção</b> ficam travadas (cinza). Dá para corrigir o cabeçalho, as cores ainda não iniciadas e acrescentar cores/referências novas.</p>}
         <div className="mapa-cab">
           <label className="field"><span>Pedido / código</span><input value={cab.pedido} onChange={setC('pedido')} placeholder="PE82" /></label>
           <label className="field"><span>Cliente</span><input list="mapa-clientes" value={cab.cliente} onChange={setC('cliente')} placeholder="PRONTA ENTREGA" /></label>
@@ -77,30 +98,31 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
                   <label className="mapa-obs"><span>OBS</span><input value={b.obs} onChange={(e) => mudarBloco(i, (x) => ({ ...x, obs: e.target.value }))} placeholder="Ex.: SALTO BLOCO · SOLA CRAVINHO · GOTA NA COR" /></label>
                 </div>
                 <div className="mapa-bloco-tot"><small>Pares</small><b>{inteiro(totalBloco(b))}</b></div>
-                <button type="button" className="btn btn-sm icon-btn" aria-label="Tirar referência" onClick={() => setBlocos((bs) => bs.filter((_, j) => j !== i))}>✕</button>
+                {!b.cores.some((c) => c.travada) && <button type="button" className="btn btn-sm icon-btn" aria-label="Tirar referência" onClick={() => setBlocos((bs) => bs.filter((_, j) => j !== i))}>✕</button>}
               </header>
               <div className="table-wrap">
                 <table className="mapa-grade">
                   <thead><tr><th>Cor</th>{nums.map((n) => <th key={n} className="c">{n}</th>)}<th className="r">Total</th><th /></tr></thead>
                   <tbody>
                     {b.cores.map((c, ci) => (
-                      <tr key={c.k}>
+                      <tr key={c.k} className={c.travada ? 'mapa-linha-travada' : undefined}>
                         <td>
-                          <select className="input input-sm mapa-cor" value={c.cor_id} onChange={(e) => mudarBloco(i, (x) => ({ ...x, cores: x.cores.map((y) => (y.k === c.k ? { ...y, cor_id: e.target.value } : y)) }))} aria-label="Cor">
+                          {c.travada ? <span><b>{corPorId[c.cor_id]?.nome}</b><br /><span className="pill warn">{numeroOP(c.numero)} · {STATUS_OP[c.status]?.label} — travada</span></span> : <select className="input input-sm mapa-cor" value={c.cor_id} onChange={(e) => mudarBloco(i, (x) => ({ ...x, cores: x.cores.map((y) => (y.k === c.k ? { ...y, cor_id: e.target.value } : y)) }))} aria-label="Cor">
                             <option value="">Escolha a cor…</option>
                             {cs.map((co) => <option key={co.id} value={co.id}>{co.nome}</option>)}
-                          </select>
+                          </select>}
+                          {c.op_id && !c.travada && <small className="faint" style={{ display: 'block' }}>{numeroOP(c.numero)}</small>}
                         </td>
                         {nums.map((n) => (
                           <td key={n} className="c">
-                            <input className="input input-sm mapa-q" inputMode="numeric" enterKeyHint="next" data-grade value={c.grade[n] ?? ''} aria-label={`Número ${n}`}
+                            <input className="input input-sm mapa-q" inputMode="numeric" enterKeyHint="next" data-grade value={c.grade[n] ?? ''} aria-label={`Número ${n}`} disabled={c.travada}
                               onChange={(e) => mudarBloco(i, (x) => ({ ...x, cores: x.cores.map((y) => (y.k === c.k ? { ...y, grade: { ...y.grade, [n]: e.target.value.replace(/\D/g, '') } } : y)) }))} />
                           </td>
                         ))}
                         <td className="r"><b>{inteiro(totalLinha(c))}</b></td>
                         <td className="r mapa-acoes">
-                          {ci > 0 && <button type="button" className="link-btn" title="Copiar a grade da linha de cima" onClick={() => mudarBloco(i, (x) => ({ ...x, cores: x.cores.map((y, yi) => (yi === ci ? { ...y, grade: { ...x.cores[ci - 1].grade } } : y)) }))}>↑ grade</button>}
-                          <button type="button" className="link-btn" onClick={() => mudarBloco(i, (x) => ({ ...x, cores: x.cores.filter((y) => y.k !== c.k) }))}>tirar</button>
+                          {ci > 0 && !c.travada && <button type="button" className="link-btn" title="Copiar a grade da linha de cima" onClick={() => mudarBloco(i, (x) => ({ ...x, cores: x.cores.map((y, yi) => (yi === ci ? { ...y, grade: { ...x.cores[ci - 1].grade } } : y)) }))}>↑ grade</button>}
+                          {!c.travada && <button type="button" className="link-btn" onClick={() => mudarBloco(i, (x) => ({ ...x, cores: x.cores.filter((y) => y.k !== c.k) }))}>tirar</button>}
                         </td>
                       </tr>
                     ))}
@@ -127,7 +149,7 @@ export default function NovoMapa({ produtos, cores, parceiros = [], onFechar, on
           <span><b>{blocos.length}</b> referências · <b>{inteiro(totalGeral)}</b> pares · <b>{blocos.reduce((t, b) => t + b.cores.filter((c) => totalLinha(c) > 0).length, 0)}</b> OPs (uma por cor)</span>
           <span className="actions">
             <button type="button" className="btn" onClick={onFechar}>Cancelar</button>
-            <button type="button" className="btn btn-dark" disabled={salvando || !totalGeral} onClick={salvar}>{salvando ? 'Criando as OPs…' : 'Salvar programação e criar OPs'}</button>
+            <button type="button" className="btn btn-dark" disabled={salvando || !totalGeral} onClick={salvar}>{salvando ? 'Salvando…' : editando ? 'Salvar correção' : 'Salvar programação e criar OPs'}</button>
           </span>
         </div>
       </div>

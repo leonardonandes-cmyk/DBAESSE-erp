@@ -29,6 +29,7 @@ const CEL = { concluida: { cls: 'ok', txt: 'OK' }, em_curso: { cls: 'cur', txt: 
 
 export default function Producao({ visao = 'quadro' }) {
   const [novaProg, setNovaProg] = useState(false)
+  const [corrigirProg, setCorrigirProg] = useState(null) // { mapa, ops }
   const [parceirosProg, setParceirosProg] = useState(null)
   const [imprimirProg, setImprimirProg] = useState(null)
   const [versaoMapas, setVersaoMapas] = useState(0)
@@ -99,6 +100,8 @@ export default function Producao({ visao = 'quadro' }) {
     <>
       {novaProg && <NovoMapa produtos={produtos} cores={cores} parceiros={parceirosProg || []} onFechar={() => setNovaProg(false)}
         onSalvo={async (r) => { setNovaProg(false); await carregar(); setVersaoMapas((v) => v + 1); const m = (await listarMapas()).find((x) => x.id === r.id); if (m) setImprimirProg(m) }} />}
+      {corrigirProg && <NovoMapa produtos={produtos} cores={cores} parceiros={parceirosProg || []} mapa={corrigirProg.mapa} ops={corrigirProg.ops} onFechar={() => setCorrigirProg(null)}
+        onSalvo={async (r) => { setCorrigirProg(null); await carregar(); setVersaoMapas((v) => v + 1); const m = (await listarMapas()).find((x) => x.id === r.id); if (m) setImprimirProg(m) }} />}
       {imprimirProg && <ImprimirMapa mapa={imprimirProg} inicial="tudo" ops={ops.filter((o) => o.programacao_id === imprimirProg.id)} cores={cores} onFechar={() => setImprimirProg(null)} />}
       <header className="page-head">
         <div>
@@ -123,7 +126,8 @@ export default function Producao({ visao = 'quadro' }) {
       </div>
 
       {visao === 'palmilhas' ? <ProgPalmilhas cores={cores} />
-        : visao === 'mapas' ? <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} />
+        : visao === 'mapas' ? <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} onMudou={carregar}
+          onCorrigir={async (mapa, os) => { if (!parceirosProg) setParceirosProg(await listarParceiros().catch(() => [])); setCorrigirProg({ mapa, ops: os }) }} />
         : visao === 'pcp' ? <Programacao ops={ops} setores={setores} onAbrir={setAberta} onMudou={carregar} /> : <>
       <section className="grid-kpi">
         <div className="card kpi"><span className="kpi-label">Ordens em aberto</span><span className="kpi-value">{inteiro(abertas.length)}</span></div>

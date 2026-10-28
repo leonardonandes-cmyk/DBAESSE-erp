@@ -102,3 +102,9 @@ export function desenhoDoTipo(tipo) {
   return DESENHOS.includes(slug) ? `/desenhos/${slug}.png` : null
 }
 const DESENHOS = ['mocassim', 'fisherman']
+
+// Correção rápida de preço (Tabela de preços) — as outras listas recalculam sozinhas
+export async function salvarPrecosModelo(id, { precoAtacado, precoVarejo }) {
+  const { error } = await supabase.from('produtos').update({ preco_atacado: preco(precoAtacado), preco_varejo: preco(precoVarejo) }).eq('id', id)
+  if (error) throw error
+}

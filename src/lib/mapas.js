@@ -55,6 +55,68 @@ export async function criarMapa({ cab, blocos }) {
   return { ...mapa, ops: criadas.length }
 }
 
+// OP que já começou (saiu do setor inicial ou não está mais aberta) fica travada na correção
+export const opTravada = (o) => o.status !== 'aberta' || (o.op_etapas || []).some((e) => e.status !== 'pendente')
+
+/*
+  Corrigir uma programação salva: cabeçalho + cores/grades.
+  OP que ainda não começou: muda cor/grade/OBS ou sai do mapa. Cor nova vira OP nova.
+  OP que já começou fica como está (só recebe a nova previsão).
+*/
+export async function atualizarMapa({ mapa, opsAtuais, cab, blocos }) {
+  const linhas = blocos.flatMap((b) => b.cores.map((c) => ({ b, c })))
+  const preenchidas = linhas.filter(({ c }) => Object.values(c.grade).some((q) => Number(q) > 0))
+  if (!preenchidas.length) throw new Error('Preencha a grade de pelo menos uma cor.')
+  const semCor = preenchidas.find(({ c }) => !c.cor_id && !c.travada)
+  if (semCor) throw new Error(`Escolha a cor de todas as linhas preenchidas (ref. ${semCor.b.produto.ref}).`)
+
+  const { error } = await supabase.from('programacoes').update({
+    pedido: cab.pedido?.trim() || null, parceiro_id: cab.parceiro_id || null, cliente: cab.cliente?.trim() || null,
+    marca: cab.marca?.trim() || null, data: cab.data || undefined, previsao: cab.previsao || null, observacao: cab.observacao?.trim() || null,
+  }).eq('id', mapa.id)
+  if (error) throw error
+
+  const ficam = new Set(linhas.filter(({ c }) => c.op_id).map(({ c }) => c.op_id))
+  // OPs livres que saíram do mapa (linha tirada ou zerada)
+  const sair = opsAtuais.filter((o) => !opTravada(o) && (!ficam.has(o.id) || linhas.some(({ c }) => c.op_id === o.id && !Object.values(c.grade).some((q) => Number(q) > 0))))
+  if (sair.length) {
+    const { error: e } = await supabase.from('ordens_producao').delete().in('id', sair.map((o) => o.id))
+    if (e) throw e
+  }
+  const saiu = new Set(sair.map((o) => o.id))
+
+  for (const { b, c } of preenchidas) {
+    if (c.travada) continue
+    const itens = b.produto.skus.filter((s) => s.cor_id === c.cor_id && Number(c.grade[s.numero]) > 0).map((s) => ({ sku_id: s.id, quantidade: Number(c.grade[s.numero]) }))
+    if (c.op_id && !saiu.has(c.op_id)) {
+      const { error: e1 } = await supabase.from('ordens_producao').update({ cor_id: c.cor_id, prazo: cab.previsao || null, prioridade: cab.prioridade || 'normal', observacao: b.obs || null }).eq('id', c.op_id)
+      if (e1) throw e1
+      const { error: e2 } = await supabase.from('op_itens').delete().eq('op_id', c.op_id)
+      if (e2) throw e2
+      const { error: e3 } = await supabase.from('op_itens').insert(itens.map((i) => ({ ...i, op_id: c.op_id })))
+      if (e3) throw e3
+    } else {
+      await criarOP({ produto_id: b.produto.id, cor_id: c.cor_id, prazo: cab.previsao, prioridade: cab.prioridade, observacao: b.obs, itens, programacao_id: mapa.id })
+    }
+  }
+  // OPs já em produção: só acompanham a nova previsão
+  const travadas = opsAtuais.filter((o) => opTravada(o) && OP_EM_ABERTO.includes(o.status)).map((o) => o.id)
+  if (travadas.length) await supabase.from('ordens_producao').update({ prazo: cab.previsao || null }).in('id', travadas)
+  return { id: mapa.id }
+}
+const OP_EM_ABERTO = ['aberta', 'em_producao']
+
+// Excluir a programação inteira — só se nenhuma OP começou
+export async function excluirMapa(mapa, opsAtuais) {
+  if (opsAtuais.filter((o) => o.status !== 'cancelada').some(opTravada)) throw new Error('Esta programação já tem ficha em produção — corrija as cores livres ou cancele as OPs no quadro.')
+  if (opsAtuais.length) {
+    const { error } = await supabase.from('ordens_producao').delete().in('id', opsAtuais.map((o) => o.id))
+    if (error) throw error
+  }
+  const { error } = await supabase.from('programacoes').delete().eq('id', mapa.id)
+  if (error) throw error
+}
+
 // situação do mapa para os avisos: finalizado · em produção · vence logo · ATRASADO
 export function situacaoMapa(mapa, ops) {
   const ativas = ops.filter((o) => o.programacao_id === mapa.id && o.status !== 'cancelada')

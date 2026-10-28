@@ -3,11 +3,11 @@ import { FotoProduto } from './FotoProduto.jsx'
 import ImprimirMapa from './ImprimirMapa.jsx'
 import Icon from './Icon.jsx'
 import { dataBR, inteiro } from '../lib/format.js'
-import { listarMapas, numeroMapa, situacaoMapa } from '../lib/mapas.js'
+import { excluirMapa, listarMapas, numeroMapa, opTravada, situacaoMapa } from '../lib/mapas.js'
 import { OP_ABERTAS, paresOP } from '../lib/producao.js'
 
 /* Mapas de programação: lista, novo mapa e impressão (mapa geral · fichas por cor · palmilha) */
-export default function MapasLista({ ops, cores, versao, onNovo }) {
+export default function MapasLista({ ops, cores, versao, onNovo, onCorrigir, onMudou }) {
   const [mapas, setMapas] = useState(null)
   const [imprimir, setImprimir] = useState(null) // { mapa, aba }
   const [erro, setErro] = useState('')
@@ -18,6 +18,12 @@ export default function MapasLista({ ops, cores, versao, onNovo }) {
   useEffect(() => { carregar() }, [versao])
 
   const opsDo = (m) => ops.filter((o) => o.programacao_id === m.id)
+
+  async function excluir(m) {
+    if (!window.confirm(`Excluir a programação ${numeroMapa(m.numero)} e as OPs dela? Não dá para desfazer.`)) return
+    setErro('')
+    try { await excluirMapa(m, opsDo(m)); await carregar(); onMudou?.() } catch (e) { setErro(e.message) }
+  }
 
   return (
     <>
@@ -66,6 +72,8 @@ export default function MapasLista({ ops, cores, versao, onNovo }) {
                 <button className="btn btn-sm" onClick={() => setImprimir({ mapa: m, aba: 'fichas' })}>Fichas por cor</button>
                 <button className="btn btn-sm" onClick={() => setImprimir({ mapa: m, aba: 'palmilha' })}>Palmilha</button>
                 <button className="btn btn-sm btn-dark" onClick={() => setImprimir({ mapa: m, aba: 'tudo' })}>Imprimir tudo</button>
+                {onCorrigir && <button className="btn btn-sm" onClick={() => onCorrigir(m, os)}>Corrigir</button>}
+                {!os.filter((o) => o.status !== 'cancelada').some(opTravada) && <button className="link-btn link-perigo" onClick={() => excluir(m)}>Excluir</button>}
               </div>
             </article>
           )

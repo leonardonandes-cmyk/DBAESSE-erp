@@ -6,7 +6,7 @@ import { brl, dataBR, hojeISO, numeroPedido } from '../lib/format.js'
 import { enderecoCompleto } from '../lib/parceiros.js'
 import { FLUXO, STATUS_PEDIDO, atrasado, carregarItens, mudarStatus, salvarDadosPedido, totaisPedido } from '../lib/pedidos.js'
 
-export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou }) {
+export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou, onCorrigir }) {
   const [itens, setItens] = useState(null)
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -153,6 +153,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
             <button type="button" className="btn" onClick={copiarResumo}>{copiado ? 'Copiado ✓' : 'Copiar p/ WhatsApp'}</button>
             {editando
               ? <button type="button" className="btn" disabled={ocupado} onClick={salvarDados}>Salvar dados</button>
+              : !fechado && !pedido.estoque_baixado && onCorrigir ? <button type="button" className="btn" onClick={onCorrigir}>Corrigir pedido</button>
               : !fechado && <button type="button" className="btn" onClick={() => setEditando(true)}>Editar dados</button>}
             {pedido.status !== 'cancelado' && pedido.status !== 'entregue' && (
               <button type="button" className="btn btn-perigo" disabled={ocupado}
