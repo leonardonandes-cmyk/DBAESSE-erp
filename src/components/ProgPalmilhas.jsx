@@ -226,6 +226,24 @@ function ImprimirPalmilha({ prog, corPorId, regra, onFechar }) {
             </table>
           </header>
 
+          <section className="pr-palm-mat">
+            <b>Materiais entregues ao prestador</b>
+            <table className="pr-tab">
+              <thead><tr><th style={{ textAlign: 'left' }}>Material</th><th>Quantidade</th><th>Conferido</th></tr></thead>
+              <tbody>
+                {[...(prog.insumos || []), ...Array.from({ length: Math.max(0, 4 - (prog.insumos || []).length) }, () => ({ descricao: '', quantidade: '' }))].map((m, i) => (
+                  <tr key={i}><td style={{ textAlign: 'left' }}>{m.descricao || ' '}</td><td>{m.quantidade}</td><td>☐</td></tr>
+                ))}
+              </tbody>
+            </table>
+            {prog.observacao && <p className="pr-tira-obs">{prog.observacao}</p>}
+          </section>
+
+          <div className="pr-palm-receb"><span>Data de entrega: ____/____/______</span><span>Data de recebimento: ____/____/______</span></div>
+          <div className="pr-assin"><span>Entregue por (DBAESSE)</span><span>Recebido por (prestador)</span></div>
+
+          <div className="pr-palm-sep"><b>Palmilhas a produzir</b></div>
+
           {tipos.map((tipo) => grupos.filter((i) => i.tipo === tipo).map((it, k) => {
             const c = it.cor; const hex = c?.hex || '#FFFFFF'
             return (
@@ -242,22 +260,6 @@ function ImprimirPalmilha({ prog, corPorId, regra, onFechar }) {
               </article>
             )
           }))}
-
-          <section className="pr-palm-mat">
-            <b>Materiais entregues ao prestador</b>
-            <table className="pr-tab">
-              <thead><tr><th style={{ textAlign: 'left' }}>Material</th><th>Quantidade</th><th>Conferido</th></tr></thead>
-              <tbody>
-                {[...(prog.insumos || []), ...Array.from({ length: Math.max(0, 4 - (prog.insumos || []).length) }, () => ({ descricao: '', quantidade: '' }))].map((m, i) => (
-                  <tr key={i}><td style={{ textAlign: 'left' }}>{m.descricao || ' '}</td><td>{m.quantidade}</td><td>☐</td></tr>
-                ))}
-              </tbody>
-            </table>
-            {prog.observacao && <p className="pr-tira-obs">{prog.observacao}</p>}
-          </section>
-
-          <div className="pr-palm-receb"><span>Data de entrega: ____/____/______</span><span>Data de recebimento: ____/____/______</span></div>
-          <div className="pr-assin"><span>Entregue por (DBAESSE)</span><span>Recebido por (prestador)</span></div>
         </div>
       </div>
     </div>,
