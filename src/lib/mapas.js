@@ -54,3 +54,17 @@ export async function criarMapa({ cab, blocos }) {
   }
   return { ...mapa, ops: criadas.length }
 }
+
+// situação do mapa para os avisos: finalizado · em produção · vence logo · ATRASADO
+export function situacaoMapa(mapa, ops) {
+  const ativas = ops.filter((o) => o.programacao_id === mapa.id && o.status !== 'cancelada')
+  const abertas = ativas.filter((o) => o.status !== 'concluida')
+  if (!ativas.length) return { id: 'vazio', abertas: 0, total: 0 }
+  if (!abertas.length) return { id: 'finalizado', abertas: 0, total: ativas.length }
+  const h = new Date()
+  const hoje = Date.UTC(h.getFullYear(), h.getMonth(), h.getDate())
+  const [a, m, d] = (mapa.previsao || '').slice(0, 10).split('-').map(Number)
+  const dias = a ? Math.round((Date.UTC(a, m - 1, d) - hoje) / 864e5) : null
+  const id = dias == null ? 'producao' : dias < 0 ? 'atrasado' : dias <= 3 ? 'vence' : 'producao'
+  return { id, dias, abertas: abertas.length, total: ativas.length }
+}

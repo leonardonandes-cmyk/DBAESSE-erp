@@ -3,7 +3,7 @@ import Leitor from './Leitor.jsx'
 import { FotoProduto } from './FotoProduto.jsx'
 import { avisar } from '../lib/leitura.js'
 import { OP_ABERTAS, avancarOP, buscarMapaComOPs, buscarOPPorNumero, concluirOP, listarSetores, numeroDoCodigo, numeroMapaDoCodigo, numeroOP, paresOP } from '../lib/producao.js'
-import { numeroMapa } from '../lib/mapas.js'
+import { numeroMapa, situacaoMapa } from '../lib/mapas.js'
 
 /* Produção: bipa o QR da ficha (OP-0017) → conclui o setor atual e passa para o próximo */
 export default function BiparProducao() {
@@ -22,17 +22,6 @@ export default function BiparProducao() {
       if (!r) throw new Error(`${numeroMapa(n)} não encontrado.`)
       avisar(true); setRes(null); setLote(r)
     } catch (e) { avisar(false); setLote(null); setRes({ tipo: 'erro', texto: e.message }) } finally { setOcupado(false) }
-  }
-  // avança de uma vez todas as OPs do mapa que estão no setor escolhido
-  async function avancarSetor(setorId) {
-    setOcupado(true)
-    try {
-      const alvo = lote.ops.filter((o) => OP_ABERTAS.includes(o.status) && o.op_etapas.find((e) => e.status !== 'concluida')?.setor_id === setorId)
-      for (const o of alvo) await avancarOP(o, { forcar: true })
-      avisar(true)
-      setHist((h) => [{ texto: `${numeroMapa(lote.mapa.numero)} · ${nomeSetor(setorId)} concluído em ${alvo.length} fichas`, hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }, ...h].slice(0, 8))
-      await abrirMapa(lote.mapa.numero)
-    } catch (e) { setRes({ tipo: 'erro', texto: e.message }) } finally { setOcupado(false) }
   }
   async function concluirMapa() {
     setOcupado(true)
@@ -76,10 +65,10 @@ export default function BiparProducao() {
   return (
     <div className="appv bipar-pagina">
       <header className="page-head">
-        <div><div className="eyebrow">Produção · operações</div><h1>Bipar fichas</h1><p className="painel-sub">Ficha: leia ao sair de cada setor e a OP passa sozinha para o próximo. Mapa: mostra o lote inteiro e conclui várias de uma vez.</p></div>
+        <div><div className="eyebrow">Produção · operações</div><h1>Bipar fichas</h1><p className="painel-sub">Bipe a <b>ficha</b> ao sair de cada setor — a OP passa sozinha para o próximo. O QR do <b>mapa</b> é para consultar onde está cada ficha e, no fim, dar entrada no estoque.</p></div>
       </header>
       <Leitor onCodigo={(c) => !ocupado && ler(c)} rotulo="Bipar QR (ficha ou mapa)" />
-      {lote && <PainelMapa lote={lote} nomeSetor={nomeSetor} setores={setores} ocupado={ocupado} onAvancar={avancarSetor} onConcluir={concluirMapa} onFechar={() => setLote(null)} />}
+      {lote && <PainelMapa lote={lote} nomeSetor={nomeSetor} setores={setores} ocupado={ocupado} onConcluir={concluirMapa} onFechar={() => setLote(null)} />}
       {res && (
         <div className={`appv-prod ${res.tipo}`}>
           {res.op && <FotoProduto p={res.op.produtos} corId={res.op.cor_id} size={64} />}
@@ -102,8 +91,9 @@ export default function BiparProducao() {
   )
 }
 
-function PainelMapa({ lote, nomeSetor, setores, ocupado, onAvancar, onConcluir, onFechar }) {
+function PainelMapa({ lote, nomeSetor, setores, ocupado, onConcluir, onFechar }) {
   const { mapa, ops } = lote
+  const sit = situacaoMapa(mapa, ops)
   const abertas = ops.filter((o) => OP_ABERTAS.includes(o.status))
   const ondeEsta = (o) => (o.status === 'concluida' ? 'concluida' : o.status === 'cancelada' ? 'cancelada' : o.op_etapas.find((e) => e.status !== 'concluida')?.setor_id || 'pronta')
   const prontas = abertas.filter((o) => ondeEsta(o) === 'pronta')
@@ -116,6 +106,9 @@ function PainelMapa({ lote, nomeSetor, setores, ocupado, onAvancar, onConcluir, 
         <div><span className="eyebrow">Mapa</span><b>{numeroMapa(mapa.numero)}</b><small>{mapa.pedido || 'sem pedido'} · {mapa.cliente || 'sem cliente'} · {ops.length} fichas · {pares(ops)} pares</small></div>
         <button className="btn btn-sm" onClick={onFechar}>Fechar</button>
       </header>
+      {sit.id === 'atrasado' && <div className="aviso-forte">⚠ MAPA ATRASADO há {Math.abs(sit.dias)} {Math.abs(sit.dias) === 1 ? 'dia' : 'dias'} — {sit.abertas} fichas ainda em produção</div>}
+      {sit.id === 'vence' && <div className="aviso-leve">⏳ {sit.dias === 0 ? 'Vence HOJE' : `Vence em ${sit.dias} ${sit.dias === 1 ? 'dia' : 'dias'}`} — faltam {sit.abertas} fichas</div>}
+      {sit.id === 'producao' && <div className="aviso-leve">Mapa em produção — faltam {sit.abertas} de {sit.total} fichas</div>}
       <div className="mapa-lote-prog">
         <i style={{ width: `${ops.length ? (concl.length / ops.length) * 100 : 0}%` }} />
         <span>{concl.length} de {ops.length} fichas concluídas</span>
@@ -125,7 +118,6 @@ function PainelMapa({ lote, nomeSetor, setores, ocupado, onAvancar, onConcluir, 
           <div><b>{s.nome}</b><small>{os.length} fichas · {pares(os)} pares</small>
             <span className="mapa-lote-ops">{os.map((o) => <span key={o.id} title={`${numeroOP(o.numero)} · ${o.produtos?.ref} ${o.cores?.nome}`}><FotoProduto p={o.produtos} corId={o.cor_id} size={26} /></span>)}</span>
           </div>
-          <button className="btn btn-sm btn-dark" disabled={ocupado} onClick={() => onAvancar(s.id)}>Concluir {s.nome} de todas</button>
         </div>
       ))}
       {prontas.length > 0 && (

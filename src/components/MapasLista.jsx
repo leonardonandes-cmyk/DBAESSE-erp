@@ -4,7 +4,7 @@ import ImprimirMapa from './ImprimirMapa.jsx'
 import NovoMapa from './NovoMapa.jsx'
 import Icon from './Icon.jsx'
 import { dataBR, inteiro } from '../lib/format.js'
-import { listarMapas, numeroMapa } from '../lib/mapas.js'
+import { listarMapas, numeroMapa, situacaoMapa } from '../lib/mapas.js'
 import { listarParceiros } from '../lib/parceiros.js'
 import { OP_ABERTAS, paresOP } from '../lib/producao.js'
 
@@ -30,6 +30,13 @@ export default function MapasLista({ ops, produtos, cores, onMudou }) {
         <button className="btn btn-dark" onClick={() => setNovo(true)}><Icon name="mais" size={16} stroke={2} />Novo mapa</button>
       </div>
       {erro && <p className="form-error" role="alert">{erro}</p>}
+      {mapas && (() => {
+        const sits = mapas.map((m) => situacaoMapa(m, ops))
+        const atras = sits.filter((x) => x.id === 'atrasado').length
+        const abertos = sits.filter((x) => ['producao', 'vence', 'atrasado'].includes(x.id)).length
+        return atras ? <div className="aviso-forte">⚠ {atras} {atras === 1 ? 'mapa ATRASADO' : 'mapas ATRASADOS'} — passou da previsão de entrega e ainda tem ficha em produção</div>
+          : abertos ? <div className="aviso-leve">{abertos} {abertos === 1 ? 'mapa em produção' : 'mapas em produção'} — ainda não finalizados</div> : null
+      })()}
       {!mapas && <p className="card-sub">Carregando…</p>}
       {mapas && mapas.length === 0 && (
         <section className="card empty"><h2>Nenhum mapa ainda</h2><p>Crie o primeiro mapa de programação — as OPs e as folhas de corte saem dele.</p><button className="btn btn-dark" onClick={() => setNovo(true)}>Novo mapa</button></section>
@@ -42,7 +49,8 @@ export default function MapasLista({ ops, produtos, cores, onMudou }) {
           const concl = os.filter((o) => o.status === 'concluida').length
           const refs = [...new Map(os.map((o) => [o.produto_id, o.produtos])).values()]
           return (
-            <article key={m.id} className="card mapa-card">
+            <article key={m.id} className={`card mapa-card sit-${situacaoMapa(m, ops).id}`}>
+              <FaixaMapa sit={situacaoMapa(m, ops)} />
               <header>
                 <div><span className="eyebrow">{numeroMapa(m.numero)}{m.pedido ? ` · ${m.pedido}` : ''}</span><h3>{m.cliente || 'Sem cliente'}</h3></div>
                 <div className="mapa-card-pares"><b>{inteiro(pares)}</b><small>pares</small></div>
@@ -73,4 +81,12 @@ export default function MapasLista({ ops, produtos, cores, onMudou }) {
       {imprimir && <ImprimirMapa mapa={imprimir.mapa} inicial={imprimir.aba} ops={opsDo(imprimir.mapa)} cores={cores} onFechar={() => setImprimir(null)} />}
     </>
   )
+}
+
+function FaixaMapa({ sit }) {
+  if (sit.id === 'vazio') return null
+  if (sit.id === 'finalizado') return <div className="mapa-faixa ok">✓ Mapa finalizado · {sit.total} {sit.total === 1 ? 'ficha concluída' : 'fichas concluídas'}</div>
+  if (sit.id === 'atrasado') return <div className="mapa-faixa atrasado">⚠ ATRASADO há {Math.abs(sit.dias)} {Math.abs(sit.dias) === 1 ? 'dia' : 'dias'} · {sit.abertas} de {sit.total} fichas ainda em produção</div>
+  if (sit.id === 'vence') return <div className="mapa-faixa vence">⏳ {sit.dias === 0 ? 'Vence HOJE' : `Vence em ${sit.dias} ${sit.dias === 1 ? 'dia' : 'dias'}`} · faltam {sit.abertas} de {sit.total} fichas</div>
+  return <div className="mapa-faixa producao">Em produção · faltam {sit.abertas} de {sit.total} fichas{sit.dias != null ? ` · entrega em ${sit.dias} ${sit.dias === 1 ? 'dia' : 'dias'}` : ''}</div>
 }

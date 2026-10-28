@@ -1218,3 +1218,15 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .pr-cab-dados { gap: 2mm 4mm; }
 .pr-cab:has(.pr-cab-qr) .pr-cab-dados { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 2mm 5mm; min-width: 0; }
 .pr-cab-qr { overflow: hidden; }
+/* avisos de mapa em aberto / atrasado */
+.aviso-leve { padding: 12px 16px; border-radius: 12px; background: #FFF7E0; border: 1px solid #F0D58A; color: #7a5a00; font-weight: 600; }
+.aviso-forte { padding: 14px 18px; border-radius: 12px; background: #A3261C; color: #fff; font-weight: 700; font-size: 15px; box-shadow: 0 8px 20px -10px rgba(163,38,28,.6); animation: pulsa 2s ease-in-out infinite; }
+@keyframes pulsa { 0%, 100% { box-shadow: 0 8px 20px -10px rgba(163,38,28,.6); } 50% { box-shadow: 0 8px 28px -6px rgba(163,38,28,.85); } }
+.mapa-faixa { margin: -24px -24px 0; padding: 9px 16px; border-radius: 18px 18px 0 0; font-size: 13px; font-weight: 700; }
+.mapa-faixa.ok { background: var(--ok-soft); color: var(--ok); }
+.mapa-faixa.producao { background: #FFF7E0; color: #7a5a00; }
+.mapa-faixa.vence { background: #FFE7B8; color: #7a4a00; }
+.mapa-faixa.atrasado { background: #A3261C; color: #fff; }
+.mapa-card.sit-atrasado { border: 2px solid #A3261C; }
+.alert-row.forte { background: #FBEDEB; margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 10px; }
+.alert-row.forte .alert-title { color: #A3261C; font-weight: 800; }

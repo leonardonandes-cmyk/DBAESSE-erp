@@ -9,6 +9,7 @@ import { listarParceiros } from '../lib/parceiros.js'
 import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, totaisPedido } from '../lib/pedidos.js'
 import { listarProdutos } from '../lib/produtos.js'
 import { listarTitulos, situacao } from '../lib/financeiro.js'
+import { listarMapas, situacaoMapa } from '../lib/mapas.js'
 import { BarrasEmpilhadas, Rosca, Sparkline, corCanal, ordenarCanais } from '../components/Graficos.jsx'
 
 const TOM_ALERTA = {
@@ -51,14 +52,17 @@ export default function Painel({ usuario }) {
   const [busca, setBusca] = useState('')
 
   useEffect(() => {
-    Promise.all([listarPedidos(), listarSaldos(), listarProdutos(), listarParceiros(), listarTitulos(), listarOPs()])
-      .then(([pedidos, saldos, produtos, parceiros, titulos, ops]) => setDados({ pedidos, saldos, produtos, parceiros, titulos, ops }))
+    Promise.all([listarPedidos(), listarSaldos(), listarProdutos(), listarParceiros(), listarTitulos(), listarOPs(), listarMapas().catch(() => [])])
+      .then(([pedidos, saldos, produtos, parceiros, titulos, ops, mapas]) => setDados({ pedidos, saldos, produtos, parceiros, titulos, ops, mapas }))
       .catch((e) => setErro(e.message))
   }, [])
 
   const calc = useMemo(() => {
     if (!dados) return null
-    const { pedidos, saldos, produtos, parceiros, titulos, ops } = dados
+    const { pedidos, saldos, produtos, parceiros, titulos, ops, mapas = [] } = dados
+    const sitMapas = mapas.map((m) => situacaoMapa(m, ops))
+    const mapasAtras = sitMapas.filter((x) => x.id === 'atrasado').length
+    const mapasAbertos = sitMapas.filter((x) => ['producao', 'vence'].includes(x.id)).length
     const agora = new Date()
     const vendidos = pedidos.filter((p) => VENDIDO.includes(p.status))
     const doMes = (m, a) => vendidos.filter((p) => { const d = new Date(p.criado_em); return d.getMonth() === m && d.getFullYear() === a })
@@ -86,6 +90,8 @@ export default function Painel({ usuario }) {
     const rascunhos = produtos.filter((p) => p.status === 'rascunho').length
 
     const alertas = [
+      mapasAtras && { n: mapasAtras, titulo: 'Mapas ATRASADOS', sub: 'Passou da previsão e ainda tem ficha em produção', tom: 'bad', para: '/producao/mapas', forte: true },
+      mapasAbertos && { n: mapasAbertos, titulo: 'Mapas em produção', sub: 'Ainda não finalizados', tom: 'warn', para: '/producao/mapas' },
       pagarVenc.length && { n: pagarVenc.length, titulo: 'Contas a pagar vencendo', sub: `${brl(somaV(pagarVenc))} vencidas ou para hoje`, tom: 'bad', para: '/financeiro' },
       receberVenc.length && { n: receberVenc.length, titulo: 'Recebimentos em atraso', sub: `${brl(somaV(receberVenc))} para cobrar`, tom: 'warn', para: '/financeiro' },
       atrasados.length && { n: atrasados.length, titulo: 'Pedidos atrasados', sub: 'Previsão de entrega já passou', tom: 'bad', para: '/pedidos' },
@@ -161,10 +167,16 @@ export default function Painel({ usuario }) {
           <h1>{saudacao()}, {usuario}</h1>
           <p className="painel-sub">Aqui está o resumo da fábrica hoje.</p>
         </div>
-        <div className="actions">
-          <Link to="/pedidos" className="btn btn-dark"><Icon name="mais" size={16} stroke={2} />Novo pedido</Link>
-        </div>
       </header>
+
+      <nav className="atalhos" aria-label="Atalhos">
+        {[
+          ['pedidos', 'Novo pedido', '/pedidos'], ['producao', 'Nova OP', '/producao'], ['estoque', 'Entrada estoque', '/estoque'],
+          ['produtos', 'Novo produto', '/produtos'], ['clientes', 'Novo cliente', '/clientes'], ['leitor', 'App vendas', '/app'],
+        ].map(([ic, t, to]) => (
+          <Link key={t} to={to} className="atalho"><span className="atalho-ico"><Icon name={ic} size={18} /></span>{t}<Icon name="seta" size={14} /></Link>
+        ))}
+      </nav>
 
       <div className="busca-geral">
         <label className="search">
@@ -236,14 +248,6 @@ export default function Painel({ usuario }) {
       </section>
 
 
-      <nav className="atalhos" aria-label="Atalhos">
-        {[
-          ['pedidos', 'Novo pedido', '/pedidos'], ['producao', 'Nova OP', '/producao'], ['estoque', 'Entrada estoque', '/estoque'],
-          ['produtos', 'Novo produto', '/produtos'], ['clientes', 'Novo cliente', '/clientes'], ['leitor', 'App vendas', '/app'],
-        ].map(([ic, t, to]) => (
-          <Link key={t} to={to} className="atalho"><span className="atalho-ico"><Icon name={ic} size={18} /></span>{t}<Icon name="seta" size={14} /></Link>
-        ))}
-      </nav>
 
       <section className="painel-linha tres">
         <div className="card">
@@ -289,7 +293,7 @@ export default function Painel({ usuario }) {
           <div className="card-head"><h2>Alertas e pendências</h2></div>
           {calc && calc.alertas.length === 0 && <p className="card-sub" style={{ margin: 0 }}>Tudo em dia por aqui.</p>}
           {calc?.alertas.map((a) => (
-            <Link to={a.para} className="alert-row" key={a.titulo}>
+            <Link to={a.para} className={`alert-row ${a.forte ? 'forte' : ''}`} key={a.titulo}>
               <span className="alert-num" style={TOM_ALERTA[a.tom]}>{a.n}</span>
               <span style={{ flex: 1 }}><span className="alert-title">{a.titulo}</span><br /><span className="alert-sub">{a.sub}</span></span>
               <Icon name="seta" size={16} />
