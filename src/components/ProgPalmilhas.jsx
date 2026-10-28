@@ -137,7 +137,7 @@ function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
                       <td key={n} className="c"><input className="input input-sm mapa-q" inputMode="numeric" enterKeyHint="next" data-grade value={l.grade[n] ?? ''} aria-label={`Número ${n}`}
                         onChange={(e) => mudar(l.k, (x) => ({ ...x, grade: { ...x.grade, [n]: e.target.value.replace(/\D/g, '') } }))} /></td>
                     ))}
-                    <td className="r"><b>{inteiro(totalItem(l))}</b></td>
+                    <td className="r"><b>{totalItem(l) ? inteiro(totalItem(l)) : ''}</b></td>
                     <td className="r mapa-acoes">
                       {i > 0 && <button type="button" className="link-btn" title="Copiar a grade da linha de cima" onClick={() => mudar(l.k, (x) => ({ ...x, grade: { ...linhas[i - 1].grade } }))}>↑ grade</button>}
                       {linhas.length > 1 && <button type="button" className="link-btn" onClick={() => setLinhas((ls) => ls.filter((y) => y.k !== l.k))}>tirar</button>}
@@ -145,7 +145,7 @@ function NovaProgPalmilha({ cores, prog, onFechar, onSalvo }) {
                   </tr>
                 ))}
               </tbody>
-              <tfoot><tr><td colSpan={2}><b>Total</b></td>{NUMEROS_PALMILHA.map((n) => <td key={n} className="c"><b>{inteiro(linhas.reduce((t, l) => t + (Number(l.grade[n]) || 0), 0)) || ''}</b></td>)}<td className="r"><b>{inteiro(total)}</b></td><td /></tr></tfoot>
+              <tfoot><tr><td colSpan={2}><b>Total</b></td>{NUMEROS_PALMILHA.map((n) => <td key={n} className="c"><b>{linhas.reduce((t, l) => t + (Number(l.grade[n]) || 0), 0) || ''}</b></td>)}<td className="r"><b>{total ? inteiro(total) : ''}</b></td><td /></tr></tfoot>
             </table>
           </div>
           <button type="button" className="fb-add" onClick={() => setLinhas((ls) => [...ls, { ...novaLinha(ls[ls.length - 1]?.tipo), grade: { ...(ls[ls.length - 1]?.grade || {}) } }])}>+ adicionar linha (já vem com o tipo e a grade da linha de cima)</button>

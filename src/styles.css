@@ -1253,3 +1253,6 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .grade-edit label { display: inline-flex; flex-direction: column; align-items: center; width: 42px; padding: 3px 2px; border: 1px solid var(--line); border-radius: 6px; }
 .grade-edit input { width: 36px; border: 0; background: transparent; text-align: center; font: inherit; font-weight: 700; font-size: 13px; padding: 0; }
 .grade-edit input:focus { outline: 2px solid var(--accent); border-radius: 4px; }
+/* grades de digitação: números com largura igual; a coluna da cor fica com a sobra */
+.mapa-grade th.c, .mapa-grade td.c, .mapa-grade th.r, .mapa-grade td.r { width: 1%; white-space: nowrap; }
+.palm-grade td:nth-child(2), .palm-grade th:nth-child(2) { width: auto; }
