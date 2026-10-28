@@ -1260,3 +1260,5 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .pr-tira .pr-tab { table-layout: fixed; }
 .pr-tira .pr-tira-cor { width: 46mm; white-space: normal; word-break: break-word; line-height: 1.15; padding: 1.5mm 2mm; }
 .pr-tira .pr-tira-cor.longa { font-size: 10pt !important; }
+.palm-regra { display: block; margin-top: 3px; font-size: 11px; color: var(--accent); }
+.pr-tira-origem { font-size: 8.5pt; color: #555; text-align: right; }

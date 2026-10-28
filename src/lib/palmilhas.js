@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { corDaPalmilha } from './mapas.js'
 
 // Programação de PALMILHA para estoque — relação que vai para o prestador de serviço
 export const TIPOS_PALMILHA = ['PALMILHA RASTEIRA', 'PALMILHA SALTO', 'PALMILHA PAPETE CONFORT', 'PALMILHA RASTEIRA CONFORT']
@@ -51,4 +52,31 @@ export async function excluirProgPalmilha(id) {
 export async function mudarStatusPalmilha(id, status) {
   const { error } = await supabase.from('programacoes_palmilha').update({ status }).eq('id', id)
   if (error) throw error
+}
+
+/*
+  Cor da PALMILHA a partir da cor escolhida (mesma regra do mapa):
+  cor composta "AZUL / CARAMELO / VERMELHO" → salto = penúltima · demais = última · cor única = ela mesma.
+*/
+export function corPalmilhaDoItem(item, corPorId, regra) {
+  const c = corPorId[item.cor_id]
+  if (!c) return { nome: '', hex: '#FFFFFF', composta: false }
+  const tipo = String(item.tipo || '').toUpperCase()
+  const nome = corDaPalmilha(c.nome, tipo.includes('SALTO') ? 'SALTO BLOCO' : tipo, regra)
+  const achada = Object.values(corPorId).find((x) => x.nome.trim().toLowerCase() === nome.trim().toLowerCase())
+  return { nome, hex: achada?.hex || (nome === c.nome ? c.hex : '#FFFFFF'), composta: nome !== c.nome, original: c.nome }
+}
+
+// junta linhas de mesma palmilha (tipo + cor da palmilha + OBS) somando a grade
+export function agruparPalmilha(itens, corPorId, regra) {
+  const g = new Map()
+  itens.forEach((it) => {
+    const cp = corPalmilhaDoItem(it, corPorId, regra)
+    const k = `${it.tipo}|${cp.nome.toLowerCase()}|${(it.obs || '').trim().toUpperCase()}`
+    const atual = g.get(k) || { tipo: it.tipo, obs: it.obs, cor: cp, origens: [], grade: {} }
+    if (cp.composta) atual.origens.push(cp.original)
+    Object.entries(it.grade || {}).forEach(([n, q]) => { atual.grade[n] = (Number(atual.grade[n]) || 0) + (Number(q) || 0) })
+    g.set(k, atual)
+  })
+  return [...g.values()]
 }
