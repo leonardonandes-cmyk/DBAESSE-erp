@@ -130,7 +130,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
         <g clipPath="url(#calorBrasil)" style={{ pointerEvents: 'none' }}>
           <g filter="url(#calorCores)">
             {visiveis.map((p) => {
-              const rr = (38 + 120 * Math.sqrt(p.valor / maxP)) * (0.5 + 0.5 * zm)
+              const rr = (38 + 120 * Math.sqrt(p.valor / maxP)) * zm // mesma escala de tela no Brasil e no zoom
               return <circle key={p.id} cx={p.x} cy={p.y - alt(p.uf)} r={rr} fill="url(#calorBolha)" opacity={0.35 + 0.65 * Math.sqrt(p.valor / maxP)} />
             })}
           </g>
