@@ -8,7 +8,7 @@ import { brl, numeroPedido, rotuloNum } from '../lib/format.js'
 import { acharSku, avisar, criarIndice } from '../lib/leitura.js'
 import { CANAIS, listarParceiros } from '../lib/parceiros.js'
 import { carregarItens, criarPedido, listarPedidos, separarItem } from '../lib/pedidos.js'
-import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
+import { listaSugerida, listarListas, precoCliente, temCondicao, textoCondicao } from '../lib/precos.js'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 
 /*
@@ -235,7 +235,8 @@ function NovoBipando({ indice, parceiros: parceirosBase, onVoltar }) {
   const [codLista, setCodLista] = useState('atacado')
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const listaPreco = listas.find((l) => l.codigo === codLista)
-  const preco = (p) => precoNaLista(p, listaPreco)
+  const clienteObj = parceiros.find((p) => p.id === cliente)
+  const preco = (p) => precoCliente(p, listaPreco, clienteObj)
   const [lista, setLista] = useState([]) // { item, quantidade }
   const [retorno, setRetorno] = useState(null)
   const [salvando, setSalvando] = useState(false)
@@ -301,7 +302,7 @@ function NovoBipando({ indice, parceiros: parceirosBase, onVoltar }) {
         </label>
         <label className="field"><span>Lista de preço</span>
           <div className="input lista-travada" title="A lista segue o segmento do pedido. Para mudar, troque o canal.">
-            <Icon name="cadeado" size={15} />{listaPreco?.nome || codLista}<small>pelo segmento</small>
+            <Icon name="cadeado" size={15} />{temCondicao(clienteObj) ? textoCondicao(clienteObj, listas) : listaPreco?.nome || codLista}<small>{temCondicao(clienteObj) ? 'condição especial' : 'pelo segmento'}</small>
           </div>
         </label>
       </div>

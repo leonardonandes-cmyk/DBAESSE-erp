@@ -1497,3 +1497,8 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
   .aguarda-acoes { grid-column: 1 / -1; justify-content: flex-start; }
 }
 .falta-cad { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 10px; border-radius: 10px; background: #fdf3ea; color: #8a3f12; font-size: 14px; }
+
+/* condição especial do cliente (só admin) */
+.condicao-especial { margin-top: 14px; padding: 14px 16px; border: 1px solid #e3d6c8; border-left: 3px solid #8A5A32; border-radius: 10px; background: #faf6f1; display: grid; gap: 12px; }
+.condicao-especial .check b { color: #8A5A32; }
+.condicao-especial small.muted { font-size: 11px; color: var(--ink-3, #8a8a86); }

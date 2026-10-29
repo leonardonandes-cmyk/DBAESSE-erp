@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { listarListas } from '../lib/precos.js'
+import { supabase } from '../lib/supabase.js'
 import { buscarCep, buscarCnpj, titulo } from '../lib/consultas.js'
 import { soDigitos } from '../lib/format.js'
 import Icon from './Icon.jsx'
@@ -26,11 +27,17 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     canal: parceiro?.canal || '',
     lista: parceiro?.lista || '',
     grupo: parceiro?.grupo || '',
+    condicao_especial: Boolean(parceiro?.condicao_especial),
+    desconto_par: parceiro?.desconto_par ? String(parceiro.desconto_par).replace('.', ',') : '',
     observacoes: parceiro?.observacoes || '',
     ativo: parceiro?.ativo ?? true,
   }))
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
+  // condição especial: só o administrador vê e altera
+  const [souAdmin, setSouAdmin] = useState(false)
+  useEffect(() => { supabase.rpc('sou_admin').then(({ data }) => setSouAdmin(Boolean(data))) }, [])
+  const condCarregada = !parceiro || 'condicao_especial' in parceiro
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -94,7 +101,10 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     if (f.uf && !/^[A-Za-z]{2}$/.test(f.uf.trim())) return setErro('UF com 2 letras (ex.: MG).')
     setSalvando(true)
     try {
-      const salvo = await salvarParceiro(f, parceiro?.id)
+      const dados = { ...f }
+      if (!(souAdmin && condCarregada)) { delete dados.condicao_especial; delete dados.desconto_par; dados.lista = parceiro?.lista || f.lista }
+      else if (dados.condicao_especial && !dados.lista) dados.lista = 'atacado'
+      const salvo = await salvarParceiro(dados, parceiro?.id)
       onSalvo(salvo)
     } catch (e) {
       setErro(e.message)
@@ -184,19 +194,36 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
             </select>
           </label>
           <label className="field">
-            <span>Lista de preço</span>
-            <select className="input" value={f.lista} onChange={set('lista')}>
-              <option value="">Pelo canal</option>
-              {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}</option>)}
-            </select>
-          </label>
-          <label className="field">
             <span>Polo / grupo</span>
             <input value={f.grupo} onChange={set('grupo')} placeholder="Ex.: Fartura" list="grupos-parceiro" />
             <datalist id="grupos-parceiro"><option value="Fartura" /></datalist>
           </label>
           <label className="field span-2"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Prazo combinado, preferências, transportadora…" /></label>
         </div>
+
+        {souAdmin && condCarregada && (
+          <div className="condicao-especial">
+            <label className="check">
+              <input type="checkbox" checked={f.condicao_especial} onChange={(e) => setF({ ...f, condicao_especial: e.target.checked, lista: f.lista || 'atacado' })} />
+              <b>Condição especial</b><small> · cliente fundador — vale em qualquer segmento (atacado, variado, drop)</small>
+            </label>
+            {f.condicao_especial && (
+              <div className="grid-2">
+                <label className="field">
+                  <span>Preço base</span>
+                  <select className="input" value={f.lista || 'atacado'} onChange={set('lista')}>
+                    {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Desconto por par (R$)</span>
+                  <input inputMode="decimal" value={f.desconto_par} onChange={set('desconto_par')} placeholder="1,00" />
+                </label>
+              </div>
+            )}
+            <small className="muted">Só o administrador vê este campo. A vendedora e o segmento do pedido não mudam.</small>
+          </div>
+        )}
 
         {editando && (
           <label className="check">

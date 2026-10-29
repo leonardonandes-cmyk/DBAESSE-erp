@@ -21,8 +21,26 @@ export const LISTA_POR_CANAL = {
   Atacado: 'atacado', Variado: 'variado', Drop: 'drop',
   Shopee: 'varejo', 'TikTok Shop': 'varejo', 'Mercado Livre': 'varejo', Instagram: 'varejo', 'Loja / varejo': 'varejo',
 }
-// a lista segue SEMPRE o segmento do pedido (a vendedora não troca) — cliente não muda isso
-export const listaSugerida = (_cliente, canal) => LISTA_POR_CANAL[canal] || 'atacado'
+// a lista segue SEMPRE o segmento do pedido (a vendedora não troca)
+// exceção: cliente com CONDIÇÃO ESPECIAL (ligada só pelo admin) usa a lista do cadastro em qualquer segmento
+export const temCondicao = (cliente) => Boolean(cliente?.condicao_especial && cliente?.lista)
+export const listaSugerida = (cliente, canal) => (temCondicao(cliente) ? cliente.lista : LISTA_POR_CANAL[canal] || 'atacado')
+export const descontoPar = (cliente) => (temCondicao(cliente) ? Number(cliente.desconto_par) || 0 : 0)
+
+// preço do par para ESTE cliente: lista − desconto por par da condição especial
+export function precoCliente(produto, lista, cliente) {
+  const p = precoNaLista(produto, lista)
+  if (!p) return 0
+  return Math.max(0, Math.round((p - descontoPar(cliente)) * 100) / 100)
+}
+
+// texto curto da condição: "Atacado − R$ 1,00/par"
+export function textoCondicao(cliente, listas = []) {
+  if (!temCondicao(cliente)) return ''
+  const nome = listas.find((l) => l.codigo === cliente.lista)?.nome || cliente.lista
+  const d = descontoPar(cliente)
+  return d ? `${nome} − R$ ${d.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/par` : nome
+}
 
 export function precoNaLista(produto, lista) {
   if (!produto) return 0

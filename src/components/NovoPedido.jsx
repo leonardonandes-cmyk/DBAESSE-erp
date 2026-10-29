@@ -12,7 +12,7 @@ import { brl } from '../lib/format.js'
 import { CANAIS, enderecoCompleto, lembrarTransportadora } from '../lib/parceiros.js'
 import { atualizarPedido, carregarItens, criarPedido } from '../lib/pedidos.js'
 import { numeroPedido, rotuloNum } from '../lib/format.js'
-import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
+import { listaSugerida, listarListas, precoCliente, temCondicao, textoCondicao } from '../lib/precos.js'
 
 // Serve para CRIAR (sem `pedido`) e para CORRIGIR um pedido aberto (com `pedido`)
 export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido: pedidoInicial, onFechar, onSalvo }) {
@@ -77,14 +77,16 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
     if (k === 'vendedora') setVendManual(true)
     else if (novo.canal !== f.canal && !vendManual && regras.length) novo.vendedora = vendedoraPadrao(regras, novo.canal)
     setF(novo)
-    // trocou a lista: reprecifica os itens já lançados
-    if (novo.lista !== f.lista) {
+    // trocou a lista ou o cliente (condição especial): reprecifica os itens já lançados
+    if (novo.lista !== f.lista || novo.parceiro_id !== f.parceiro_id) {
       const l = listas.find((x) => x.codigo === novo.lista)
-      setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoNaLista(i.produto, l) })))
+      const cli = clientes.find((x) => x.id === novo.parceiro_id)
+      setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoCliente(i.produto, l, cli) })))
     }
   }
 
-  const precoPadrao = (p) => precoNaLista(p, listaAtual)
+  const clienteAtual = clientes.find((x) => x.id === f.parceiro_id)
+  const precoPadrao = (p) => precoCliente(p, listaAtual, clienteAtual)
 
   function adicionar(linhas) {
     const mapa = Object.fromEntries(itens.map((i) => [i.sku_id, i]))
@@ -240,8 +242,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
           </label>
           <label className="field">
             <span>Lista de preço</span>
-            <div className="input lista-travada" title="A lista segue o segmento do pedido. Para mudar, troque o canal.">
-              <Icon name="cadeado" size={15} />{listas.find((l) => l.codigo === f.lista)?.nome || f.lista}<small>pelo segmento</small>
+            <div className="input lista-travada" title={temCondicao(clienteAtual) ? 'Condição especial do cliente (definida no cadastro pelo administrador).' : 'A lista segue o segmento do pedido. Para mudar, troque o canal.'}>
+              <Icon name="cadeado" size={15} />{temCondicao(clienteAtual) ? textoCondicao(clienteAtual, listas) : listas.find((l) => l.codigo === f.lista)?.nome || f.lista}<small>{temCondicao(clienteAtual) ? 'condição especial' : 'pelo segmento'}</small>
             </div>
           </label>
           <label className="field">
@@ -375,7 +377,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
             setF((x) => ({ ...x, parceiro_id: novo.id, canal, lista, endereco_entrega: '' }))
             setOutroEndereco(false)
             const l = listas.find((x) => x.codigo === lista)
-            setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoNaLista(i.produto, l) })))
+            setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoCliente(i.produto, l, novo) })))
           }} />
       )}
     </div>
