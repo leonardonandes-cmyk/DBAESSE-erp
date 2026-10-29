@@ -23,16 +23,19 @@ function carregarLib() {
   return carregando
 }
 
-// el = a(s) folha(s) A4 · → Blob do PDF
+// el = uma folha A4 ou o conjunto .print-folhas (várias folhas: cada .folha começa numa página nova) → Blob do PDF
 export async function gerarPdf(el, nome) {
   const html2pdf = await carregarLib()
-  return html2pdf().set({
-    margin: 0, filename: nome,
-    image: { type: 'jpeg', quality: 0.92 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], after: '.folha-quebra' },
-  }).from(el).outputPdf('blob')
+  document.body.classList.add('gerando-pdf') // tira sombra/margens da tela e fixa a largura em A4
+  try {
+    return await html2pdf().set({
+      margin: 0, filename: nome,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], before: '.folha + .folha', avoid: ['.doc-item', '.pr-bloco', '.pr-ficha', '.pr-tira', '.tp-card'] },
+    }).from(el).outputPdf('blob')
+  } finally { document.body.classList.remove('gerando-pdf') }
 }
 
 export function baixar(blob, nome) {

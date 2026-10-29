@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import AcoesDocumento from './AcoesDocumento.jsx'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Icon from './Icon.jsx'
 import { dataBR, hojeISO, inteiro } from '../lib/format.js'
@@ -187,6 +188,7 @@ const textoEscuro = (hex) => { const h = (hex || '#ffffff').replace('#', ''); co
 
 function ImprimirPalmilha({ prog, corPorId, regra, onFechar }) {
   const [empresa, setEmpresa] = useState(null)
+  const folhas = useRef(null)
   useEffect(() => {
     supabase.from('empresas').select('nome,razao_social,cnpj,telefone,cidade,uf').limit(1).maybeSingle().then(({ data }) => setEmpresa(data || null)).catch(() => {})
     document.body.classList.add('imprimindo'); return () => document.body.classList.remove('imprimindo')
@@ -201,12 +203,11 @@ function ImprimirPalmilha({ prog, corPorId, regra, onFechar }) {
     <div className="print-root">
       <div className="print-barra no-print">
         <b>{numeroPalmilha(prog.numero)} · relação para o prestador</b>
-        <span className="actions">
-          <button className="btn btn-dark" onClick={() => window.print()}>Imprimir</button>
-          <button className="btn" onClick={onFechar}>Fechar</button>
-        </span>
+        <AcoesDocumento alvo={folhas} imprimirEscuro onFechar={onFechar} pasta="palmilhas"
+          nome={`${numeroPalmilha(prog.numero)}-relacao-palmilha${prog.prestador ? `-${prog.prestador.replace(/[^\p{L}\p{N}]+/gu, '-')}` : ''}`}
+          mensagem={`Relação de palmilha ${numeroPalmilha(prog.numero)}${prog.prestador ? ` · ${prog.prestador}` : ''} · ${inteiro(total)} pares${prog.previsao ? ` · entrega ${dataBR(prog.previsao)}` : ''}.`} />
       </div>
-      <div className="print-folhas">
+      <div className="print-folhas" ref={folhas}>
         <div className="folha">
           <header className="pr-cab pr-cab-palm">
             <div className="pr-marca">

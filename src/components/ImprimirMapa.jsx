@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import AcoesDocumento from './AcoesDocumento.jsx'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FotoProduto } from './FotoProduto.jsx'
 import { dataBR, inteiro } from '../lib/format.js'
@@ -28,6 +29,7 @@ const textoEscuro = (hex) => { const h = (hex || '#ffffff').replace('#', ''); co
 
 export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'mapa' }) {
   const [aba, setAba] = useState(inicial)
+  const folhas = useRef(null)
   const [regra, setRegra] = useState([{ chave: 'SALTO BLOCO', posicao: 2 }, { chave: '*', posicao: 1 }])
   const [empresa, setEmpresa] = useState(null)
   useEffect(() => {
@@ -205,12 +207,11 @@ export default function ImprimirMapa({ mapa, ops, cores, onFechar, inicial = 'ma
             <button key={id} className={aba === id ? 'on' : ''} onClick={() => setAba(id)}>{l}</button>
           ))}
         </div>
-        <span className="actions">
-          <button className="btn btn-dark" onClick={() => window.print()}>Imprimir</button>
-          <button className="btn" onClick={onFechar}>Fechar</button>
-        </span>
+        <AcoesDocumento alvo={folhas} imprimirEscuro onFechar={onFechar} pasta="programacoes"
+          nome={`${numeroMapa(mapa.numero)}-${{ mapa: 'mapa-geral', fichas: 'fichas', palmilha: 'palmilha', tudo: 'completo' }[aba]}${mapa.cliente ? `-${mapa.cliente.replace(/[^\p{L}\p{N}]+/gu, '-')}` : ''}`}
+          mensagem={`Programação ${numeroMapa(mapa.numero)}${mapa.cliente ? ` · ${mapa.cliente}` : ''}${mapa.pedido ? ` · pedido ${mapa.pedido}` : ''} · ${inteiro(total)} pares${mapa.previsao ? ` · entrega ${dataBR(mapa.previsao)}` : ''} — ${{ mapa: 'mapa geral', fichas: 'fichas por cor', palmilha: 'relação de palmilha', tudo: 'mapa, fichas e palmilha' }[aba]} em PDF.`} />
       </div>
-      <div className="print-folhas">
+      <div className="print-folhas" ref={folhas}>
         {(aba === 'mapa' || aba === 'tudo') && <Mapa />}
         {(aba === 'fichas' || aba === 'tudo') && <Fichas />}
         {(aba === 'palmilha' || aba === 'tudo') && <Palmilha />}

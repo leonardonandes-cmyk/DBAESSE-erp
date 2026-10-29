@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FotoProduto } from './FotoProduto.jsx'
-import Icon from './Icon.jsx'
+import AcoesDocumento from './AcoesDocumento.jsx'
 import { brl, inteiro, numeroPedido, rotuloNum } from '../lib/format.js'
 import { MODALIDADE, modalidadeDoCanal } from '../lib/modalidades.js'
 import { supabase } from '../lib/supabase.js'
-import { baixar, enviarWhats, gerarPdf } from '../lib/documentos.js'
 
 /*
   Pedido / orçamento para o cliente: visualizar, imprimir, baixar PDF e enviar pelo WhatsApp.
@@ -14,9 +13,6 @@ import { baixar, enviarWhats, gerarPdf } from '../lib/documentos.js'
 export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totais, onFechar }) {
   const folha = useRef(null)
   const [empresa, setEmpresa] = useState(null)
-  const [ocupado, setOcupado] = useState('')
-  const [msg, setMsg] = useState('')
-  const [erro, setErro] = useState('')
   useEffect(() => {
     supabase.from('empresas').select('nome,razao_social,cnpj,telefone,email,endereco,numero,bairro,cidade,uf,pix_chave,pagamento_instrucoes').limit(1).maybeSingle().then(({ data }) => setEmpresa(data || null)).catch(() => {})
     document.body.classList.add('imprimindo')
@@ -32,32 +28,11 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
   const linhaEmpresa = empresa ? [empresa.razao_social, empresa.cnpj && `CNPJ ${empresa.cnpj}`, empresa.telefone, empresa.email, empresa.cidade && `${empresa.cidade}${empresa.uf ? `/${empresa.uf}` : ''}`].filter(Boolean).join(' · ') : ''
   const mensagem = `Olá${cliente?.nome ? `, ${cliente.nome.split(' ')[0]}` : ''}! Segue ${orcamento ? 'o orçamento' : 'o pedido'} ${numeroPedido(pedido.numero)} da DBAESSE: ${inteiro(totais.pares)} pares · ${brl(totais.total)}${pedido.previsao ? ` · previsão ${dataLonga(pedido.previsao)}` : ''}.\n\nConfira os itens no PDF${empresa?.pix_chave || empresa?.pagamento_instrucoes ? ' e, estando tudo certo, o pagamento pode ser feito por aqui:' : '. Estando tudo certo, é só nos confirmar.'}${empresa?.pix_chave ? `\n💳 Pix: ${empresa.pix_chave}` : ''}${empresa?.pagamento_instrucoes ? `\n${empresa.pagamento_instrucoes}` : ''}`
 
-  async function pdf() {
-    setErro(''); setMsg(''); setOcupado('pdf')
-    try { baixar(await gerarPdf(folha.current, nomeArq), nomeArq); setMsg('PDF baixado.') } catch (e) { setErro(e.message) } finally { setOcupado('') }
-  }
-  async function whats() {
-    setErro(''); setMsg(''); setOcupado('whats')
-    try {
-      const blob = await gerarPdf(folha.current, nomeArq)
-      const r = await enviarWhats({ blob, nome: nomeArq, telefone: cliente?.telefone, mensagem })
-      if (r === 'link') setMsg(cliente?.telefone ? 'WhatsApp aberto na conversa do cliente com o link do PDF.' : 'WhatsApp aberto com o link do PDF — escolha o contato (cliente sem telefone no cadastro).')
-      if (r === 'compartilhado') setMsg('PDF enviado.')
-    } catch (e) { setErro(e.message) } finally { setOcupado('') }
-  }
-
   return createPortal(
     <div className="print-root">
       <div className="print-barra no-print">
         <div><b>{titulo} {numeroPedido(pedido.numero)}</b> <span className="faint">· {cliente?.nome || 'sem cliente'}</span></div>
-        <div className="row-gap">
-          {msg && <span className="doc-ok">{msg}</span>}
-          {erro && <span className="doc-erro">{erro}</span>}
-          <button className="btn" onClick={() => window.print()}>Imprimir</button>
-          <button className="btn" onClick={pdf} disabled={!!ocupado}><Icon name="ficha" size={16} />{ocupado === 'pdf' ? 'Gerando…' : 'Baixar PDF'}</button>
-          <button className="btn btn-whats" onClick={whats} disabled={!!ocupado}><Icon name="app" size={16} />{ocupado === 'whats' ? 'Preparando…' : 'Enviar no WhatsApp'}</button>
-          <button className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
-        </div>
+        <AcoesDocumento alvo={folha} nome={nomeArq} telefone={cliente?.telefone} mensagem={mensagem} pasta="pedidos" onFechar={onFechar} />
       </div>
 
       <div className="print-folhas">

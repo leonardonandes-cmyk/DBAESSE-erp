@@ -6,6 +6,7 @@ import { custosPorProduto, margemNaLista, pct, tomMargem } from '../lib/custos.j
 import { brl } from '../lib/format.js'
 import { listarListas, precoNaLista } from '../lib/precos.js'
 import { listarProdutos, salvarPrecosModelo } from '../lib/produtos.js'
+import ImprimirTabela from '../components/ImprimirTabela.jsx'
 
 /*
   Tabela de preços para consulta: todos os modelos × todas as listas.
@@ -25,6 +26,7 @@ export default function TabelaPrecos() {
   const [interno, setInterno] = useState(() => lerPref('precos.interno', false))
   const [inativos, setInativos] = useState(false)
   const [corrigir, setCorrigir] = useState(null)
+  const [enviar, setEnviar] = useState(false)
 
   useEffect(() => {
     Promise.all([listarProdutos(), listarListas(), listarFichaConsumo()])
@@ -55,7 +57,7 @@ export default function TabelaPrecos() {
           <button className={`btn ${interno ? 'btn-dark' : ''}`} onClick={alternarInterno} aria-pressed={interno} title="Custo e margem são dados internos">
             {interno ? 'Esconder custo e margem' : 'Mostrar custo e margem'}
           </button>
-          <button className="btn" onClick={() => window.print()}>Imprimir / PDF</button>
+          <button className="btn btn-dark" onClick={() => setEnviar(true)} disabled={!listas.length}>Tabela para o cliente · PDF · WhatsApp</button>
         </div>
       </header>
 
@@ -123,6 +125,7 @@ export default function TabelaPrecos() {
         Clique num modelo para corrigir o preço. Preços calculados pelas regras de Configurações → Listas de preço{semPreco ? ` · ${semPreco} modelo(s) sem preço de atacado cadastrado` : ''}.
         {interno && ' Margem já descontando as despesas de cada lista (imposto, frete, perda…).'}
       </p>
+      {enviar && <ImprimirTabela produtos={visiveis} listas={listas} onFechar={() => setEnviar(false)} />}
       {corrigir && <CorrigirPreco produto={corrigir} listas={listas} onFechar={() => setCorrigir(null)}
         onSalvo={(novo) => { setProdutos((ps) => ps.map((x) => (x.id === corrigir.id ? { ...x, ...novo } : x))); setCorrigir(null) }} />}
     </>
