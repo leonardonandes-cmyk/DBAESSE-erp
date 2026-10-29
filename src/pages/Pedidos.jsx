@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import NovoPedido from '../components/NovoPedido.jsx'
 import PedidoDetalhe from '../components/PedidoDetalhe.jsx'
@@ -37,7 +38,16 @@ export default function Pedidos() {
       return pe
     } catch (e) { setErro(e.message) } finally { setCarregando(false) }
   }
-  useEffect(() => { carregar() }, [])
+  // vindo da Produção: ?abrir=<id> abre o pedido · ?corrigir=<id> abre a correção
+  const [params, setParams] = useSearchParams()
+  useEffect(() => {
+    carregar().then((lista) => {
+      const id = params.get('abrir') || params.get('corrigir')
+      const p = id && lista?.find((x) => x.id === id)
+      if (p) (params.get('corrigir') ? setCorrigir : setAberto)(p)
+      if (id) setParams({}, { replace: true })
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const visiveis = useMemo(() => {
     const f = FILTROS.find((x) => x.id === filtro)

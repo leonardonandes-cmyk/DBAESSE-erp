@@ -8,6 +8,7 @@ import OPDetalhe from '../components/OPDetalhe.jsx'
 import OPForm from '../components/OPForm.jsx'
 import Programacao from '../components/Programacao.jsx'
 import MapasLista from '../components/MapasLista.jsx'
+import PedidosAguardando from '../components/PedidosAguardando.jsx'
 import ProgPalmilhas from '../components/ProgPalmilhas.jsx'
 import NovoMapa from '../components/NovoMapa.jsx'
 import ImprimirMapa from '../components/ImprimirMapa.jsx'
@@ -137,8 +138,10 @@ export default function Producao({ visao = 'quadro' }) {
       </div>
 
       {visao === 'palmilhas' ? <ProgPalmilhas cores={cores} />
-        : visao === 'mapas' ? <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} onMudou={carregar}
-          onCorrigir={async (mapa, os) => { if (!parceirosProg) setParceirosProg(await listarParceiros().catch(() => [])); setCorrigirProg({ mapa, ops: os }) }} />
+        : visao === 'mapas' ? <><PedidosAguardando pedidos={pedidos} ops={ops} produtos={produtos} cores={cores} versao={versaoMapas}
+          onProgramado={async (r) => { await carregar(); setVersaoMapas((v) => v + 1); const m = (await listarMapas()).find((x) => x.id === r.id); if (m) setImprimirProg(m) }} />
+          <MapasLista ops={ops} cores={cores} versao={versaoMapas} onNovo={abrirProg} onMudou={carregar}
+          onCorrigir={async (mapa, os) => { if (!parceirosProg) setParceirosProg(await listarParceiros().catch(() => [])); setCorrigirProg({ mapa, ops: os }) }} /></>
         : visao === 'pcp' ? <Programacao ops={ops} setores={setores} onAbrir={setAberta} onMudou={carregar} /> : <>
       <section className="grid-kpi">
         <div className="card kpi"><span className="kpi-label">Ordens em aberto</span><span className="kpi-value">{inteiro(abertas.length)}</span></div>

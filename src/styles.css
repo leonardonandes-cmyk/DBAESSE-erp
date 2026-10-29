@@ -1478,3 +1478,21 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 @media (max-width: 640px) { .transp-linha { grid-template-columns: 1fr; } }
 .doc-partes { grid-template-columns: 1.6fr 1.3fr .9fr; }
 .doc-falta { display: block; margin-top: 2px; font-size: 12px; color: #b4561c; font-weight: 600; }
+/* Pedidos aguardando programação */
+.aguarda { display: grid; gap: 4px; margin-bottom: 18px; }
+.aguarda-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.aguarda-head h2 { margin: 0; font-size: 17px; }
+.aguarda-head .card-sub { margin: 4px 0 0; }
+.aguarda-cont { min-width: 34px; height: 34px; padding: 0 10px; border-radius: 17px; background: var(--ink, #111); color: #fff; display: grid; place-items: center; font-weight: 700; }
+.aguarda-linha { display: grid; grid-template-columns: 120px minmax(0, 1fr) 90px 100px auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line, #eee); font-size: 14px; }
+.aguarda-num { display: flex; gap: 8px; align-items: center; }
+.aguarda-cli { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aguarda-cli small { color: var(--muted); }
+.aguarda-prev.atras { color: #b4561c; font-weight: 600; }
+.aguarda-acoes { display: flex; gap: 12px; align-items: center; justify-content: flex-end; }
+.aguarda-orc { justify-self: start; margin-top: 6px; }
+@media (max-width: 720px) {
+  .aguarda-linha { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .aguarda-cli { grid-column: 1 / -1; order: -1; font-weight: 600; }
+  .aguarda-acoes { grid-column: 1 / -1; justify-content: flex-start; }
+}
