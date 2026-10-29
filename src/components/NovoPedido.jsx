@@ -9,7 +9,7 @@ import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import ParceiroForm from './ParceiroForm.jsx'
 import { brl } from '../lib/format.js'
-import { CANAIS, enderecoCompleto } from '../lib/parceiros.js'
+import { CANAIS, enderecoCompleto, lembrarTransportadora } from '../lib/parceiros.js'
 import { atualizarPedido, carregarItens, criarPedido } from '../lib/pedidos.js'
 import { numeroPedido, rotuloNum } from '../lib/format.js'
 import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
@@ -28,13 +28,15 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
   const [itensSalvos, setItensSalvos] = useState([])
   const [novos, setNovos] = useState([]) // clientes cadastrados agora, dentro da venda
   const [cadastrar, setCadastrar] = useState(false)
+  const [novaTransp, setNovaTransp] = useState(false)
+  const transportadoras = useMemo(() => [...novos, ...parceiros].filter((p, i, a) => p.ativo !== false && p.tipos?.includes('transportadora') && a.findIndex((x) => x.id === p.id) === i).sort((a, b) => a.nome.localeCompare(b.nome)), [parceiros, novos])
   const clientes = useMemo(
     () => [...novos, ...parceiros].filter((p, i, a) => p.ativo && (p.tipos.includes('cliente') || p.tipos.includes('revendedora')) && a.findIndex((x) => x.id === p.id) === i),
     [parceiros, novos]
   )
   const [f, setF] = useState(() => (pedido
-    ? { vendedora: pedido.vendedora ?? '', parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status }
-    : { parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento' }))
+    ? { vendedora: pedido.vendedora ?? '', parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status, transportadora_id: pedido.transportadora_id || '', frete_por: pedido.frete_por || 'cliente' }
+    : { parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento', transportadora_id: '', frete_por: 'cliente' }))
   const [outroEndereco, setOutroEndereco] = useState(Boolean(pedido?.endereco_entrega))
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
@@ -67,7 +69,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
     let novo = { ...f, [k]: v }
     if (k === 'parceiro_id') {
       const c = clientes.find((x) => x.id === v)
-      novo = { ...novo, canal: c?.canal || f.canal, endereco_entrega: '' }
+      novo = { ...novo, canal: c?.canal || f.canal, endereco_entrega: '', transportadora_id: c?.transportadora_id || '' }
       setOutroEndereco(false)
       novo.lista = listaSugerida(c, novo.canal)
     }
@@ -129,6 +131,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
       const dados = { ...f, desconto: descontoRS, itens: validos }
       const ped = editando ? await atualizarPedido(pedido.id, dados) : await criarPedido(dados)
       const atual = editando ? pedido : { ...ped, status: dados.status }
+      const cli = clientes.find((x) => x.id === f.parceiro_id)
+      if (cli && (cli.transportadora_id || '') !== (f.transportadora_id || '')) lembrarTransportadora(cli.id, f.transportadora_id).catch(() => {})
       // já tem programação atrelada → ela acompanha a correção
       const prog = await programacaoDoPedido(atual.id)
       if (prog) {
@@ -154,7 +158,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
       const g = {}
       itensSalvos.forEach((i) => { const k = `${i.produto?.id}|${i.cor?.id}`; (g[k] ||= { chave: k, produto: i.produto, cor: i.cor, itens: [] }).itens.push({ id: i.sku_id, quantidade: i.quantidade, preco_unit: i.preco_unit, skus: { numero: i.numero } }) })
       const grupos = Object.values(g).map((x) => ({ ...x, itens: x.itens.sort((a, b) => a.skus.numero - b.skus.numero) }))
-      const ped = { id: pedido.id, numero: pedido.numero, status: pedido.status || f.status, canal: f.canal, vendedora: f.vendedora, criado_em: pedido.criado_em || new Date().toISOString(), previsao: f.previsao, observacoes: f.observacoes, desconto: descontoRS }
+      const ped = { id: pedido.id, numero: pedido.numero, status: pedido.status || f.status, canal: f.canal, vendedora: f.vendedora, frete_por: f.frete_por, transp: transportadoras.find((x) => x.id === f.transportadora_id) || null, criado_em: pedido.criado_em || new Date().toISOString(), previsao: f.previsao, observacoes: f.observacoes, desconto: descontoRS }
       return <ImprimirPedido pedido={ped} grupos={grupos} cliente={cliente} entrega={f.endereco_entrega || enderecoCompleto(cliente)}
         totais={{ pares, bruto, total, desconto: descontoRS }} onFechar={depoisDeEnviar} />
     }
@@ -323,7 +327,24 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
           )
         })()}
 
-        <label className="field"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Forma de pagamento, transportadora, embalagem…" /></label>
+        <div className="transp-linha">
+          <label className="field">
+            <span style={{ display: 'flex', justifyContent: 'space-between' }}>Transportadora <button type="button" className="link-btn" onClick={() => setNovaTransp(true)}>+ nova</button></span>
+            <select className="input" value={f.transportadora_id} onChange={set('transportadora_id')}>
+              <option value="">Sem transportadora (retira / entrega própria)</option>
+              {transportadoras.map((x) => <option key={x.id} value={x.id}>{x.nome}{x.cidade ? ` · ${x.cidade}` : ''}</option>)}
+            </select>
+          </label>
+          <div className="field">
+            <span>Frete por conta</span>
+            <div className="segmented" role="group" aria-label="Frete por conta">
+              <button type="button" className={f.frete_por === 'cliente' ? 'on' : ''} onClick={() => setF((x) => ({ ...x, frete_por: 'cliente' }))}>Do cliente (FOB)</button>
+              <button type="button" className={f.frete_por === 'empresa' ? 'on' : ''} onClick={() => setF((x) => ({ ...x, frete_por: 'empresa' }))}>Da DBAESSE (CIF)</button>
+            </div>
+          </div>
+        </div>
+
+        <label className="field"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Forma de pagamento, embalagem…" /></label>
 
         {erro && <p className="form-error" role="alert">{erro}</p>}
 
@@ -339,6 +360,10 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
           </div>
         </div>
       </div>
+      {novaTransp && (
+        <ParceiroForm tipoInicial="transportadora" onFechar={() => setNovaTransp(false)}
+          onSalvo={(nova) => { setNovaTransp(false); if (!nova?.id) return; setNovos((n) => [nova, ...n]); setF((x) => ({ ...x, transportadora_id: nova.id })) }} />
+      )}
       {cadastrar && (
         <ParceiroForm tipoInicial="cliente" onFechar={() => setCadastrar(false)}
           onSalvo={(novo) => {

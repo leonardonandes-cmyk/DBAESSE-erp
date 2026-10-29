@@ -6,7 +6,7 @@ const ABAS = [
   ['SKUs e estoque', 'estoque_saldos', 'sku,numero,saldo,saldo_bulk,saldo_pick'],
   ['Cores', 'cores', 'nome,sigla,hex'],
   ['Clientes e fornecedores', 'parceiros', 'nome,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,observacoes,ativo'],
-  ['Pedidos', 'pedidos', 'numero,canal,status,previsao,desconto,observacoes,criado_em,parceiros(nome)'],
+  ['Pedidos', 'pedidos', 'numero,canal,status,previsao,desconto,observacoes,criado_em,parceiros!pedidos_parceiro_id_fkey(nome)'],
   ['Itens dos pedidos', 'pedido_itens', 'quantidade,preco_unit,pedidos(numero),skus(sku)'],
   ['Movimentos de estoque', 'estoque_movimentos', 'criado_em,local,tipo,quantidade,motivo,observacao,skus(sku)'],
   ['Financeiro', 'titulos', 'tipo,descricao,categoria,valor,vencimento,parcela,pago_em,valor_pago,forma,observacao,parceiros(nome)'],

@@ -54,6 +54,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
               <small>Entrega</small>
               <span>{entrega || '—'}</span>
               {pedido.previsao && <span><b>Previsão: {dataLonga(pedido.previsao)}</b></span>}
+              {(pedido.transp?.nome || pedido.frete_por) && <span>{pedido.transp?.nome ? <>Transportadora: <b>{pedido.transp.nome}</b>{pedido.transp.telefone ? ` · ${pedido.transp.telefone}` : ''}</> : 'Sem transportadora'}{pedido.frete_por ? ` · frete por conta ${pedido.frete_por === 'empresa' ? 'da DBAESSE (CIF)' : 'do cliente (FOB)'}` : ''}</span>}
             </div>
             <div>
               <small>Condição</small>

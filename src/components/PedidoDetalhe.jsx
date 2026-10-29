@@ -133,6 +133,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
           <dl className="dados">
             <dt>Previsão</dt><dd>{pedido.previsao ? dataBR(pedido.previsao) : '—'}</dd>
             <dt>Entrega</dt><dd>{entrega || '—'}{pedido.endereco_entrega ? <span className="pill warn" style={{ marginLeft: 8 }}>diferente do cadastro</span> : entrega ? <small style={{ color: 'var(--muted)' }}> · do cadastro</small> : null}</dd>
+            <dt>Transportadora</dt><dd>{pedido.transp?.nome || '—'}{pedido.frete_por ? <small style={{ color: 'var(--muted)' }}> · frete {pedido.frete_por === 'empresa' ? 'da DBAESSE (CIF)' : 'do cliente (FOB)'}</small> : null}</dd>
             <dt>Observações</dt><dd>{pedido.observacoes || '—'}</dd>
           </dl>
         )}

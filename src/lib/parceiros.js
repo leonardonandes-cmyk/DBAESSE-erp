@@ -12,7 +12,7 @@ export const CANAIS = ['Atacado', 'Variado', 'Drop', 'Shopee', 'TikTok Shop', 'M
 export async function listarParceiros() {
   return todas(() => supabase
     .from('parceiros')
-    .select('id,nome,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,grupo,observacoes,ativo')
+    .select('id,nome,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,grupo,transportadora_id,observacoes,ativo')
     .order('nome').order('id'))
 }
 
@@ -53,4 +53,10 @@ export function enderecoCompleto(p) {
   const rua = [p.endereco, p.numero].filter(Boolean).join(', ')
   const cid = p.cidade ? `${p.cidade}${p.uf ? `/${p.uf}` : ''}` : ''
   return [rua, p.complemento, p.bairro, cid, p.cep ? `CEP ${p.cep}` : ''].filter(Boolean).join(' – ')
+}
+
+// lembra a última transportadora usada com o cliente (sugere no próximo pedido)
+export async function lembrarTransportadora(clienteId, transportadoraId) {
+  if (!clienteId) return
+  await supabase.from('parceiros').update({ transportadora_id: transportadoraId || null }).eq('id', clienteId)
 }
