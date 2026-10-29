@@ -1418,3 +1418,41 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .prog-cor i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
 .prog-resumo { font-size: 13px; color: var(--muted); }
 .prog-acoes { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line-soft); padding-top: 14px; }
+
+/* ---------- Pedido / orçamento para o cliente (A4) ---------- */
+.btn-whats { background: #1f9d55 !important; border-color: #1f9d55 !important; color: #fff !important; }
+.doc-ok { font-size: 12px; font-weight: 700; color: var(--ok); }
+.doc-erro { font-size: 12px; font-weight: 700; color: var(--bad); }
+.doc-folha { gap: 7mm; padding: 14mm 13mm; font-size: 10pt; }
+.doc-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 8mm; padding-bottom: 5mm; border-bottom: 1.5px solid #111; }
+.doc-logo { display: grid; gap: 1.5mm; }
+.doc-logo b { font-family: 'Jost', var(--font); font-size: 24pt; font-weight: 500; letter-spacing: .16em; line-height: 1; }
+.doc-logo small { font-size: 7.5pt; color: #666; max-width: 110mm; line-height: 1.4; }
+.doc-tit { display: grid; justify-items: end; text-align: right; gap: .5mm; }
+.doc-tit small { font-size: 8pt; letter-spacing: .2em; text-transform: uppercase; color: #8A5A32; font-weight: 700; }
+.doc-tit b { font-family: 'Jost', var(--font); font-size: 18pt; font-weight: 600; letter-spacing: .06em; }
+.doc-tit span { font-size: 9pt; color: #666; }
+.doc-partes { display: grid; grid-template-columns: 1.2fr 1.4fr 1fr; gap: 6mm; }
+.doc-partes > div { display: grid; gap: 1mm; align-content: start; }
+.doc-partes small { font-size: 7pt; letter-spacing: .16em; text-transform: uppercase; color: #8A5A32; font-weight: 700; margin-bottom: .5mm; }
+.doc-partes b { font-size: 11pt; } .doc-partes span { font-size: 9pt; color: #333; line-height: 1.45; }
+.doc-itens { width: 100%; border-collapse: collapse; font-size: 9pt; }
+.doc-itens thead th { font-size: 7pt; letter-spacing: .12em; text-transform: uppercase; color: #666; font-weight: 700; padding: 2mm 1.5mm; border-bottom: 1px solid #111; text-align: left; }
+.doc-itens th.c, .doc-itens td.c { text-align: center; width: 9mm; } .doc-itens th.r, .doc-itens td.r { text-align: right; white-space: nowrap; }
+.doc-itens td { padding: 2.2mm 1.5mm; border-bottom: 1px solid #e6e3dd; vertical-align: middle; }
+.doc-item { break-inside: avoid; page-break-inside: avoid; }
+.doc-col-prod { width: 62mm; }
+.doc-prod { display: flex; align-items: center; gap: 3mm; }
+.doc-prod > div { display: grid; gap: .3mm; }
+.doc-prod b { font-size: 10.5pt; } .doc-prod span { font-size: 8.5pt; color: #444; }
+.doc-prod em { font-style: normal; font-size: 8.5pt; color: #333; display: inline-flex; align-items: center; gap: 1.5mm; }
+.doc-prod em i { width: 2.6mm; height: 2.6mm; border-radius: 50%; box-shadow: inset 0 0 0 .2mm rgba(0,0,0,.25); }
+.doc-fim { display: grid; grid-template-columns: 1fr 70mm; gap: 8mm; align-items: start; break-inside: avoid; }
+.doc-obs small { font-size: 7pt; letter-spacing: .16em; text-transform: uppercase; color: #8A5A32; font-weight: 700; }
+.doc-obs p { margin: 1mm 0 0; font-size: 9pt; line-height: 1.5; } .doc-valid { color: #666; font-style: italic; }
+.doc-totais { display: grid; gap: 1.5mm; }
+.doc-totais span { display: flex; justify-content: space-between; align-items: baseline; font-size: 9.5pt; }
+.doc-totais small { font-size: 7.5pt; letter-spacing: .12em; text-transform: uppercase; color: #666; }
+.doc-total { border-top: 1.5px solid #111; padding-top: 2mm; margin-top: 1mm; }
+.doc-total b { font-family: 'Jost', var(--font); font-size: 17pt; font-weight: 600; }
+.doc-rodape { margin-top: auto; text-align: center; font-size: 8pt; letter-spacing: .2em; text-transform: uppercase; color: #8A5A32; padding-top: 4mm; border-top: 1px solid #e6e3dd; }

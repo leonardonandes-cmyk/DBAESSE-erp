@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import TituloForm from './TituloForm.jsx'
+import ImprimirPedido from './ImprimirPedido.jsx'
 import { titulosDoPedido } from '../lib/financeiro.js'
 import { brl, dataBR, hojeISO, numeroPedido, rotuloNum } from '../lib/format.js'
 import { enderecoCompleto } from '../lib/parceiros.js'
@@ -15,6 +16,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   const [editando, setEditando] = useState(false)
   const [titulos, setTitulos] = useState(null)
   const [gerar, setGerar] = useState(false)
+  const [imprimir, setImprimir] = useState(false)
 
   useEffect(() => { titulosDoPedido(pedido.id).then(setTitulos).catch(() => setTitulos([])) }, [pedido.id, pedido.status])
 
@@ -150,7 +152,8 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
             <b>{brl(total)}</b>
           </div>
           <div className="actions">
-            <button type="button" className="btn" onClick={copiarResumo}>{copiado ? 'Copiado ✓' : 'Copiar p/ WhatsApp'}</button>
+            <button type="button" className="btn btn-dark" onClick={() => setImprimir(true)} disabled={!itens}>Visualizar · PDF · WhatsApp</button>
+            <button type="button" className="btn" onClick={copiarResumo}>{copiado ? 'Copiado ✓' : 'Copiar resumo'}</button>
             {editando
               ? <button type="button" className="btn" disabled={ocupado} onClick={salvarDados}>Salvar dados</button>
               : !fechado && !pedido.estoque_baixado && onCorrigir ? <button type="button" className="btn" onClick={onCorrigir}>Corrigir pedido</button>
@@ -169,6 +172,10 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
           </div>
         </div>
             </div>
+      {imprimir && (
+        <ImprimirPedido pedido={pedido} grupos={grupos} cliente={parceiros.find((x) => x.id === pedido.parceiro_id)} entrega={entrega}
+          totais={{ pares, bruto, total, desconto: Number(pedido.desconto) || 0 }} onFechar={() => setImprimir(false)} />
+      )}
       {gerar && (
         <div onClick={(e) => e.stopPropagation()}>
           <TituloForm parceiros={parceiros}
