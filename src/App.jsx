@@ -18,6 +18,7 @@ import Simulador from './pages/Simulador.jsx'
 import TabelaPrecos from './pages/TabelaPrecos.jsx'
 import MargemLojas from './pages/MargemLojas.jsx'
 import Indicadores from './pages/Indicadores.jsx'
+import MapaClientes from './pages/MapaClientes.jsx'
 import FichasTecnicas from './pages/FichasTecnicas.jsx'
 import BiparProducao from './components/BiparProducao.jsx'
 
@@ -40,6 +41,7 @@ export const MODULOS = [
   { to: '/fichas', icon: 'ficha', label: 'Fichas técnicas', grupo: 'Operações', sub: true },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro' },
   { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
+  { to: '/mapa', icon: 'mapa', label: 'Mapa de clientes', grupo: 'Relatórios' },
   { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
 ]
 const GRUPOS = [...new Set(MODULOS.map((m) => m.grupo || ''))]
@@ -139,6 +141,7 @@ export default function App() {
           <Route path="/compras" element={<Compras />} />
           <Route path="/relatorios" element={<Indicadores />} />
           <Route path="/indicadores" element={<Indicadores />} />
+          <Route path="/mapa" element={<MapaClientes />} />
           <Route path="/fichas" element={<FichasTecnicas />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/producao" element={<Producao visao="quadro" />} />
