@@ -21,7 +21,8 @@ export const LISTA_POR_CANAL = {
   Atacado: 'atacado', Variado: 'variado', Drop: 'drop',
   Shopee: 'varejo', 'TikTok Shop': 'varejo', 'Mercado Livre': 'varejo', Instagram: 'varejo', 'Loja / varejo': 'varejo',
 }
-export const listaSugerida = (cliente, canal) => cliente?.lista || LISTA_POR_CANAL[canal] || 'atacado'
+// a lista segue SEMPRE o segmento do pedido (a vendedora não troca) — cliente não muda isso
+export const listaSugerida = (_cliente, canal) => LISTA_POR_CANAL[canal] || 'atacado'
 
 export function precoNaLista(produto, lista) {
   if (!produto) return 0

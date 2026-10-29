@@ -1,5 +1,4 @@
-import AvisoLista from './AvisoLista.jsx'
-import { listaDoSegmento } from '../lib/modalidades.js'
+import Icon from './Icon.jsx'
 import { listarVendedoras, vendedoraPadrao, vendedorasDe } from '../lib/repasses.js'
 import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
@@ -49,13 +48,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
       produto: prodPorId[i.skus.produto_id], cor: corPorId[i.skus.cor_id],
     })))).catch((e) => setErro(e.message))
   }, [pedido?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  // lista de outro segmento: trava e pergunta antes
-  const [avisoLista, setAvisoLista] = useState(null)
-  const set = (k) => (e) => {
-    const v = e.target.value
-    if (k === 'lista' && v !== listaDoSegmento(f.canal)) { setAvisoLista(v); return }
-    aplicar(k, v)
-  }
+  // a lista de preço é travada no segmento: só muda trocando o canal
+  const set = (k) => (e) => { if (k !== 'lista') aplicar(k, e.target.value) }
   const aplicar = (k, v) => {
     let novo = { ...f, [k]: v }
     if (k === 'parceiro_id') {
@@ -151,10 +145,10 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
             </select>
           </label>
           <label className="field">
-            <span>Lista de preço{f.lista && listas.length > 0 && f.lista !== listaDoSegmento(f.canal) && <span className="lista-fora">fora do segmento</span>}</span>
-            <select className="input" value={f.lista} onChange={set('lista')}>
-              {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}{Number(l.acrescimo) ? ` (+${Number(l.acrescimo).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})` : ''}</option>)}
-            </select>
+            <span>Lista de preço</span>
+            <div className="input lista-travada" title="A lista segue o segmento do pedido. Para mudar, troque o canal.">
+              <Icon name="cadeado" size={15} />{listas.find((l) => l.codigo === f.lista)?.nome || f.lista}<small>pelo segmento</small>
+            </div>
           </label>
           <label className="field">
             <span>Vendedora</span>
@@ -256,13 +250,6 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
             const l = listas.find((x) => x.codigo === lista)
             setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoNaLista(i.produto, l) })))
           }} />
-      )}
-      {avisoLista && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <AvisoLista canal={f.canal} escolhida={avisoLista} esperada={listaDoSegmento(f.canal)} listas={listas}
-            onVoltar={() => { setAvisoLista(null); if (f.lista !== listaDoSegmento(f.canal)) aplicar('lista', listaDoSegmento(f.canal)) }}
-            onSeguir={() => { aplicar('lista', avisoLista); setAvisoLista(null) }} />
-        </div>
       )}
     </div>
   )

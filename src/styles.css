@@ -1375,3 +1375,6 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .aviso-lista-acoes { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
 .aviso-lista-acoes .btn { width: 100%; justify-content: center; }
 .lista-fora { color: var(--bad); font-weight: 700; font-size: 11px; margin-left: 6px; }
+.lista-travada { display: flex; align-items: center; gap: 8px; background: var(--surface-2); color: var(--ink); font-weight: 600; cursor: not-allowed; user-select: none; }
+.lista-travada svg { color: var(--muted); flex-shrink: 0; }
+.lista-travada small { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--faint); }
