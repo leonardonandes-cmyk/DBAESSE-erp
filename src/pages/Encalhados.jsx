@@ -83,7 +83,7 @@ export default function Encalhados() {
     <>
       <header className="page-head">
         <div>
-          <div className="eyebrow">Relatórios · giro do estoque</div>
+          <div className="eyebrow">Estoque · giro dos produtos</div>
           <h1>Produtos encalhados</h1>
         </div>
         <div className="actions">

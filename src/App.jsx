@@ -36,14 +36,14 @@ export const MODULOS = [
   { to: '/producao/palmilhas', icon: 'ficha', label: 'Palmilhas', grupo: 'Operações', sub: true },
   { to: '/producao/pcp', icon: 'relatorios', label: 'Programação (PCP)', grupo: 'Operações', sub: true },
   { to: '/producao/bipar', icon: 'leitor', label: 'Bipar fichas', grupo: 'Operações', sub: true },
-  { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações' },
+  { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações', exato: true },
+  { to: '/estoque/encalhados', icon: 'alerta', label: 'Produtos encalhados', grupo: 'Operações', sub: true },
   { to: '/compras', icon: 'compras', label: 'Compras', grupo: 'Operações' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
   { to: '/fichas', icon: 'ficha', label: 'Fichas técnicas', grupo: 'Operações', sub: true },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro' },
   { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
   { to: '/mapa', icon: 'mapa', label: 'Mapa de clientes', grupo: 'Relatórios' },
-  { to: '/encalhados', icon: 'alerta', label: 'Produtos encalhados', grupo: 'Relatórios' },
   { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
 ]
 const GRUPOS = [...new Set(MODULOS.map((m) => m.grupo || ''))]
@@ -144,6 +144,7 @@ export default function App() {
           <Route path="/relatorios" element={<Indicadores />} />
           <Route path="/indicadores" element={<Indicadores />} />
           <Route path="/mapa" element={<MapaClientes />} />
+          <Route path="/estoque/encalhados" element={<Encalhados />} />
           <Route path="/encalhados" element={<Encalhados />} />
           <Route path="/fichas" element={<FichasTecnicas />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
