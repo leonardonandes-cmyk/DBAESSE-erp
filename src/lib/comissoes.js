@@ -4,7 +4,7 @@ import { MODALIDADE, modalidadeDoCanal } from './modalidades.js'
 
 /*
   Comissões
-  - Regra por MODALIDADE do pedido (atacado, variado, drop, marketplace, varejo) ou por POLO/GRUPO da cliente (ex.: Fartura).
+  - Regra por VENDEDORA do pedido (nas modalidades dela), por POLO/GRUPO da cliente (ex.: Fartura) ou por MODALIDADE.
   - tipo 'pct' = % do valor faturado (já com desconto) · 'par' = R$ por par.
   - Regras que valem para o mesmo pedido SOMAM (ex.: pedido de atacado do polo Fartura paga Fartura + Sabrina).
   - Base: pedidos faturados ou entregues, pela data do pedido.
@@ -12,14 +12,14 @@ import { MODALIDADE, modalidadeDoCanal } from './modalidades.js'
 export const VENDIDO = ['faturado', 'entregue']
 
 export async function listarRegras() {
-  const { data, error } = await supabase.from('comissao_regras').select('id,beneficiario,parceiro_id,criterio,alvo,tipo,valor,ativo,ordem').order('ordem').order('criado_em')
+  const { data, error } = await supabase.from('comissao_regras').select('id,beneficiario,parceiro_id,criterio,alvo,modalidades,tipo,valor,ativo,ordem').order('ordem').order('criado_em')
   if (error) throw error
   return data
 }
 
 export async function salvarRegra(r) {
   const linha = {
-    beneficiario: r.beneficiario.trim(), criterio: r.criterio, alvo: String(r.alvo).trim(), tipo: r.tipo,
+    beneficiario: r.beneficiario.trim(), criterio: r.criterio, alvo: String(r.alvo ?? '').trim(), modalidades: r.criterio === 'vendedora' ? (r.modalidades || []) : [], tipo: r.tipo,
     valor: Number(String(r.valor).replace(',', '.')) / (r.tipo === 'pct' ? 100 : 1), ativo: r.ativo ?? true, ordem: r.ordem ?? 0,
   }
   const q = r.id ? supabase.from('comissao_regras').update(linha).eq('id', r.id) : supabase.from('comissao_regras').insert(linha)
@@ -32,11 +32,22 @@ export async function excluirRegra(id) {
   if (error) throw error
 }
 
+export const onde = (r) => (r.criterio === 'grupo' ? `polo ${r.alvo}` : r.criterio === 'vendedora' ? `vendas dela: ${(r.modalidades || []).map((m) => MODALIDADE[m]?.label || m).join(', ')}` : MODALIDADE[r.alvo]?.label || r.alvo)
 export const descreverRegra = (r) =>
-  `${r.tipo === 'pct' ? `${(Number(r.valor) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do faturado` : `R$ ${Number(r.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} por par`} · ${r.criterio === 'grupo' ? `polo ${r.alvo}` : MODALIDADE[r.alvo]?.label || r.alvo}`
+  `${r.tipo === 'pct' ? `${(Number(r.valor) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do faturado` : `R$ ${Number(r.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} por par`} · ${onde(r)}`
+
+// vendedora sugerida para um pedido novo: dona da modalidade do canal (marketplace → ninguém)
+export function vendedoraPadrao(regras, canal) {
+  const m = modalidadeDoCanal(canal)
+  return regras.filter((r) => r.ativo && r.criterio === 'vendedora' && (r.modalidades || []).includes(m)).sort((a, b) => a.ordem - b.ordem)[0]?.beneficiario || ''
+}
+export const vendedorasDe = (regras) => [...new Set(regras.filter((r) => r.criterio === 'vendedora').map((r) => r.beneficiario))]
 
 const mesmo = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
-export const regraVale = (r, pedido) => r.ativo && (r.criterio === 'grupo' ? mesmo(pedido.grupo, r.alvo) : modalidadeDoCanal(pedido.canal) === r.alvo)
+export const regraVale = (r, pedido) => r.ativo && (
+  r.criterio === 'grupo' ? mesmo(pedido.grupo, r.alvo)
+  : r.criterio === 'vendedora' ? mesmo(pedido.vendedora, r.beneficiario) && (r.modalidades || []).includes(modalidadeDoCanal(pedido.canal))
+  : modalidadeDoCanal(pedido.canal) === r.alvo)
 
 // → { linhas: [{ pedido, total, pares, modalidade, comissoes: { regraId: valor } }], porRegra: { regraId: { valor, pedidos, pares, base } } }
 export function calcularComissoes(pedidos, regras, per) {

@@ -1,3 +1,4 @@
+import { listarRegras, vendedoraPadrao, vendedorasDe } from '../lib/comissoes.js'
 import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
@@ -18,11 +19,20 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
     [parceiros, novos]
   )
   const [f, setF] = useState(() => (pedido
-    ? { parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status }
+    ? { vendedora: pedido.vendedora ?? '', parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status }
     : { parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento' }))
   const [outroEndereco, setOutroEndereco] = useState(Boolean(pedido?.endereco_entrega))
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
+  // vendedora: sugerida pela modalidade do canal (Sabrina, Pamela…); dá para trocar ou deixar sem
+  const [regras, setRegras] = useState([])
+  const [vendManual, setVendManual] = useState(Boolean(pedido))
+  useEffect(() => {
+    listarRegras().then((rg) => {
+      setRegras(rg)
+      if (!pedido) setF((x) => (x.vendedora === undefined ? { ...x, vendedora: vendedoraPadrao(rg, x.canal) } : x))
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const listaAtual = listas.find((l) => l.codigo === f.lista)
   const [itens, setItens] = useState([]) // { sku_id, sku, numero, quantidade, preco_unit, produto, cor }
   const [erro, setErro] = useState('')
@@ -47,6 +57,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
       novo.lista = listaSugerida(c, novo.canal)
     }
     if (k === 'canal') novo.lista = listaSugerida(clientes.find((x) => x.id === f.parceiro_id), v)
+    if (k === 'vendedora') setVendManual(true)
+    else if (novo.canal !== f.canal && !vendManual && regras.length) novo.vendedora = vendedoraPadrao(regras, novo.canal)
     setF(novo)
     // trocou a lista: reprecifica os itens já lançados
     if (novo.lista !== f.lista) {
@@ -134,6 +146,13 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
             <span>Lista de preço</span>
             <select className="input" value={f.lista} onChange={set('lista')}>
               {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}{Number(l.acrescimo) ? ` (+${Number(l.acrescimo).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})` : ''}</option>)}
+            </select>
+          </label>
+          <label className="field">
+            <span>Vendedora</span>
+            <select className="input" value={f.vendedora ?? ''} onChange={set('vendedora')}>
+              <option value="">Ninguém (sem comissão)</option>
+              {[...new Set([...vendedorasDe(regras), ...(f.vendedora ? [f.vendedora] : [])])].map((v) => <option key={v} value={v}>{v}</option>)}
             </select>
           </label>
           <label className="field"><span>Previsão de entrega</span><input type="date" value={f.previsao} onChange={set('previsao')} /></label>

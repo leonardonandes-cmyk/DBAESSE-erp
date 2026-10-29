@@ -1360,3 +1360,7 @@ tr.inativa td { opacity: .5; }
 tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .form-ok { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--ok-soft); color: var(--ok); font-weight: 600; font-size: 13px; }
 .row-gap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.com-mods { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.com-mods .check { font-size: 12px; gap: 6px; }
+.com-mods .check input { width: 15px; height: 15px; }
+.com-mods-tags { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; }

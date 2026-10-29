@@ -69,7 +69,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
       <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div>
-            <div className="eyebrow">{pedido.canal} · criado em {dataBR(pedido.criado_em)}</div>
+            <div className="eyebrow">{pedido.canal}{pedido.vendedora ? ` · vendedora ${pedido.vendedora}` : ''}{pedido.grupo ? ` · polo ${pedido.grupo}` : ''} · criado em {dataBR(pedido.criado_em)}</div>
             <h2>{numeroPedido(pedido.numero)} · {pedido.parceiros?.nome || 'Sem cliente'}</h2>
             <div className="chips" style={{ marginTop: 8 }}>
               <span className={`pill ${st.tom}`}>{st.label}</span>

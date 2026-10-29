@@ -113,7 +113,7 @@ export default function Comissoes() {
           <div className="table-wrap">
             <table>
               <thead className="tinted">
-                <tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Modalidade</th><th>Polo</th><th className="r">Pares</th><th className="r">Valor</th>
+                <tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Modalidade</th><th>Vendedora</th><th>Polo</th><th className="r">Pares</th><th className="r">Valor</th>
                   {pessoas.map((p) => <th key={p.nome} className="r"><span className="canal-tag"><i style={{ background: p.cor }} />{p.nome}</span></th>)}</tr>
               </thead>
               <tbody>
@@ -123,6 +123,7 @@ export default function Comissoes() {
                     <td className="faint">{dataBR(l.pedido.criado_em.slice(0, 10))}</td>
                     <td>{l.pedido.parceiros?.nome || '—'}</td>
                     <td><span className="canal-tag"><i style={{ background: MODALIDADE[l.modalidade]?.cor }} />{MODALIDADE[l.modalidade]?.label}</span></td>
+                    <td>{l.pedido.vendedora || <span className="faint">—</span>}</td>
                     <td>{l.pedido.grupo || <span className="faint">—</span>}</td>
                     <td className="r">{inteiro(l.pares)}</td>
                     <td className="r">{brl(l.total)}</td>
@@ -132,10 +133,10 @@ export default function Comissoes() {
                     })}
                   </tr>
                 ))}
-                {linhas.length === 0 && <tr><td colSpan={7 + pessoas.length} className="vazio">Nenhum pedido com comissão no período.</td></tr>}
+                {linhas.length === 0 && <tr><td colSpan={8 + pessoas.length} className="vazio">Nenhum pedido com comissão no período.</td></tr>}
               </tbody>
               {linhas.length > 0 && (
-                <tfoot><tr><td colSpan={5}><b>Total</b></td><td className="r"><b>{inteiro(linhas.reduce((t, l) => t + l.pares, 0))}</b></td><td className="r"><b>{brl(linhas.reduce((t, l) => t + l.total, 0))}</b></td>
+                <tfoot><tr><td colSpan={6}><b>Total</b></td><td className="r"><b>{inteiro(linhas.reduce((t, l) => t + l.pares, 0))}</b></td><td className="r"><b>{brl(linhas.reduce((t, l) => t + l.total, 0))}</b></td>
                   {pessoas.map((p) => <td key={p.nome} className="r"><b>{brl(linhas.reduce((t, l) => t + p.regras.reduce((s, r) => s + (l.comissoes[r.id] || 0), 0), 0))}</b></td>)}</tr></tfoot>
               )}
             </table>
@@ -149,12 +150,12 @@ export default function Comissoes() {
 }
 
 function Regras({ regras, onMudou, setErro }) {
-  const vazia = { beneficiario: '', criterio: 'modalidade', alvo: 'atacado', tipo: 'pct', valor: '1', ativo: true }
+  const vazia = { beneficiario: '', criterio: 'vendedora', alvo: '', modalidades: ['atacado'], tipo: 'pct', valor: '1', ativo: true }
   const [edit, setEdit] = useState(null) // regra em edição (id ou 'nova')
   const [f, setF] = useState(vazia)
   const abrir = (r) => { setEdit(r ? r.id : 'nova'); setF(r ? { ...r, valor: String(Number(r.valor) * (r.tipo === 'pct' ? 100 : 1)).replace('.', ',') } : vazia) }
   async function salvar() {
-    if (!f.beneficiario.trim() || !String(f.alvo).trim() || !(Number(String(f.valor).replace(',', '.')) >= 0)) { setErro('Preencha quem recebe, onde vale e o valor.'); return }
+    if (!f.beneficiario.trim() || (f.criterio === 'vendedora' ? !(f.modalidades || []).length : !String(f.alvo).trim()) || !(Number(String(f.valor).replace(',', '.')) >= 0)) { setErro('Preencha quem recebe, onde vale e o valor.'); return }
     try { await salvarRegra({ ...f, id: edit === 'nova' ? undefined : edit }); setEdit(null); onMudou() } catch (e) { setErro(e.message) }
   }
   async function alternar(r) { try { await salvarRegra({ ...r, valor: Number(r.valor) * (r.tipo === 'pct' ? 100 : 1), ativo: !r.ativo }); onMudou() } catch (e) { setErro(e.message) } }
@@ -165,10 +166,14 @@ function Regras({ regras, onMudou, setErro }) {
       <td><input className="input" value={f.beneficiario} onChange={(e) => setF({ ...f, beneficiario: e.target.value })} placeholder="Quem recebe" /></td>
       <td>
         <div className="com-onde">
-          <select className="input" value={f.criterio} onChange={(e) => setF({ ...f, criterio: e.target.value, alvo: e.target.value === 'grupo' ? 'Fartura' : 'atacado' })}>
-            <option value="modalidade">Modalidade</option><option value="grupo">Polo / grupo</option>
+          <select className="input" value={f.criterio} onChange={(e) => setF({ ...f, criterio: e.target.value, alvo: e.target.value === 'grupo' ? 'Fartura' : e.target.value === 'modalidade' ? 'atacado' : '', modalidades: f.modalidades?.length ? f.modalidades : ['atacado'] })}>
+            <option value="vendedora">Vendedora (o que ela vende)</option><option value="grupo">Polo / grupo</option><option value="modalidade">Toda a modalidade</option>
           </select>
-          {f.criterio === 'modalidade'
+          {f.criterio === 'vendedora' ? (
+            <div className="com-mods">{MODALIDADES.map((m) => (
+              <label key={m.id} className="check"><input type="checkbox" checked={(f.modalidades || []).includes(m.id)} onChange={(e) => setF({ ...f, modalidades: e.target.checked ? [...(f.modalidades || []), m.id] : (f.modalidades || []).filter((x) => x !== m.id) })} />{m.label}</label>
+            ))}</div>
+          ) : f.criterio === 'modalidade'
             ? <select className="input" value={f.alvo} onChange={(e) => setF({ ...f, alvo: e.target.value })}>{MODALIDADES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select>
             : <input className="input" value={f.alvo} onChange={(e) => setF({ ...f, alvo: e.target.value })} placeholder="Fartura" />}
         </div>
@@ -187,7 +192,7 @@ function Regras({ regras, onMudou, setErro }) {
   return (
     <section className="card card-flush">
       <div className="card-head pad">
-        <div><h2>Regras de comissão</h2><div className="card-sub">Por modalidade do pedido ou por polo da cliente (campo "Polo / grupo" no cadastro). Regras do mesmo pedido somam.</div></div>
+        <div><h2>Regras de comissão</h2><div className="card-sub">Vendedora: ganha nos pedidos em que ela é a vendedora · Polo: pela cliente · regras do mesmo pedido somam · marketplace não paga ninguém.</div></div>
         <button className="btn btn-sm" onClick={() => abrir(null)}><Icon name="mais" size={14} />Nova regra</button>
       </div>
       <div className="table-wrap">
@@ -197,7 +202,7 @@ function Regras({ regras, onMudou, setErro }) {
             {regras.map((r) => edit === r.id ? <Frag key={r.id}>{form}</Frag> : (
               <tr key={r.id} className={r.ativo ? '' : 'inativa'}>
                 <td><b>{r.beneficiario}</b></td>
-                <td>{r.criterio === 'grupo' ? <>Polo <b>{r.alvo}</b></> : <span className="canal-tag"><i style={{ background: MODALIDADE[r.alvo]?.cor }} />{MODALIDADE[r.alvo]?.label || r.alvo}</span>}</td>
+                <td>{r.criterio === 'vendedora' ? <span className="com-mods-tags">Pedidos dela em {(r.modalidades || []).map((m) => <span key={m} className="canal-tag"><i style={{ background: MODALIDADE[m]?.cor }} />{MODALIDADE[m]?.label || m}</span>)}</span> : r.criterio === 'grupo' ? <>Polo <b>{r.alvo}</b></> : <span className="canal-tag"><i style={{ background: MODALIDADE[r.alvo]?.cor }} />{MODALIDADE[r.alvo]?.label || r.alvo}</span>}</td>
                 <td>{r.tipo === 'pct' ? `${(Number(r.valor) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do faturado` : `${brl(Number(r.valor))} por par`}</td>
                 <td><button className={`chip-var ${r.ativo ? 'sobe' : 'neutro'}`} style={{ border: 0, cursor: 'pointer' }} onClick={() => alternar(r)}>{r.ativo ? 'ativa' : 'pausada'}</button></td>
                 <td className="r"><div className="row-gap" style={{ justifyContent: 'flex-end' }}><button className="btn btn-sm" onClick={() => abrir(r)}>Editar</button><button className="btn btn-sm btn-perigo" onClick={() => excluir(r)}>Excluir</button></div></td>
