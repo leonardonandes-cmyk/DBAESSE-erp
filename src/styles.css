@@ -1378,3 +1378,12 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .lista-travada { display: flex; align-items: center; gap: 8px; background: var(--surface-2); color: var(--ink); font-weight: 600; cursor: not-allowed; user-select: none; }
 .lista-travada svg { color: var(--muted); flex-shrink: 0; }
 .lista-travada small { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--faint); }
+
+/* ---------- Guarda de cadastro aberto ("Deseja salvar as alterações?") ---------- */
+.guarda-bg { z-index: 90; background: rgba(21,21,21,.5); }
+.guarda { max-width: 440px; align-items: center; text-align: center; gap: 12px; border-top: 4px solid #b46b00; }
+.guarda-ic { width: 52px; height: 52px; border-radius: 50%; background: #fdf0d9; color: #b46b00; display: grid; place-items: center; font-size: 26px; font-weight: 800; }
+.guarda h2 { margin: 0; font-size: 21px; letter-spacing: -.02em; }
+.guarda p { margin: 0; color: var(--ink-2); line-height: 1.5; font-size: 14px; }
+.guarda-acoes { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
+.guarda-acoes .btn { width: 100%; justify-content: center; }
