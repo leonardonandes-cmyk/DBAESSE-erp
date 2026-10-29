@@ -1456,3 +1456,6 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .doc-total { border-top: 1.5px solid #111; padding-top: 2mm; margin-top: 1mm; }
 .doc-total b { font-family: 'Jost', var(--font); font-size: 17pt; font-weight: 600; }
 .doc-rodape { margin-top: auto; text-align: center; font-size: 8pt; letter-spacing: .2em; text-transform: uppercase; color: #8A5A32; padding-top: 4mm; border-top: 1px solid #e6e3dd; }
+.doc-pag { margin-top: 3mm; padding: 3mm 4mm; border: 1px solid #e6e3dd; border-radius: 2mm; background: #faf8f4; }
+.doc-pag small { font-size: 7pt; letter-spacing: .16em; text-transform: uppercase; color: #8A5A32; font-weight: 700; }
+.doc-pag p { margin: 1mm 0 0; font-size: 9.5pt; }

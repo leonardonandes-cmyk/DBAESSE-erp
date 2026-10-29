@@ -4,7 +4,7 @@ import { buscarCep, buscarCnpj, titulo } from '../lib/consultas.js'
 import { soDigitos } from '../lib/format.js'
 import { supabase } from '../lib/supabase.js'
 
-const CAMPOS = ['nome', 'razao_social', 'cnpj', 'ie', 'telefone', 'email', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf']
+const CAMPOS = ['nome', 'razao_social', 'cnpj', 'ie', 'telefone', 'email', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'pix_chave', 'pagamento_instrucoes']
 const fmtCep = (c) => (c && c.length === 8 ? `${c.slice(0, 5)}-${c.slice(5)}` : c)
 
 // Dados da empresa (Configurações): só o administrador altera
@@ -90,6 +90,8 @@ export default function DadosEmpresa({ podeEditar, onSalvo }) {
         <label className="field"><span>Bairro</span><input value={f.bairro} disabled={dis} onChange={set('bairro')} /></label>
         <label className="field span-2"><span>Cidade</span><input value={f.cidade} disabled={dis} onChange={set('cidade')} /></label>
         <label className="field"><span>UF</span><input value={f.uf} disabled={dis} onChange={set('uf')} maxLength={2} /></label>
+        <label className="field"><span>Chave Pix</span><input value={f.pix_chave} disabled={dis} onChange={set('pix_chave')} placeholder="CNPJ, e-mail ou telefone" /></label>
+        <label className="field span-2"><span>Instruções de pagamento <small style={{ color: 'var(--muted)' }}>(vai no PDF do pedido e na mensagem do WhatsApp)</small></span><input value={f.pagamento_instrucoes} disabled={dis} onChange={set('pagamento_instrucoes')} placeholder="Ex.: Pix ou boleto 30/60. Envie o comprovante por aqui." /></label>
       </div>
       {erro && <p className="form-error" role="alert">{erro}</p>}
       <div className="actions" style={{ justifyContent: 'space-between' }}>

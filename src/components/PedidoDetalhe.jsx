@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import TituloForm from './TituloForm.jsx'
 import ImprimirPedido from './ImprimirPedido.jsx'
+import ProgramarPedido from './ProgramarPedido.jsx'
+import { useNavigate } from 'react-router-dom'
+import { programacaoDoPedido, numeroMapa } from '../lib/mapas.js'
 import { titulosDoPedido } from '../lib/financeiro.js'
 import { brl, dataBR, hojeISO, numeroPedido, rotuloNum } from '../lib/format.js'
 import { enderecoCompleto } from '../lib/parceiros.js'
@@ -17,6 +20,11 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   const [titulos, setTitulos] = useState(null)
   const [gerar, setGerar] = useState(false)
   const [imprimir, setImprimir] = useState(false)
+  // programação de cliente (atacado): gerar depois que o cliente conferiu/pagou
+  const navigate = useNavigate()
+  const [prog, setProg] = useState(undefined) // undefined = carregando · null = não tem
+  const [programar, setProgramar] = useState(false)
+  useEffect(() => { programacaoDoPedido(pedido.id).then(setProg).catch(() => setProg(null)) }, [pedido.id])
 
   useEffect(() => { titulosDoPedido(pedido.id).then(setTitulos).catch(() => setTitulos([])) }, [pedido.id, pedido.status])
 
@@ -153,6 +161,10 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
           </div>
           <div className="actions">
             <button type="button" className="btn btn-dark" onClick={() => setImprimir(true)} disabled={!itens}>Visualizar · PDF · WhatsApp</button>
+            {pedido.canal === 'Atacado' && pedido.status !== 'cancelado' && prog === null && itens && (
+              <button type="button" className="btn" onClick={() => setProgramar(true)}>Gerar programação</button>
+            )}
+            {prog && <button type="button" className="btn" onClick={() => navigate(`/producao/mapas?imprimir=${prog.id}`)}>Programação {numeroMapa(prog.numero)}</button>}
             <button type="button" className="btn" onClick={copiarResumo}>{copiado ? 'Copiado ✓' : 'Copiar resumo'}</button>
             {editando
               ? <button type="button" className="btn" disabled={ocupado} onClick={salvarDados}>Salvar dados</button>
@@ -172,6 +184,15 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
           </div>
         </div>
             </div>
+      {programar && itens && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ProgramarPedido pedido={pedido} cliente={parceiros.find((x) => x.id === pedido.parceiro_id)} previsao={pedido.previsao}
+            itens={itens.map((i) => ({ sku_id: i.sku_id, numero: i.skus.numero, quantidade: i.quantidade, produto: prodPorId[i.skus.produto_id], cor: corPorId[i.skus.cor_id] }))}
+            onCorrigir={() => { setProgramar(false); onCorrigir?.() }}
+            onAgoraNao={() => setProgramar(false)}
+            onFinalizado={(r) => { setProgramar(false); onMudou?.(); navigate(`/producao/mapas?imprimir=${r.id}`) }} />
+        </div>
+      )}
       {imprimir && (
         <ImprimirPedido pedido={pedido} grupos={grupos} cliente={parceiros.find((x) => x.id === pedido.parceiro_id)} entrega={entrega}
           totais={{ pares, bruto, total, desconto: Number(pedido.desconto) || 0 }} onFechar={() => setImprimir(false)} />

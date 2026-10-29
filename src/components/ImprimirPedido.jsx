@@ -18,7 +18,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
   const [msg, setMsg] = useState('')
   const [erro, setErro] = useState('')
   useEffect(() => {
-    supabase.from('empresas').select('nome,razao_social,cnpj,telefone,email,endereco,numero,bairro,cidade,uf').limit(1).maybeSingle().then(({ data }) => setEmpresa(data || null)).catch(() => {})
+    supabase.from('empresas').select('nome,razao_social,cnpj,telefone,email,endereco,numero,bairro,cidade,uf,pix_chave,pagamento_instrucoes').limit(1).maybeSingle().then(({ data }) => setEmpresa(data || null)).catch(() => {})
     document.body.classList.add('imprimindo')
     return () => document.body.classList.remove('imprimindo')
   }, [])
@@ -30,7 +30,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
   const seg = MODALIDADE[modalidadeDoCanal(pedido.canal)]?.label
   const nums = [...new Set(grupos.flatMap((g) => g.itens.map((i) => i.skus.numero)))].sort((a, b) => a - b)
   const linhaEmpresa = empresa ? [empresa.razao_social, empresa.cnpj && `CNPJ ${empresa.cnpj}`, empresa.telefone, empresa.email, empresa.cidade && `${empresa.cidade}${empresa.uf ? `/${empresa.uf}` : ''}`].filter(Boolean).join(' · ') : ''
-  const mensagem = `Olá${cliente?.nome ? `, ${cliente.nome.split(' ')[0]}` : ''}! Segue ${orcamento ? 'o orçamento' : 'o pedido'} ${numeroPedido(pedido.numero)} da DBAESSE: ${inteiro(totais.pares)} pares · ${brl(totais.total)}${pedido.previsao ? ` · previsão ${dataLonga(pedido.previsao)}` : ''}.`
+  const mensagem = `Olá${cliente?.nome ? `, ${cliente.nome.split(' ')[0]}` : ''}! Segue ${orcamento ? 'o orçamento' : 'o pedido'} ${numeroPedido(pedido.numero)} da DBAESSE: ${inteiro(totais.pares)} pares · ${brl(totais.total)}${pedido.previsao ? ` · previsão ${dataLonga(pedido.previsao)}` : ''}.\n\nConfira os itens no PDF${empresa?.pix_chave || empresa?.pagamento_instrucoes ? ' e, estando tudo certo, o pagamento pode ser feito por aqui:' : '. Estando tudo certo, é só nos confirmar.'}${empresa?.pix_chave ? `\n💳 Pix: ${empresa.pix_chave}` : ''}${empresa?.pagamento_instrucoes ? `\n${empresa.pagamento_instrucoes}` : ''}`
 
   async function pdf() {
     setErro(''); setMsg(''); setOcupado('pdf')
@@ -114,6 +114,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
           <section className="doc-fim">
             <div className="doc-obs">
               {pedido.observacoes && <><small>Observações</small><p>{pedido.observacoes}</p></>}
+              {(empresa?.pix_chave || empresa?.pagamento_instrucoes) && <div className="doc-pag"><small>Pagamento</small>{empresa.pix_chave && <p><b>Pix:</b> {empresa.pix_chave}</p>}{empresa.pagamento_instrucoes && <p>{empresa.pagamento_instrucoes}</p>}</div>}
               {orcamento && <p className="doc-valid">Orçamento válido por 7 dias. Sujeito à disponibilidade de estoque.</p>}
             </div>
             <div className="doc-totais">

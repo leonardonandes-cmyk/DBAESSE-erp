@@ -3,6 +3,7 @@ import { listarVendedoras, vendedoraPadrao, vendedorasDe } from '../lib/repasses
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProgramarPedido from './ProgramarPedido.jsx'
+import ImprimirPedido from './ImprimirPedido.jsx'
 import { programacaoDoPedido, sincronizarProgramacao } from '../lib/mapas.js'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
@@ -135,15 +136,11 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
         if (r?.travadas?.length) { setAvisoSync({ prog, travadas: r.travadas, ped: atual }); setEtapa('aviso'); setSalvando(false); return }
         return onSalvo(atual)
       }
-      // atacado sem programação → pergunta se gera
-      if (f.canal === 'Atacado') {
-        setSalvo({ id: atual.id, numero: atual.numero, status: atual.status })
-        setItensSalvos(validos)
-        setEtapa(jaNaPrevia ? 'previa' : 'pergunta')
-        setSalvando(false)
-        return
-      }
-      onSalvo(atual)
+      // salvo → oferece enviar ao cliente (conferir e pagar); no atacado, depois pergunta da programação
+      setSalvo({ id: atual.id, numero: atual.numero, status: atual.status, criado_em: atual.criado_em || pedidoInicial?.criado_em })
+      setItensSalvos(validos)
+      setEtapa(jaNaPrevia ? 'previa' : 'enviar')
+      setSalvando(false)
     } catch (e) {
       setErro(e.message)
       setSalvando(false)
@@ -151,6 +148,30 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
   }
 
   const cliente = clientes.find((x) => x.id === f.parceiro_id)
+  const depoisDeEnviar = () => (f.canal === 'Atacado' ? setEtapa('pergunta') : onSalvo(pedido))
+  if (etapa === 'enviar' || etapa === 'documento') {
+    if (etapa === 'documento') {
+      const g = {}
+      itensSalvos.forEach((i) => { const k = `${i.produto?.id}|${i.cor?.id}`; (g[k] ||= { chave: k, produto: i.produto, cor: i.cor, itens: [] }).itens.push({ id: i.sku_id, quantidade: i.quantidade, preco_unit: i.preco_unit, skus: { numero: i.numero } }) })
+      const grupos = Object.values(g).map((x) => ({ ...x, itens: x.itens.sort((a, b) => a.skus.numero - b.skus.numero) }))
+      const ped = { id: pedido.id, numero: pedido.numero, status: pedido.status || f.status, canal: f.canal, vendedora: f.vendedora, criado_em: pedido.criado_em || new Date().toISOString(), previsao: f.previsao, observacoes: f.observacoes, desconto: descontoRS }
+      return <ImprimirPedido pedido={ped} grupos={grupos} cliente={cliente} entrega={f.endereco_entrega || enderecoCompleto(cliente)}
+        totais={{ pares, bruto, total, desconto: descontoRS }} onFechar={depoisDeEnviar} />
+    }
+    return (
+      <div className="modal-bg">
+        <div className="modal pergunta-prog">
+          <div className="pergunta-prog-ic"><Icon name="app" size={26} /></div>
+          <h2>Enviar ao cliente?</h2>
+          <p>Pedido {numeroPedido(pedido.numero)} salvo. Deseja abrir o PDF e enviar no WhatsApp {cliente?.nome ? <>de <b>{cliente.nome}</b> </> : ''}para conferir e pagar?</p>
+          <div className="pergunta-prog-acoes">
+            <button type="button" className="btn btn-dark" onClick={() => setEtapa('documento')} autoFocus>Ver PDF e enviar</button>
+            <button type="button" className="btn" onClick={depoisDeEnviar}>Agora não</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (etapa === 'previa') {
     return <ProgramarPedido pedido={pedido} cliente={cliente} previsao={f.previsao} itens={itensSalvos}
       onCorrigir={() => { setJaNaPrevia(true); setEtapa('form') }}
