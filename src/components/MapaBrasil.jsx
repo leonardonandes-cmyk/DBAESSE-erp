@@ -25,7 +25,8 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
   const [dica, setDica] = useState(null)
   const mostrar = (ev, d) => { const b = caixaRef.current?.getBoundingClientRect(); if (b) setDica({ ...d, x: ev.clientX - b.left, y: ev.clientY - b.top, w: b.width }) }
   const naReg = (uf) => reg === 'BR' || REGIOES[reg]?.includes(uf)
-  const off = (uf) => (reg === 'BR' ? SEP[regiaoDe(uf)] || [0, 0] : [0, 0])
+  const calor = visao === 'calor'
+  const off = (uf) => (reg === 'BR' && !calor ? SEP[regiaoDe(uf)] || [0, 0] : [0, 0])
 
   const { viewBox, zm } = useMemo(() => {
     const ufs = reg === 'BR' ? Object.keys(geo.caixa) : REGIOES[reg]
@@ -38,7 +39,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
   }, [geo, reg])
 
   const maxUf = Math.max(1, ...Object.entries(porUf).filter(([u]) => naReg(u)).map(([, v]) => v))
-  const alt = (uf) => (!naReg(uf) ? 0 : porUf[uf] ? H_BASE + (H_MAX - H_BASE) * Math.sqrt(porUf[uf] / maxUf) : H_BASE)
+  const alt = (uf) => (!naReg(uf) ? 0 : calor ? 6 : porUf[uf] ? H_BASE + (H_MAX - H_BASE) * Math.sqrt(porUf[uf] / maxUf) : H_BASE)
   const ordem = useMemo(() => Object.keys(geo.estados).sort((a, b) => geo.caixa[a].cy - geo.caixa[b].cy), [geo])
 
   const visiveis = pontos.filter((p) => naReg(p.uf) && p.valor > 0)
@@ -49,11 +50,11 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
   // rótulos de cidade sem sobrepor (as maiores primeiro)
   // rótulo em TODAS as esferas: tenta direita, esquerda, cima, baixo (e mais longe) até achar espaço livre
   const rotulos = []
-  if (visao === 'cidades') {
-    const caixas = visiveis.map((p) => { const o = off(p.uf), r = raio(p.valor), x = p.x + o[0], cy = p.y + o[1] - alt(p.uf) - r * 0.85; return { x0: x - r, x1: x + r, y0: cy - r, y1: cy + r } })
+  if (visao === 'cidades' || calor) {
+    const caixas = visiveis.map((p) => { const o = off(p.uf), r = calor ? 7 * zm : raio(p.valor), x = p.x + o[0], cy = p.y + o[1] - alt(p.uf) - (calor ? 0 : r * 0.85); return { x0: x - r, x1: x + r, y0: cy - r, y1: cy + r } })
     const bate = (c) => caixas.some((k) => c.x0 < k.x1 && c.x1 > k.x0 && c.y0 < k.y1 && c.y1 > k.y0)
     ;[...visiveis].sort((a, b) => b.valor - a.valor).forEach((p, i) => {
-      const o = off(p.uf), r = raio(p.valor), x = p.x + o[0], cy = p.y + o[1] - alt(p.uf) - r * 0.85
+      const o = off(p.uf), r = calor ? 7 * zm : raio(p.valor), x = p.x + o[0], cy = p.y + o[1] - alt(p.uf) - (calor ? 0 : r * 0.85)
       const fs = (i < 6 ? 19 : 15) * zm, w = p.nome.length * fs * 0.56, h = fs * 1.1, g = 5 * zm
       const tentativas = [1, 2.2].flatMap((m) => [
         { x: x + r + g * m, y: cy, anc: 'start' }, { x: x - r - g * m, y: cy, anc: 'end' },
@@ -63,11 +64,11 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
       const caixa = (t) => { const x0 = t.anc === 'start' ? t.x : t.anc === 'end' ? t.x - w : t.x - w / 2; return { x0, x1: x0 + w, y0: t.y - h / 2, y1: t.y + h / 2 } }
       const ok = tentativas.find((t) => !bate(caixa(t))) || tentativas[0]
       caixas.push(caixa(ok))
-      rotulos.push({ id: p.id, nome: p.nome, x: ok.x, y: ok.y, anc: ok.anc, fs, forte: i < 6 })
+      if (!calor || i < 8) rotulos.push({ id: p.id, nome: p.nome, x: ok.x, y: ok.y, anc: ok.anc, fs, forte: i < 6 })
     })
   }
 
-  const rotRegiao = reg !== 'BR' ? [] : Object.keys(REGIOES).map((k) => {
+  const rotRegiao = reg !== 'BR' || calor ? [] : Object.keys(REGIOES).map((k) => {
     let a = 1e9, b = -1e9, c = 1e9, d = -1e9
     REGIOES[k].forEach((s) => { const q = geo.caixa[s]; a = Math.min(a, q.x0); b = Math.max(b, q.x1); c = Math.min(c, q.y0); d = Math.max(d, q.y1) })
     const o = SEP[k]
@@ -89,6 +90,17 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
           <stop offset=".75" stopColor={esfera[1]} />
           <stop offset="1" stopColor={esfera[2]} />
         </radialGradient>
+        <radialGradient id="calorBolha"><stop offset="0" stopColor="#000" stopOpacity="1" /><stop offset=".45" stopColor="#000" stopOpacity=".55" /><stop offset="1" stopColor="#000" stopOpacity="0" /></radialGradient>
+        <filter id="calorCores" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 1 0" />
+          <feComponentTransfer>
+            <feFuncR type="table" tableValues="0.55 0.20 0.10 0.98 1.00 0.86" />
+            <feFuncG type="table" tableValues="0.80 0.62 0.75 0.85 0.45 0.13" />
+            <feFuncB type="table" tableValues="1.00 0.95 0.55 0.20 0.12 0.18" />
+            <feFuncA type="table" tableValues="0 0.45 0.62 0.74 0.82 0.88" />
+          </feComponentTransfer>
+        </filter>
+        <clipPath id="calorBrasil">{Object.keys(geo.estados).filter((u) => naReg(u)).map((uf) => <path key={uf} d={geo.estados[uf].d} transform={`translate(0,${-alt(uf)})`} />)}</clipPath>
         <radialGradient id="mapaChao"><stop offset="0" stopColor="#1a1a1a" stopOpacity=".32" /><stop offset="1" stopColor="#1a1a1a" stopOpacity="0" /></radialGradient>
       </defs>
 
@@ -112,6 +124,22 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
 
       {rotRegiao.map((r) => (
         <text key={r.k} x={r.x} y={r.y} textAnchor={r.anc} className="mapa-regiao" style={{ fontSize: 17 * zm }}>{NOME_REGIAO[r.k].toUpperCase()}</text>
+      ))}
+
+      {calor && (
+        <g clipPath="url(#calorBrasil)" style={{ pointerEvents: 'none' }}>
+          <g filter="url(#calorCores)">
+            {visiveis.map((p) => {
+              const rr = (38 + 120 * Math.sqrt(p.valor / maxP)) * (0.5 + 0.5 * zm)
+              return <circle key={p.id} cx={p.x} cy={p.y - alt(p.uf)} r={rr} fill="url(#calorBolha)" opacity={0.35 + 0.65 * Math.sqrt(p.valor / maxP)} />
+            })}
+          </g>
+        </g>
+      )}
+      {calor && visiveis.map((p) => (
+        <circle key={`h${p.id}`} cx={p.x} cy={p.y - alt(p.uf)} r={10 * zm} fill="transparent" style={{ cursor: 'pointer' }}
+          onMouseMove={(ev) => { ev.stopPropagation(); mostrar(ev, { titulo: `${p.nome}/${p.uf}`, sub: `${geo.estados[p.uf]?.nome || p.uf} · ${NOME_REGIAO[regiaoDe(p.uf)]}`, valor: fmt(p.valor), detalhe: p.detalhe }) }}
+          onClick={(ev) => { ev.stopPropagation(); onSel?.({ tipo: 'cidade', id: p.id }) }} />
       ))}
 
       {Object.keys(geo.estados).filter((u) => naReg(u)).map((uf) => {
