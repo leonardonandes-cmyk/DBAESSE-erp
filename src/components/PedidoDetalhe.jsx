@@ -11,7 +11,7 @@ import { EXIGE_CADASTRO, enderecoCompleto, pendenciasCadastro } from '../lib/par
 import ParceiroForm from './ParceiroForm.jsx'
 import { FLUXO, STATUS_PEDIDO, atrasado, carregarItens, mudarStatus, salvarDadosPedido, totaisPedido } from '../lib/pedidos.js'
 
-export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou, onCorrigir }) {
+export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou, onCorrigir, abrirDocumento = false }) {
   const [itens, setItens] = useState(null)
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -30,6 +30,8 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   useEffect(() => { titulosDoPedido(pedido.id).then(setTitulos).catch(() => setTitulos([])) }, [pedido.id, pedido.status])
 
   useEffect(() => { carregarItens(pedido.id).then(setItens).catch((e) => setErro(e.message)) }, [pedido.id])
+  // vindo do atalho da lista (imprimir / enviar): abre o documento assim que os itens chegam
+  useEffect(() => { if (abrirDocumento && itens) setImprimir(true) }, [abrirDocumento, itens])
 
   const prodPorId = useMemo(() => Object.fromEntries(produtos.map((p) => [p.id, p])), [produtos])
   const corPorId = useMemo(() => Object.fromEntries(cores.map((c) => [c.id, c])), [cores])
@@ -211,7 +213,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
       )}
       {imprimir && (
         <ImprimirPedido pedido={pedido} grupos={grupos} cliente={parceiros.find((x) => x.id === pedido.parceiro_id)} entrega={entrega}
-          totais={{ pares, bruto, total, desconto: Number(pedido.desconto) || 0 }} onFechar={() => setImprimir(false)} />
+          totais={{ pares, bruto, total, desconto: Number(pedido.desconto) || 0 }} onFechar={() => { setImprimir(false); if (abrirDocumento) onFechar() }} />
       )}
       {gerar && (
         <div onClick={(e) => e.stopPropagation()}>

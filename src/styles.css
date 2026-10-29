@@ -1502,3 +1502,28 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .condicao-especial { margin-top: 14px; padding: 14px 16px; border: 1px solid #e3d6c8; border-left: 3px solid #8A5A32; border-radius: 10px; background: #faf6f1; display: grid; gap: 12px; }
 .condicao-especial .check b { color: #8A5A32; }
 .condicao-especial small.muted { font-size: 11px; color: var(--ink-3, #8a8a86); }
+
+/* ---------- Pedidos: abas por situação + filtros + lista ---------- */
+.ped-abas { display: flex; gap: 6px; overflow-x: auto; padding: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; scrollbar-width: none; }
+.ped-abas::-webkit-scrollbar { display: none; }
+.ped-aba { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-2); font-weight: 500; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.ped-aba b { min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; background: #ECEAE6; color: var(--ink-2); font-size: 11px; display: inline-grid; place-items: center; }
+.ped-aba:hover { background: #F1EFEB; }
+.ped-aba.on { background: var(--ink); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.08); }
+.ped-aba.on b { background: rgba(255,255,255,.18); color: #fff; }
+.ped-aba.alerta b { background: var(--bad-soft); color: var(--bad); }
+.ped-aba.alerta.on b { background: var(--bad); color: #fff; }
+.ped-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ped-filtros .search { flex: 1 1 260px; }
+.ped-filtros > select.input { width: auto; min-width: 170px; }
+.ped-tabela td { vertical-align: middle; }
+.ped-sub { display: block; font-size: 11px; color: var(--faint); margin-top: 2px; }
+.ped-fotos { display: flex; align-items: center; }
+.ped-fotos .thumb { border: 2px solid var(--surface); margin-left: -8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.ped-fotos .thumb:first-child { margin-left: 0; }
+.ped-mais { margin-left: 6px; font-size: 11px; color: var(--muted); font-weight: 600; }
+.ped-mod { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
+.ped-mod i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.ped-acoes { display: inline-flex; gap: 6px; justify-content: flex-end; }
+.ped-total td { font-weight: 700; background: var(--surface-2); border-top: 1px solid var(--line); }
+@media (max-width: 720px) { .ped-filtros > select.input { flex: 1 1 45%; min-width: 0; } }

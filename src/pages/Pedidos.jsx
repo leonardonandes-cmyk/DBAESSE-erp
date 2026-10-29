@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { FotoProduto } from '../components/FotoProduto.jsx'
+import SeletorPeriodo, { periodoPadrao, resolverPeriodo } from '../components/SeletorPeriodo.jsx'
+import { MODALIDADES, modalidadeDoCanal } from '../lib/modalidades.js'
 import { useSearchParams } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import NovoPedido from '../components/NovoPedido.jsx'
@@ -9,13 +12,20 @@ import { listarParceiros } from '../lib/parceiros.js'
 import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, totaisPedido } from '../lib/pedidos.js'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 
+const programado = (p) => p.status === 'producao' || (p.programacoes?.length > 0 && ABERTOS.includes(p.status))
 const FILTROS = [
-  { id: 'abertos', label: 'Em aberto', teste: (p) => ABERTOS.includes(p.status) },
-  { id: 'atrasados', label: 'Atrasados', teste: atrasado },
-  { id: 'faturados', label: 'Faturados', teste: (p) => ['faturado', 'entregue'].includes(p.status) },
+  { id: 'abertos', label: 'Não faturados', teste: (p) => ABERTOS.includes(p.status) },
+  { id: 'orcamento', label: 'Orçamentos', teste: (p) => p.status === 'orcamento' },
+  { id: 'aprovado', label: 'Aprovados', teste: (p) => p.status === 'aprovado' && !programado(p) },
+  { id: 'programados', label: 'Programados', teste: programado },
+  { id: 'separacao', label: 'Separação', teste: (p) => p.status === 'separacao' },
+  { id: 'atrasados', label: 'Atrasados', teste: atrasado, tom: 'bad' },
+  { id: 'faturados', label: 'Faturados', teste: (p) => p.status === 'faturado' },
+  { id: 'entregues', label: 'Entregues', teste: (p) => p.status === 'entregue' },
   { id: 'cancelados', label: 'Cancelados', teste: (p) => p.status === 'cancelado' },
   { id: 'todos', label: 'Todos', teste: () => true },
 ]
+const FECHADO = ['faturado', 'entregue', 'cancelado']
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState([])
@@ -30,6 +40,10 @@ export default function Pedidos() {
   const [novo, setNovo] = useState(false)
   const [aberto, setAberto] = useState(null)
   const [corrigir, setCorrigir] = useState(null)
+  const [documento, setDocumento] = useState(false) // abriu pelo atalho Imprimir / Enviar
+  const [modalidade, setModalidade] = useState('')
+  const [vendedora, setVendedora] = useState('')
+  const [periodo, setPeriodo] = useState(() => periodoPadrao('tudo'))
 
   async function carregar() {
     try {
@@ -49,18 +63,35 @@ export default function Pedidos() {
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const visiveis = useMemo(() => {
-    const f = FILTROS.find((x) => x.id === filtro)
+  // filtros de cima (modalidade, vendedora, período, busca) valem para todas as abas e para as contagens
+  const base = useMemo(() => {
     const q = busca.trim().toLowerCase()
-    return pedidos.filter((p) => f.teste(p) &&
-      (!q || `${numeroPedido(p.numero)} ${p.numero} ${p.parceiros?.nome || ''} ${p.canal}`.toLowerCase().includes(q)))
-  }, [pedidos, filtro, busca])
+    const per = resolverPeriodo(periodo)
+    return pedidos.filter((p) => {
+      if (modalidade && modalidadeDoCanal(p.canal) !== modalidade) return false
+      if (vendedora && (p.vendedora || '') !== (vendedora === '—' ? '' : vendedora)) return false
+      const d = new Date(p.criado_em)
+      if (per && (d < per.ini || d > per.fim)) return false
+      return !q || `${numeroPedido(p.numero)} ${p.numero} ${p.parceiros?.nome || ''} ${p.canal} ${p.vendedora || ''}`.toLowerCase().includes(q)
+    })
+  }, [pedidos, busca, modalidade, vendedora, periodo])
+  const visiveis = useMemo(() => base.filter(FILTROS.find((x) => x.id === filtro).teste), [base, filtro])
+  const somaVis = visiveis.reduce((a, p) => { const t = totaisPedido(p); return { pares: a.pares + t.pares, total: a.total + t.total } }, { pares: 0, total: 0 })
+  const vendedoras = [...new Set(pedidos.map((p) => p.vendedora || '—'))].sort()
+  const prodPorId = useMemo(() => Object.fromEntries(produtos.map((p) => [p.id, p])), [produtos])
+  // até 3 modelos (foto da cor) por pedido
+  const fotosDe = (p) => {
+    const vistos = new Map()
+    ;(p.pedido_itens || []).forEach((i) => { const k = i.skus?.produto_id; if (k && !vistos.has(k)) vistos.set(k, i.skus.cor_id) })
+    return [...vistos].map(([pid, cor]) => ({ produto: prodPorId[pid], cor }))
+  }
+  const abrirCom = (p, doc = false) => (e) => { e?.stopPropagation(); setDocumento(doc); setAberto(p) }
 
   const abertos = pedidos.filter((p) => ABERTOS.includes(p.status))
   const paresAbertos = abertos.reduce((t, p) => t + totaisPedido(p).pares, 0)
   const valorAbertos = abertos.reduce((t, p) => t + totaisPedido(p).total, 0)
   const qtdAtrasados = pedidos.filter(atrasado).length
-  const contagem = Object.fromEntries(FILTROS.map((f) => [f.id, pedidos.filter(f.teste).length]))
+  const contagem = Object.fromEntries(FILTROS.map((f) => [f.id, base.filter(f.teste).length]))
 
   async function depoisDeMudar(manterAberto) {
     const lista = await carregar()
@@ -89,17 +120,29 @@ export default function Pedidos() {
         <div className="card kpi"><span className="kpi-label">Atrasados</span><span className="kpi-value" style={qtdAtrasados ? { color: 'var(--bad)' } : undefined}>{inteiro(qtdAtrasados)}</span></div>
       </section>
 
-      <div className="actions">
+      <div className="ped-abas" role="tablist">
+        {FILTROS.map((f) => (
+          <button key={f.id} role="tab" aria-selected={f.id === filtro} className={`ped-aba ${f.id === filtro ? 'on' : ''} ${f.tom === 'bad' && contagem[f.id] ? 'alerta' : ''}`} onClick={() => setFiltro(f.id)}>
+            {f.label}<b>{contagem[f.id]}</b>
+          </button>
+        ))}
+      </div>
+
+      <div className="ped-filtros">
         <label className="search">
           <Icon name="busca" size={16} />
           <span className="sr-only">Buscar pedido</span>
-          <input type="search" placeholder="Buscar por número, cliente ou canal" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <input type="search" placeholder="Número, cliente, canal ou vendedora" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </label>
-        <div className="chips">
-          {FILTROS.map((f) => (
-            <button key={f.id} className={`chip ${f.id === filtro ? 'on' : ''}`} onClick={() => setFiltro(f.id)}>{f.label} · {contagem[f.id]}</button>
-          ))}
-        </div>
+        <select className="input" value={modalidade} onChange={(e) => setModalidade(e.target.value)} aria-label="Modalidade">
+          <option value="">Todas as modalidades</option>
+          {MODALIDADES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+        </select>
+        <select className="input" value={vendedora} onChange={(e) => setVendedora(e.target.value)} aria-label="Vendedora">
+          <option value="">Todas as vendedoras</option>
+          {vendedoras.map((v) => <option key={v} value={v}>{v === '—' ? 'Sem vendedora' : v}</option>)}
+        </select>
+        <SeletorPeriodo valor={periodo} onChange={setPeriodo} />
       </div>
 
       {!carregando && pedidos.length === 0 && !erro ? (
@@ -114,32 +157,56 @@ export default function Pedidos() {
       ) : (
         <section className="card card-flush">
           <div className="table-wrap">
-            <table style={{ minWidth: 720 }}>
+            <table className="ped-tabela" style={{ minWidth: 980 }}>
               <thead className="tinted">
-                <tr><th>Pedido</th><th>Cliente</th><th>Canal</th><th className="r">Pares</th><th className="r">Valor</th><th>Situação</th><th className="r">Previsão</th></tr>
+                <tr><th>Pedido</th><th>Cliente</th><th>Modelos</th><th>Modalidade</th><th className="r">Pares</th><th className="r">Valor</th><th>Situação</th><th className="r">Previsão</th><th className="r">Ações</th></tr>
               </thead>
               <tbody>
-                {carregando && <tr><td colSpan={7} style={{ color: 'var(--muted)', padding: 32 }}>Carregando…</td></tr>}
+                {carregando && <tr><td colSpan={9} style={{ color: 'var(--muted)', padding: 32 }}>Carregando…</td></tr>}
                 {visiveis.map((p) => {
                   const st = STATUS_PEDIDO[p.status]
                   const t = totaisPedido(p)
                   const late = atrasado(p)
+                  const fotos = fotosDe(p)
+                  const mod = MODALIDADES.find((m) => m.id === modalidadeDoCanal(p.canal))
+                  const prog = p.programacoes?.[0]
                   return (
-                    <tr key={p.id} className="clickable" onClick={() => setAberto(p)}>
-                      <td><b>{numeroPedido(p.numero)}</b></td>
-                      <td>{p.parceiros?.nome || <span style={{ color: 'var(--muted)' }}>Sem cliente</span>}</td>
-                      <td style={{ color: 'var(--muted)' }}>{p.canal}</td>
-                      <td className="r">{t.pares}</td>
-                      <td className="r">{brl(t.total)}</td>
-                      <td><span className={`pill ${st.tom}`}>{st.label}</span>{late && <span className="pill bad" style={{ marginLeft: 6 }}>Atrasado</span>}</td>
+                    <tr key={p.id} className="clickable" onClick={abrirCom(p)}>
+                      <td><b>{numeroPedido(p.numero)}</b><small className="ped-sub">{dataBR(p.criado_em)}</small></td>
+                      <td>{p.parceiros?.nome || <span style={{ color: 'var(--muted)' }}>Sem cliente</span>}{p.vendedora && <small className="ped-sub">{p.vendedora}</small>}</td>
+                      <td>
+                        <div className="ped-fotos">
+                          {fotos.slice(0, 3).map((f, i) => <FotoProduto key={i} p={f.produto} corId={f.cor} size={30} />)}
+                          {fotos.length > 3 && <span className="ped-mais">+{fotos.length - 3}</span>}
+                        </div>
+                      </td>
+                      <td><span className="ped-mod"><i style={{ background: mod?.cor }} />{mod?.label}</span>{p.canal !== mod?.label && <small className="ped-sub">{p.canal}</small>}</td>
+                      <td className="r">{inteiro(t.pares)}</td>
+                      <td className="r"><b>{brl(t.total)}</b></td>
+                      <td>
+                        <span className={`pill ${st.tom}`}>{st.label}</span>
+                        {late && <span className="pill bad" style={{ marginLeft: 6 }}>Atrasado</span>}
+                        {prog && p.status !== 'producao' && ABERTOS.includes(p.status) && <small className="ped-sub">programado</small>}
+                      </td>
                       <td className="r" style={{ color: late ? 'var(--bad)' : 'var(--muted)', fontWeight: late ? 600 : 400 }}>{dataBR(p.previsao)}</td>
+                      <td className="r">
+                        <div className="ped-acoes" onClick={(e) => e.stopPropagation()}>
+                          <button type="button" className="btn btn-sm" title="Visualizar, imprimir, PDF ou enviar no WhatsApp" onClick={abrirCom(p, true)}>Imprimir · Enviar</button>
+                          {!FECHADO.includes(p.status) && !p.estoque_baixado && <button type="button" className="btn btn-sm" onClick={() => setCorrigir(p)}>Editar</button>}
+                        </div>
+                      </td>
                     </tr>
                   )
                 })}
                 {!carregando && pedidos.length > 0 && visiveis.length === 0 && (
-                  <tr><td colSpan={7} style={{ color: 'var(--muted)', padding: 32 }}>Nenhum pedido neste filtro.</td></tr>
+                  <tr><td colSpan={9} style={{ color: 'var(--muted)', padding: 32 }}>Nenhum pedido neste filtro.</td></tr>
                 )}
               </tbody>
+              {visiveis.length > 1 && (
+                <tfoot>
+                  <tr className="ped-total"><td colSpan={4}>{inteiro(visiveis.length)} pedidos</td><td className="r">{inteiro(somaVis.pares)}</td><td className="r">{brl(somaVis.total)}</td><td colSpan={3} /></tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>
@@ -151,7 +218,7 @@ export default function Pedidos() {
       )}
       {aberto && (
         <PedidoDetalhe pedido={aberto} produtos={produtos} cores={cores} parceiros={parceiros}
-          onFechar={() => setAberto(null)} onMudou={depoisDeMudar} onCorrigir={() => setCorrigir(aberto)} />
+          abrirDocumento={documento} onFechar={() => { setAberto(null); setDocumento(false) }} onMudou={depoisDeMudar} onCorrigir={() => setCorrigir(aberto)} />
       )}
       {corrigir && (
         <NovoPedido pedido={corrigir} produtos={produtos} cores={cores} parceiros={parceiros} saldos={saldos}
