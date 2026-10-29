@@ -12,6 +12,7 @@ import { listarTitulos } from '../lib/financeiro.js'
 import { listarFichaConsumo } from '../lib/compras.js'
 import { custosPorProduto } from '../lib/custos.js'
 import { listarListas } from '../lib/precos.js'
+import { MODALIDADES, modalidadeDoCanal } from '../lib/modalidades.js'
 import { AbaEstoque, AbaFinanceiro, AbaMargem, AbaProducao } from '../components/IndicadoresAbas.jsx'
 
 /*
@@ -127,6 +128,8 @@ export default function Indicadores() {
     })
     const listaCanais = ordenarCanais(Object.keys(porCanal)).map((k) => porCanal[k])
 
+    const porModal = Object.fromEntries(MODALIDADES.map((m) => [m.id, { ...m, valor: 0, pares: 0, pedidos: 0 }]))
+    atual.forEach((x) => { const m = porModal[modalidadeDoCanal(x.p.canal)]; m.valor += x.valor; m.pares += x.pares; m.pedidos += 1 })
     const porModelo = {}, porCliente = {}, porTipo = {}
     atual.forEach((x) => {
       x.its.forEach((i) => {
@@ -152,7 +155,7 @@ export default function Indicadores() {
       ticket: a.pedidos ? a.valor / a.pedidos : 0, varTicket: varia(a.pedidos ? a.valor / a.pedidos : 0, b.pedidos ? b.valor / b.pedidos : 0),
       precoPar: a.pares ? a.valor / a.pares : 0, varPreco: varia(a.pares ? a.valor / a.pares : 0, b.pares ? b.valor / b.pares : 0),
       canais: listaCanais, modelos: modelos.slice(0, 10), nModelos: modelos.length, totModelos: modelos.reduce((t, m) => t + m[medida], 0),
-      tipos: tiposV, clientes: Object.values(porCliente).sort((c1, c2) => c2.valor - c1.valor).slice(0, 10), semana,
+      modalidades: Object.values(porModal), tipos: tiposV, clientes: Object.values(porCliente).sort((c1, c2) => c2.valor - c1.valor).slice(0, 10), semana,
     }
   }, [pedidos, skuInfo, per, canal, tipo, medida])
 
@@ -252,6 +255,32 @@ export default function Indicadores() {
           <Rosca fatias={r.canais.map((c) => ({ id: c.id, nome: c.nome, cor: c.cor, valor: c[medida] }))}
             fmt={medida === 'valor' ? brlCurto : (v) => `${inteiro(v)} pares`} rotuloCentro={medida === 'valor' ? 'faturamento' : 'vendidos'}
             selecionada={canal !== 'Todos' ? canal : null} onClicar={(id) => setCanal(canal === id ? 'Todos' : id)} />
+        </div>
+      </section>
+
+      <section className="card card-flush">
+        <div className="card-head pad"><div><h2>Por modalidade</h2><div className="card-sub">Atacado · Mesclado · Drop · Marketplace · Varejo{tipo !== 'Todos' ? ` · ${tipo}` : ''}</div></div></div>
+        <div className="table-wrap">
+          <table>
+            <thead className="tinted"><tr><th>Modalidade</th><th className="r">Pedidos</th><th className="r">Pares</th><th className="r">Faturamento</th><th>Participação</th><th className="r">Preço médio do par</th><th className="r">Ticket médio</th></tr></thead>
+            <tbody>
+              {r.modalidades.map((m) => {
+                const totM = r.modalidades.reduce((s, x) => s + x[medida], 0)
+                const part = totM ? m[medida] / totM : 0
+                return (
+                  <tr key={m.id}>
+                    <td><span className="canal-tag"><i style={{ background: m.cor }} /><b style={{ color: "var(--ink)", fontSize: 14 }}>{m.label}</b></span><br /><span className="faint" style={{ fontSize: 12 }}>{m.descricao}</span></td>
+                    <td className="r">{inteiro(m.pedidos)}</td>
+                    <td className="r">{inteiro(m.pares)}</td>
+                    <td className="r"><b>{brl(m.valor)}</b></td>
+                    <td><span className="hbar-trilho" style={{ display: 'inline-block', width: 140, verticalAlign: 'middle', marginRight: 8 }}><i style={{ width: `${part * 100}%`, background: m.cor }} /></span>{Math.round(part * 100)}%</td>
+                    <td className="r">{m.pares ? brl(m.valor / m.pares) : '—'}</td>
+                    <td className="r">{m.pedidos ? brl(m.valor / m.pedidos) : '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
 

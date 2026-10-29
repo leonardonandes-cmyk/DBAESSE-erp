@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
   Cores dos canais em ordem fixa (paleta validada para daltonismo) — a cor segue o canal, nunca a posição.
 */
 export const CORES_CANAL = {
-  'Atacado': '#2a78d6', 'Shopee': '#eb6834', 'Revenda': '#1baf7a', 'Mercado Livre': '#eda100',
+  'Atacado': '#2a78d6', 'Shopee': '#eb6834', 'Mesclado': '#1baf7a', 'Mercado Livre': '#eda100',
   'Instagram': '#e87ba4', 'Drop': '#008300', 'TikTok Shop': '#6250d6', 'Loja / varejo': '#e34948',
 }
 export const ORDEM_CANAL = Object.keys(CORES_CANAL)

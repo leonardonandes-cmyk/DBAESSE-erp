@@ -91,7 +91,7 @@ export default function MovimentoModal({ modo, produtos, cores, saldos, onFechar
           <div>
             <div className="eyebrow">{transf ? `Estoque · ${LOCAIS[local].label} → ${LOCAIS[destino].label}` : cfg.eyebrow}</div>
             <h2>{cfg.titulo}</h2>
-            {transf && <p className="card-sub" style={{ margin: '6px 0 0' }}>Abriu caixa master? Passe os pares do Bulk para o Pick para separar pedido variado.</p>}
+            {transf && <p className="card-sub" style={{ margin: '6px 0 0' }}>Abriu caixa master? Passe os pares do Bulk para o Pick para separar pedido mesclado.</p>}
           </div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>

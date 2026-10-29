@@ -173,7 +173,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
         <div onClick={(e) => e.stopPropagation()}>
           <TituloForm parceiros={parceiros}
             padrao={{ tipo: 'receber', descricao: `Pedido ${numeroPedido(pedido.numero)}`, parceiro_id: pedido.parceiro_id, valorTotal: total.toFixed(2),
-              categoria: pedido.canal === 'Revenda' ? 'Venda revenda' : pedido.canal === 'Drop' ? 'Venda drop' : pedido.canal === 'Atacado' ? 'Venda atacado' : ['Shopee', 'TikTok Shop', 'Mercado Livre'].includes(pedido.canal) ? 'Marketplace' : 'Venda varejo',
+              categoria: pedido.canal === 'Mesclado' ? 'Venda mesclado' : pedido.canal === 'Drop' ? 'Venda drop' : pedido.canal === 'Atacado' ? 'Venda atacado' : ['Shopee', 'TikTok Shop', 'Mercado Livre'].includes(pedido.canal) ? 'Marketplace' : 'Venda varejo',
               primeiroVencimento: hojeISO(), pedido_id: pedido.id }}
             onFechar={() => setGerar(false)}
             onSalvo={() => { setGerar(false); titulosDoPedido(pedido.id).then(setTitulos) }} />

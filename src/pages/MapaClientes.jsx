@@ -8,24 +8,19 @@ import { listarPedidos, totaisPedido } from '../lib/pedidos.js'
 import { listarParceiros } from '../lib/parceiros.js'
 import { listarProdutos } from '../lib/produtos.js'
 import { NOME_REGIAO, REGIOES, carregarGeo, chaveCidade, regiaoDe } from '../lib/geo.js'
+import { MODALIDADES, modalidadeDoCanal } from '../lib/modalidades.js'
 
 /*
   Relatórios › Mapa de clientes.
   Onde estão os clientes (cadastro: cidade/UF) e quanto cada praça compra (pedidos faturados ou entregues, pela data do pedido).
   - Ativo = comprou nos últimos N dias (N editável, padrão 90) · Inativo = já comprou, parou há mais de N dias · Nunca comprou = cadastrado sem pedido.
-  - Tipo do cliente pelo cadastro; tipo da venda pelo canal do pedido.
+  - Modalidade (Atacado, Mesclado, Drop, Marketplace, Varejo): do cliente pelo canal do cadastro; da venda pelo canal do pedido.
 */
 const VENDIDO = ['faturado', 'entregue']
-export const TIPOS_CLIENTE = {
-  lojista: { label: 'Lojistas', cor: '#6250d6' },
-  revendedora: { label: 'Revendedoras', cor: '#d4537e' },
-  marketplace: { label: 'Marketplace', cor: '#1baf7a' },
-  varejo: { label: 'Varejo', cor: '#eb6834' },
-}
+const TIPOS_CLIENTE = Object.fromEntries(MODALIDADES.map((m) => [m.id, m]))
 const COR_TODOS = '#1f6fd6'
-const CANAL_TIPO = { Atacado: 'lojista', Revenda: 'revendedora', Drop: 'revendedora', Shopee: 'marketplace', 'TikTok Shop': 'marketplace', 'Mercado Livre': 'marketplace', Instagram: 'varejo', 'Loja / varejo': 'varejo' }
-const tipoDoParceiro = (p) => (p?.tipos?.includes('revendedora') ? 'revendedora' : CANAL_TIPO[p?.canal] || 'lojista')
-const tipoDaVenda = (canal, p) => CANAL_TIPO[canal] || tipoDoParceiro(p)
+const tipoDoParceiro = (p) => (p?.canal ? modalidadeDoCanal(p.canal) : p?.tipos?.includes('revendedora') ? 'mesclado' : 'atacado')
+const tipoDaVenda = (canal, p) => (canal ? modalidadeDoCanal(canal) : tipoDoParceiro(p))
 const ehCliente = (p) => p.tipos?.some((t) => t === 'cliente' || t === 'revendedora')
 const DIAS_INATIVO = [60, 90, 120, 180]
 const lerInativo = () => { try { return Number(localStorage.getItem('mapa.inativo')) || 90 } catch { return 90 } }
@@ -216,8 +211,8 @@ export default function MapaClientes() {
 
       <div className="ind-filtros card">
         <div className="field"><span>Período</span><SeletorPeriodo valor={periodo} onChange={setPeriodo} /></div>
-        <div className="field livre"><span>Clientes</span>
-          <div className="segmented" role="group" aria-label="Tipo de cliente">
+        <div className="field livre"><span>Modalidade</span>
+          <div className="segmented" role="group" aria-label="Modalidade">
             <button className={tipo === 'todos' ? 'on' : ''} onClick={() => setTipo('todos')}>Todos</button>
             {Object.entries(TIPOS_CLIENTE).map(([k, t]) => <button key={k} className={tipo === k ? 'on' : ''} onClick={() => setTipo(k)}><i className="ponto" style={{ background: t.cor }} />{t.label}</button>)}
           </div>

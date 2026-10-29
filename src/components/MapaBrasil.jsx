@@ -16,6 +16,7 @@ const ESFERAS = {
   '#d4537e': ['#f0a3c0', '#d4537e', '#7a2244'],
   '#1baf7a': ['#6fdcb2', '#1baf7a', '#0b5e40'],
   '#eb6834': ['#f7b08f', '#eb6834', '#7d2f0f'],
+  '#e8a10c': ['#f7d27e', '#e8a10c', '#7a5000'],
 }
 const H_BASE = 5, H_MAX = 34
 
