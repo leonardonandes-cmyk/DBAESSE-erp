@@ -1309,3 +1309,11 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 @media (max-width: 640px) { .mapa-br { height: 420px !important; } }
 .ind-filtros .field.livre { flex: 0 0 auto; min-width: 0; }
 @media (max-width: 640px) { .ind-filtros .field.livre .segmented { flex-wrap: wrap; } }
+.mapa-cidade-rotulo.leve { font-weight: 500; fill: var(--ink-2); }
+.mapa-caixa { position: relative; }
+.mapa-dica { position: absolute; z-index: 5; pointer-events: none; min-width: 170px; max-width: 230px; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(20,24,32,.14); font-size: 12px; }
+.mapa-dica b { font-size: 14px; color: var(--ink); }
+.mapa-dica span { color: var(--muted); }
+.mapa-dica strong { font-size: 16px; margin-top: 4px; }
+.mapa-dica em { font-style: normal; color: var(--ink-2); }
+.mapa-uf-rotulo.leve { fill: #a8a197; font-weight: 600; letter-spacing: .06em; }

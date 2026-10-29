@@ -158,8 +158,9 @@ export default function MapaClientes() {
   const val = (a) => (medida === 'valor' ? a.valor : medida === 'pares' ? a.pares : a.clientes)
   const fmt = (v) => (medida === 'valor' ? brlCurto(v) : medida === 'pares' ? `${inteiro(v)} pares` : `${inteiro(v)} clientes`)
 
-  const pontos = useMemo(() => (r ? r.cidades.map((c) => ({ id: c.id, nome: c.nome, uf: c.uf, x: c.x, y: c.y, valor: val(c) })) : []), [r, medida]) // eslint-disable-line react-hooks/exhaustive-deps
+  const pontos = useMemo(() => (r ? r.cidades.map((c) => ({ id: c.id, nome: c.nome, uf: c.uf, x: c.x, y: c.y, valor: val(c), detalhe: `${c.clientes} clientes (${c.ativos} ativos) · ${inteiro(c.pares)} pares` })) : []), [r, medida]) // eslint-disable-line react-hooks/exhaustive-deps
   const porUf = useMemo(() => { const o = {}; r?.estados.forEach((e) => { o[e.id] = val(e) }); return o }, [r, medida]) // eslint-disable-line react-hooks/exhaustive-deps
+  const detalheUf = useMemo(() => { const o = {}; r?.estados.forEach((e) => { o[e.id] = `${e.clientes} clientes (${e.ativos} ativos) · ${inteiro(e.pares)} pares` }); return o }, [r]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selecionado = !r || !sel ? null : sel.tipo === 'cidade' ? r.cidades.find((c) => c.id === sel.id) : r.estados.find((e) => e.id === sel.id)
   const foco = selecionado || r?.total
@@ -250,7 +251,7 @@ export default function MapaClientes() {
                 <button className={visao === 'estados' ? 'on' : ''} onClick={() => { setVisao('estados'); setSel(null) }}>Estados</button>
               </div>
             </div>
-            <MapaBrasil geo={geo} reg={reg} visao={visao} pontos={pontos} porUf={porUf} cor={cor} sel={sel} onSel={setSel} fmt={fmt} />
+            <MapaBrasil geo={geo} reg={reg} visao={visao} pontos={pontos} porUf={porUf} detalheUf={detalheUf} cor={cor} sel={sel} onSel={setSel} fmt={fmt} />
             {(r.semLocal > 0 || r.semLocalValor > 0) && (
               <p className="card-sub mapa-aviso"><Icon name="alerta" size={14} /> {r.semLocal > 0 ? `${r.semLocal} cliente(s) sem cidade/UF válida no cadastro` : ''}{r.semLocal > 0 && r.semLocalValor > 0 ? ' · ' : ''}{r.semLocalValor > 0 ? `${brl(r.semLocalValor)} em vendas sem localização` : ''} — não aparecem no mapa.</p>
             )}

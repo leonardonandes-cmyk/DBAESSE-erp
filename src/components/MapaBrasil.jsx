@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { NOME_REGIAO, REGIOES, regiaoDe } from '../lib/geo.js'
 
 /*
@@ -20,7 +20,10 @@ const ESFERAS = {
 }
 const H_BASE = 5, H_MAX = 34
 
-export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf = {}, cor = '#1f6fd6', sel, onSel, fmt = String, altura = 620 }) {
+export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf = {}, detalheUf = {}, cor = '#1f6fd6', sel, onSel, fmt = String, altura = 620 }) {
+  const caixaRef = useRef(null)
+  const [dica, setDica] = useState(null)
+  const mostrar = (ev, d) => { const b = caixaRef.current?.getBoundingClientRect(); if (b) setDica({ ...d, x: ev.clientX - b.left, y: ev.clientY - b.top, w: b.width }) }
   const naReg = (uf) => reg === 'BR' || REGIOES[reg]?.includes(uf)
   const off = (uf) => (reg === 'BR' ? SEP[regiaoDe(uf)] || [0, 0] : [0, 0])
 
@@ -44,11 +47,23 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
   const esfera = ESFERAS[cor] || ESFERAS['#1f6fd6']
 
   // rótulos de cidade sem sobrepor (as maiores primeiro)
+  // rótulo em TODAS as esferas: tenta direita, esquerda, cima, baixo (e mais longe) até achar espaço livre
   const rotulos = []
   if (visao === 'cidades') {
-    ;[...visiveis].sort((a, b) => b.valor - a.valor).slice(0, 12).forEach((p) => {
-      const o = off(p.uf), x = p.x + o[0], y = p.y + o[1] - alt(p.uf)
-      if (rotulos.length < (reg === 'BR' ? 6 : 9) && !rotulos.some((r) => Math.abs(r.x - x) < 120 * zm && Math.abs(r.y - y) < 26 * zm)) rotulos.push({ ...p, x, y })
+    const caixas = visiveis.map((p) => { const o = off(p.uf), r = raio(p.valor), x = p.x + o[0], cy = p.y + o[1] - alt(p.uf) - r * 0.85; return { x0: x - r, x1: x + r, y0: cy - r, y1: cy + r } })
+    const bate = (c) => caixas.some((k) => c.x0 < k.x1 && c.x1 > k.x0 && c.y0 < k.y1 && c.y1 > k.y0)
+    ;[...visiveis].sort((a, b) => b.valor - a.valor).forEach((p, i) => {
+      const o = off(p.uf), r = raio(p.valor), x = p.x + o[0], cy = p.y + o[1] - alt(p.uf) - r * 0.85
+      const fs = (i < 6 ? 19 : 15) * zm, w = p.nome.length * fs * 0.56, h = fs * 1.1, g = 5 * zm
+      const tentativas = [1, 2.2].flatMap((m) => [
+        { x: x + r + g * m, y: cy, anc: 'start' }, { x: x - r - g * m, y: cy, anc: 'end' },
+        { x, y: cy - r - h * 0.55 * m, anc: 'middle' }, { x, y: cy + r + h * 0.6 * m, anc: 'middle' },
+        { x: x + r * 0.7 + g * m, y: cy - r - h * 0.3 * m, anc: 'start' }, { x: x - r * 0.7 - g * m, y: cy + r + h * 0.4 * m, anc: 'end' },
+      ])
+      const caixa = (t) => { const x0 = t.anc === 'start' ? t.x : t.anc === 'end' ? t.x - w : t.x - w / 2; return { x0, x1: x0 + w, y0: t.y - h / 2, y1: t.y + h / 2 } }
+      const ok = tentativas.find((t) => !bate(caixa(t))) || tentativas[0]
+      caixas.push(caixa(ok))
+      rotulos.push({ id: p.id, nome: p.nome, x: ok.x, y: ok.y, anc: ok.anc, fs, forte: i < 6 })
     })
   }
 
@@ -61,6 +76,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
   })
 
   return (
+    <div className="mapa-caixa" ref={caixaRef} onMouseLeave={() => setDica(null)}>
     <svg className="mapa-br" viewBox={viewBox} style={{ height: altura }} role="img" aria-label={`Mapa de clientes — ${NOME_REGIAO[reg]}`}
       onClick={(e) => { if (e.target === e.currentTarget) onSel?.(null) }}>
       <defs>
@@ -85,10 +101,10 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
           for (let k = 0; k < h; k += 1.5) camadas.push(<path key={k} d={e.d} transform={`translate(${o[0]},${o[1] - k})`} fill="#c9c3ba" fillOpacity={(0.75 + 0.25 * k / h).toFixed(2)} />)
           return (
             <g key={uf} className={`mapa-uf ${clicavel ? 'clicavel' : ''}`} style={{ opacity: dentro ? 1 : 0.28 }}
+              onMouseMove={(ev) => dentro && mostrar(ev, { titulo: e.nome, sub: `${uf} · ${NOME_REGIAO[regiaoDe(uf)]}`, valor: porUf[uf] ? fmt(porUf[uf]) : 'sem vendas', detalhe: detalheUf[uf] })}
               onClick={(ev) => { ev.stopPropagation(); if (clicavel) onSel?.(on ? null : { tipo: 'estado', id: uf }) }}>
               {camadas}
               <path d={e.d} transform={`translate(${o[0]},${o[1] - h})`} fill="#fff" stroke={on ? '#151515' : '#c4bdb2'} strokeWidth={on ? 2.2 * zm : 0.8 * zm} strokeLinejoin="round" />
-              <title>{e.nome}{porUf[uf] ? ` · ${fmt(porUf[uf])}` : ''}</title>
             </g>
           )
         })}
@@ -98,28 +114,37 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
         <text key={r.k} x={r.x} y={r.y} textAnchor={r.anc} className="mapa-regiao" style={{ fontSize: 17 * zm }}>{NOME_REGIAO[r.k].toUpperCase()}</text>
       ))}
 
-      {visao === 'estados' && Object.keys(porUf).filter((u) => naReg(u) && porUf[u] > 0).sort((a, b) => porUf[b] - porUf[a]).slice(0, reg === 'BR' ? 10 : 14).map((uf) => {
-        const b = geo.caixa[uf], o = off(uf)
-        return <text key={uf} x={b.cx + o[0]} y={b.cy + o[1] - alt(uf) + 7 * zm} textAnchor="middle" className="mapa-uf-rotulo" style={{ fontSize: 22 * zm, strokeWidth: 5 * zm }}>{uf}</text>
+      {Object.keys(geo.estados).filter((u) => naReg(u)).map((uf) => {
+        const b = geo.caixa[uf], o = off(uf), forte = visao === 'estados' && porUf[uf] > 0
+        const pequeno = (b.x1 - b.x0) < 40 * zm // DF, SE, AL…: sigla menor
+        return <text key={`uf${uf}`} x={b.cx + o[0] + (uf === 'DF' ? 14 * zm : 0)} y={b.cy + o[1] - alt(uf) + (uf === 'DF' ? -10 * zm : 6 * zm)} textAnchor="middle"
+          className={`mapa-uf-rotulo ${forte ? '' : 'leve'}`} style={{ fontSize: (forte ? 20 : pequeno ? 11 : 14) * zm, strokeWidth: 4 * zm }}>{uf}</text>
       })}
 
       {visao === 'cidades' && [...visiveis].sort((a, b) => a.y - b.y).map((p) => {
         const o = off(p.uf), r = raio(p.valor), x = p.x + o[0], z = p.y + o[1] - alt(p.uf)
         const on = sel?.tipo === 'cidade' && sel.id === p.id
         return (
-          <g key={p.id} className="mapa-esfera" onClick={(ev) => { ev.stopPropagation(); onSel?.(on ? null : { tipo: 'cidade', id: p.id }) }}>
+          <g key={p.id} className="mapa-esfera" onMouseMove={(ev) => { ev.stopPropagation(); mostrar(ev, { titulo: `${p.nome}/${p.uf}`, sub: `${geo.estados[p.uf]?.nome || p.uf} · ${NOME_REGIAO[regiaoDe(p.uf)]}`, valor: fmt(p.valor), detalhe: p.detalhe }) }} onClick={(ev) => { ev.stopPropagation(); onSel?.(on ? null : { tipo: 'cidade', id: p.id }) }}>
             <ellipse cx={x + r * 0.25} cy={z + r * 0.15} rx={r * 1.15} ry={r * 0.42} fill="url(#mapaChao)" />
             <circle cx={x} cy={z - r * 0.85} r={r} fill="url(#mapaEsfera)" stroke={on ? '#151515' : 'none'} strokeWidth={2.5 * zm} />
             <ellipse cx={x - r * 0.32} cy={z - r * 1.22} rx={r * 0.28} ry={r * 0.17} fill="#fff" fillOpacity=".55" />
-            <title>{p.nome}/{p.uf} · {fmt(p.valor)}</title>
           </g>
         )
       })}
 
-      {rotulos.map((p) => {
-        const r = raio(p.valor)
-        return <text key={`r${p.id}`} x={p.x + r + 6 * zm} y={p.y - r * 0.85 + 5 * zm} className="mapa-cidade-rotulo" style={{ fontSize: 21 * zm, strokeWidth: 5 * zm }}>{p.nome}</text>
-      })}
+      {rotulos.map((p) => (
+        <text key={`r${p.id}`} x={p.x} y={p.y} dy=".35em" textAnchor={p.anc} className={`mapa-cidade-rotulo ${p.forte ? '' : 'leve'}`} style={{ fontSize: p.fs, strokeWidth: 4.5 * zm }}>{p.nome}</text>
+      ))}
     </svg>
+    {dica && (
+      <div className="mapa-dica" style={{ left: Math.min(dica.x + 14, dica.w - 230), top: dica.y + 14 }}>
+        <b>{dica.titulo}</b>
+        <span>{dica.sub}</span>
+        {dica.valor != null && <strong style={{ color: cor }}>{dica.valor}</strong>}
+        {dica.detalhe && <em>{dica.detalhe}</em>}
+      </div>
+    )}
+    </div>
   )
 }
