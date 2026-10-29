@@ -1326,6 +1326,3 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .det-mods em { font-style: normal; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 .mapa-detalhe .icon-btn { padding: 0; justify-content: center; }
 .mapa-detalhe .icon-btn svg { flex-shrink: 0; }
-.ind-filtros.mapa-filtros .field:first-child { flex: 0 0 auto; }
-.ind-filtros.mapa-filtros { gap: 14px 22px; padding: 14px 18px; }
-.mapa-filtros + .kpis-cor .kpi-note { font-size: 12px; }

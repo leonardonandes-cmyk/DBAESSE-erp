@@ -207,8 +207,18 @@ export default function MapaClientes() {
       </header>
 
 
-      <div className="ind-filtros card mapa-filtros">
+      <div className="segmented lojas-abas" role="tablist" aria-label="Região">
+        {['BR', 'N', 'NE', 'CO', 'SE', 'S'].map((k) => <button key={k} className={reg === k ? 'on' : ''} onClick={() => setReg(k)}>{NOME_REGIAO[k]}</button>)}
+      </div>
+
+      <div className="ind-filtros card">
         <div className="field"><span>Período</span><SeletorPeriodo valor={periodo} onChange={setPeriodo} /></div>
+        <div className="field livre"><span>Modalidade</span>
+          <div className="segmented" role="group" aria-label="Modalidade">
+            <button className={tipo === 'todos' ? 'on' : ''} onClick={() => setTipo('todos')}>Todos</button>
+            {Object.entries(TIPOS_CLIENTE).map(([k, t]) => <button key={k} className={tipo === k ? 'on' : ''} onClick={() => setTipo(k)}><i className="ponto" style={{ background: t.cor }} />{t.label}</button>)}
+          </div>
+        </div>
         <div className="field livre"><span>Medir por</span>
           <div className="segmented" role="group" aria-label="Medida">
             {[['valor', 'R$'], ['pares', 'Pares'], ['clientes', 'Clientes']].map(([k, l]) => <button key={k} className={medida === k ? 'on' : ''} onClick={() => setMedida(k)}>{l}</button>)}
@@ -219,17 +229,6 @@ export default function MapaClientes() {
             {DIAS_INATIVO.map((d) => <option key={d} value={d}>{d} dias sem comprar</option>)}
           </select>
         </label>
-        <div className="field livre"><span>Região</span>
-          <div className="segmented" role="group" aria-label="Região">
-        {['BR', 'N', 'NE', 'CO', 'SE', 'S'].map((k) => <button key={k} className={reg === k ? 'on' : ''} onClick={() => setReg(k)}>{NOME_REGIAO[k]}</button>)}
-      </div>
-        </div>
-        <div className="field livre"><span>Modalidade</span>
-          <div className="segmented" role="group" aria-label="Modalidade">
-            <button className={tipo === 'todos' ? 'on' : ''} onClick={() => setTipo('todos')}>Todos</button>
-            {Object.entries(TIPOS_CLIENTE).map(([k, t]) => <button key={k} className={tipo === k ? 'on' : ''} onClick={() => setTipo(k)}><i className="ponto" style={{ background: t.cor }} />{t.label}</button>)}
-          </div>
-        </div>
       </div>
 
       {erro && <p className="form-error" role="alert">Não consegui carregar: {erro}</p>}
