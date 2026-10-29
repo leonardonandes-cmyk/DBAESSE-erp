@@ -1496,3 +1496,4 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
   .aguarda-cli { grid-column: 1 / -1; order: -1; font-weight: 600; }
   .aguarda-acoes { grid-column: 1 / -1; justify-content: flex-start; }
 }
+.falta-cad { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 10px; border-radius: 10px; background: #fdf3ea; color: #8a3f12; font-size: 14px; }

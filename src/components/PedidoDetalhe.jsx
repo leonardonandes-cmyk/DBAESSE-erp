@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom'
 import { programacaoDoPedido, numeroMapa } from '../lib/mapas.js'
 import { titulosDoPedido } from '../lib/financeiro.js'
 import { brl, dataBR, hojeISO, numeroPedido, rotuloNum } from '../lib/format.js'
-import { enderecoCompleto } from '../lib/parceiros.js'
+import { EXIGE_CADASTRO, enderecoCompleto, pendenciasCadastro } from '../lib/parceiros.js'
+import ParceiroForm from './ParceiroForm.jsx'
 import { FLUXO, STATUS_PEDIDO, atrasado, carregarItens, mudarStatus, salvarDadosPedido, totaisPedido } from '../lib/pedidos.js'
 
 export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [], onFechar, onMudou, onCorrigir }) {
@@ -48,6 +49,9 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   const idx = FLUXO.indexOf(pedido.status)
   const proximo = idx >= 0 && idx < FLUXO.length - 1 ? FLUXO[idx + 1] : null
   const fechado = ['faturado', 'entregue', 'cancelado'].includes(pedido.status)
+  const clienteCad = parceiros.find((x) => x.id === pedido.parceiro_id)
+  const faltaCad = !fechado && EXIGE_CADASTRO.includes(pedido.canal) ? pendenciasCadastro(clienteCad) : []
+  const [completar, setCompletar] = useState(false)
 
   async function acao(status, confirmar) {
     if (confirmar && !window.confirm(confirmar)) return
@@ -160,6 +164,12 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
             {Number(pedido.desconto) > 0 && <span>Bruto {brl(bruto)} · desconto −{brl(pedido.desconto)}</span>}
             <b>{brl(total)}</b>
           </div>
+          {faltaCad.length > 0 && (
+            <div className="falta-cad" role="status">
+              <span><b>Para faturar, complete o cadastro do cliente.</b> Falta: {faltaCad.join(', ')}.</span>
+              {clienteCad && <button type="button" className="btn btn-sm" onClick={() => setCompletar(true)}>Completar cadastro</button>}
+            </div>
+          )}
           <div className="actions">
             <button type="button" className="btn btn-dark" onClick={() => setImprimir(true)} disabled={!itens}>Visualizar · PDF · WhatsApp</button>
             {pedido.canal === 'Atacado' && pedido.status !== 'cancelado' && prog === null && itens && (
@@ -179,7 +189,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
               <button type="button" className="btn btn-dark" disabled={ocupado} onClick={() => acao(proximo)}>Avançar: {STATUS_PEDIDO[proximo].label}</button>
             )}
             {!fechado && pedido.status !== 'orcamento' && (
-              <button type="button" className="btn btn-dark" disabled={ocupado}
+              <button type="button" className="btn btn-dark" disabled={ocupado || faltaCad.length > 0} title={faltaCad.length ? `Falta no cadastro: ${faltaCad.join(', ')}` : undefined}
                 onClick={() => acao('faturado', `Faturar ${numeroPedido(pedido.numero)}? Vai dar baixa de ${pares} pares no estoque.`)}>Faturar</button>
             )}
           </div>
@@ -192,6 +202,11 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
             onCorrigir={() => { setProgramar(false); onCorrigir?.() }}
             onAgoraNao={() => setProgramar(false)}
             onFinalizado={(r) => { setProgramar(false); onMudou?.(); navigate(`/producao/mapas?imprimir=${r.id}`) }} />
+        </div>
+      )}
+      {completar && clienteCad && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ParceiroForm parceiro={clienteCad} onFechar={() => setCompletar(false)} onSalvo={async () => { setCompletar(false); await onMudou(true) }} />
         </div>
       )}
       {imprimir && (

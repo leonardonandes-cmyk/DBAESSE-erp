@@ -63,3 +63,12 @@ export async function lembrarTransportadora(clienteId, transportadoraId) {
   if (!clienteId) return
   await supabase.from('parceiros').update({ transportadora_id: transportadoraId || null }).eq('id', clienteId)
 }
+
+// o que falta no cadastro para faturar (Atacado, Variado e Drop) — o banco confere de novo ao faturar
+export const EXIGE_CADASTRO = ['Atacado', 'Variado', 'Drop']
+export function pendenciasCadastro(p) {
+  if (!p) return ['cliente']
+  const v = (k) => String(p[k] || '').trim()
+  return [['documento', 'CPF/CNPJ'], ['telefone', 'telefone'], ['cep', 'CEP'], ['endereco', 'rua'], ['numero', 'número'], ['bairro', 'bairro'], ['cidade', 'cidade'], ['uf', 'UF']]
+    .filter(([k]) => !v(k)).map(([, r]) => r)
+}
