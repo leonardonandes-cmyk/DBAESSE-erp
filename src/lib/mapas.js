@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js'
-import { criarOP } from './producao.js'
+import { criarOP, listarOPs } from './producao.js'
 
 /*
   Mapa de programação (planilha PROGRAMAÇÃO): cabeçalho (pedido, cliente, marca, datas)
@@ -10,7 +10,7 @@ export const numeroMapa = (n) => `MP-${String(n).padStart(4, '0')}`
 
 export async function listarMapas() {
   const { data, error } = await supabase.from('programacoes')
-    .select('id,numero,pedido,parceiro_id,cliente,marca,data,previsao,observacao,criado_em').order('numero', { ascending: false })
+    .select('id,numero,pedido,pedido_id,parceiro_id,cliente,marca,data,previsao,observacao,criado_em').order('numero', { ascending: false })
   if (error) throw error
   return data
 }
@@ -36,7 +36,7 @@ export async function criarMapa({ cab, blocos }) {
   const semCor = linhas.find(({ c }) => !c.cor_id)
   if (semCor) throw new Error(`Escolha a cor de todas as linhas preenchidas (ref. ${semCor.b.produto.ref}).`)
   const { data: mapa, error } = await supabase.from('programacoes').insert({
-    pedido: cab.pedido?.trim() || null, parceiro_id: cab.parceiro_id || null, cliente: cab.cliente?.trim() || null,
+    pedido: cab.pedido?.trim() || null, pedido_id: cab.pedido_id || null, parceiro_id: cab.parceiro_id || null, cliente: cab.cliente?.trim() || null,
     marca: cab.marca?.trim() || null, data: cab.data || undefined, previsao: cab.previsao || null, observacao: cab.observacao?.trim() || null,
   }).select('id,numero').single()
   if (error) throw error
@@ -44,7 +44,7 @@ export async function criarMapa({ cab, blocos }) {
   try {
     for (const { b, c } of linhas) {
       const itens = b.produto.skus.filter((s) => s.cor_id === c.cor_id && Number(c.grade[s.numero]) > 0).map((s) => ({ sku_id: s.id, quantidade: Number(c.grade[s.numero]) }))
-      const op = await criarOP({ produto_id: b.produto.id, cor_id: c.cor_id, prazo: cab.previsao, prioridade: cab.prioridade, observacao: b.obs, itens, programacao_id: mapa.id })
+      const op = await criarOP({ produto_id: b.produto.id, cor_id: c.cor_id, pedido_id: cab.pedido_id, prazo: cab.previsao, prioridade: cab.prioridade, observacao: b.obs, itens, programacao_id: mapa.id })
       criadas.push(op.id)
     }
   } catch (e) {
@@ -96,7 +96,7 @@ export async function atualizarMapa({ mapa, opsAtuais, cab, blocos }) {
       const { error: e3 } = await supabase.from('op_itens').insert(itens.map((i) => ({ ...i, op_id: c.op_id })))
       if (e3) throw e3
     } else {
-      await criarOP({ produto_id: b.produto.id, cor_id: c.cor_id, prazo: cab.previsao, prioridade: cab.prioridade, observacao: b.obs, itens, programacao_id: mapa.id })
+      await criarOP({ produto_id: b.produto.id, cor_id: c.cor_id, pedido_id: mapa.pedido_id || cab.pedido_id, prazo: cab.previsao, prioridade: cab.prioridade, observacao: b.obs, itens, programacao_id: mapa.id })
     }
   }
   // OPs já em produção: só acompanham a nova previsão
@@ -129,4 +129,61 @@ export function situacaoMapa(mapa, ops) {
   const dias = a ? Math.round((Date.UTC(a, m - 1, d) - hoje) / 864e5) : null
   const id = dias == null ? 'producao' : dias < 0 ? 'atrasado' : dias <= 3 ? 'vence' : 'producao'
   return { id, dias, abertas: abertas.length, total: ativas.length }
+}
+
+/* ---------------- Programação de cliente a partir do PEDIDO (atacado) ---------------- */
+const chaveK = () => Math.random().toString(36).slice(2)
+
+// itens do pedido [{ sku_id, numero, quantidade, produto, cor }] → blocos do mapa (uma referência por modelo, uma linha por cor)
+export function blocosDoPedido(itens, obsPorProduto = {}) {
+  const porProd = new Map()
+  itens.filter((i) => i.quantidade > 0 && i.produto).forEach((i) => {
+    if (!porProd.has(i.produto.id)) porProd.set(i.produto.id, { k: chaveK(), produto: i.produto, obs: obsPorProduto[i.produto.id] ?? (i.produto.tipo || '').toUpperCase(), cores: new Map() })
+    const b = porProd.get(i.produto.id)
+    const corId = i.cor?.id || i.cor_id
+    if (!b.cores.has(corId)) b.cores.set(corId, { k: chaveK(), cor_id: corId, grade: {} })
+    const c = b.cores.get(corId)
+    c.grade[i.numero] = String((Number(c.grade[i.numero]) || 0) + i.quantidade)
+  })
+  return [...porProd.values()].map((b) => ({ ...b, cores: [...b.cores.values()] }))
+}
+
+export async function programacaoDoPedido(pedidoId) {
+  if (!pedidoId) return null
+  const { data, error } = await supabase.from('programacoes').select('id,numero,pedido,pedido_id,parceiro_id,cliente,marca,data,previsao,observacao').eq('pedido_id', pedidoId).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/*
+  Pedido corrigido → programação atrelada acompanha.
+  Cores ainda não iniciadas: recebem a nova grade (ou saem). Cores já em produção: ficam como estão (travadas) e voltam no aviso.
+  → null (sem programação) | { mapa, travadas: [{ ref, cor }] } quando alguma cor travada ficou diferente do pedido
+*/
+export async function sincronizarProgramacao(pedidoId, itens, { previsao } = {}) {
+  const mapa = await programacaoDoPedido(pedidoId)
+  if (!mapa) return null
+  const ops = (await listarOPs()).filter((o) => o.programacao_id === mapa.id && o.status !== 'cancelada')
+  const obs = Object.fromEntries(ops.map((o) => [o.produto_id, o.observacao || '']))
+  const blocos = blocosDoPedido(itens, obs)
+  const diferentes = []
+  blocos.forEach((b) => b.cores.forEach((c) => {
+    const op = ops.find((o) => o.produto_id === b.produto.id && o.cor_id === c.cor_id)
+    if (!op) return
+    c.op_id = op.id
+    if (opTravada(op)) {
+      c.travada = true
+      const antes = Object.fromEntries((op.op_itens || []).map((i) => [i.skus?.numero, i.quantidade]))
+      const mudou = Object.keys({ ...antes, ...c.grade }).some((n) => (Number(antes[n]) || 0) !== (Number(c.grade[n]) || 0))
+      if (mudou) diferentes.push({ ref: b.produto.ref, cor: op.cores?.nome || '' })
+    }
+  }))
+  // cor travada que saiu do pedido continua no mapa (já está em produção)
+  ops.filter(opTravada).forEach((op) => {
+    const existe = blocos.some((b) => b.cores.some((c) => c.op_id === op.id))
+    if (!existe) diferentes.push({ ref: op.produtos?.ref || '', cor: op.cores?.nome || '' })
+  })
+  const cab = { ...mapa, previsao: previsao || mapa.previsao, prioridade: ops[0]?.prioridade || 'normal' }
+  await atualizarMapa({ mapa, opsAtuais: ops, cab, blocos })
+  return { mapa, travadas: diferentes }
 }

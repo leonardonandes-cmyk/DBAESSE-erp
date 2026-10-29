@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProdutoCelula, { FotoProduto } from '../components/FotoProduto.jsx'
@@ -54,7 +55,17 @@ export default function Producao({ visao = 'quadro' }) {
       return o
     } catch (e) { setErro(e.message) } finally { setCarregando(false) }
   }
-  useEffect(() => { carregar() }, [])
+  // vindo do pedido (programação finalizada): abre a impressão do mapa → fichas seguem para a produção
+  const [params, setParams] = useSearchParams()
+  useEffect(() => {
+    carregar().then(async () => {
+      const id = params.get('imprimir')
+      if (!id) return
+      const m = (await listarMapas()).find((x) => x.id === id)
+      if (m) { setVersaoMapas((v) => v + 1); setImprimirProg(m) }
+      setParams({}, { replace: true })
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function abrirSugestoes() {
     setErro('')

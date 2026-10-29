@@ -1392,3 +1392,29 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .desc-campo .input { min-width: 0; }
 .desc-conv { color: var(--muted); font-size: 12px; margin-top: 4px; display: block; }
 .preco-travado { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---------- Programação de cliente a partir do pedido ---------- */
+.pergunta-prog { max-width: 470px; align-items: center; text-align: center; gap: 12px; border-top: 4px solid var(--ink); }
+.pergunta-prog-ic { width: 54px; height: 54px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+.pergunta-prog-ic.aviso { background: #fdf0d9; color: #b46b00; }
+.pergunta-prog h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+.pergunta-prog p { margin: 0; color: var(--ink-2); line-height: 1.5; }
+.pergunta-prog-acoes { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
+.pergunta-prog-acoes .btn { width: 100%; justify-content: center; }
+.pergunta-prog-lista { margin: 0; padding: 0; list-style: none; width: 100%; display: grid; gap: 4px; text-align: left; }
+.pergunta-prog-lista li { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 13px; }
+.prog-pedido .form-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.prog-blocos { display: grid; gap: 12px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+.prog-bloco { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--surface); }
+.prog-bloco-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.prog-bloco-head .mapa-obs { flex: 1 1 280px; max-width: 460px; }
+.prog-grade { width: 100%; font-size: 13px; }
+.prog-grade th, .prog-grade td { padding: 5px 8px; }
+.prog-grade .c { text-align: center; width: 44px; }
+.prog-grade { table-layout: fixed; }
+.prog-grade th:first-child { width: 34%; }
+.prog-grade th:last-child { width: 80px; }
+.prog-cor { display: inline-flex; align-items: center; gap: 8px; }
+.prog-cor i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.prog-resumo { font-size: 13px; color: var(--muted); }
+.prog-acoes { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line-soft); padding-top: 14px; }

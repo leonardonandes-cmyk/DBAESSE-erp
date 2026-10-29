@@ -1,6 +1,9 @@
 import Icon from './Icon.jsx'
 import { listarVendedoras, vendedoraPadrao, vendedorasDe } from '../lib/repasses.js'
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import ProgramarPedido from './ProgramarPedido.jsx'
+import { programacaoDoPedido, sincronizarProgramacao } from '../lib/mapas.js'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import ParceiroForm from './ParceiroForm.jsx'
@@ -11,8 +14,17 @@ import { numeroPedido, rotuloNum } from '../lib/format.js'
 import { listaSugerida, listarListas, precoNaLista } from '../lib/precos.js'
 
 // Serve para CRIAR (sem `pedido`) e para CORRIGIR um pedido aberto (com `pedido`)
-export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido, onFechar, onSalvo }) {
+export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido: pedidoInicial, onFechar, onSalvo }) {
+  // depois do 1º salvamento o pedido passa a existir (corrigir volta para cá em modo correção)
+  const [salvo, setSalvo] = useState(null) // { id, numero, status }
+  const pedido = pedidoInicial || salvo
   const editando = Boolean(pedido)
+  const navigate = useNavigate()
+  // programação de cliente (atacado): pergunta → prévia ("Alguma correção?") → finalizar
+  const [etapa, setEtapa] = useState('form') // form | pergunta | previa | aviso
+  const [jaNaPrevia, setJaNaPrevia] = useState(false)
+  const [avisoSync, setAvisoSync] = useState(null)
+  const [itensSalvos, setItensSalvos] = useState([])
   const [novos, setNovos] = useState([]) // clientes cadastrados agora, dentro da venda
   const [cadastrar, setCadastrar] = useState(false)
   const clientes = useMemo(
@@ -115,11 +127,65 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
     try {
       const dados = { ...f, desconto: descontoRS, itens: validos }
       const ped = editando ? await atualizarPedido(pedido.id, dados) : await criarPedido(dados)
-      onSalvo(ped)
+      const atual = editando ? pedido : { ...ped, status: dados.status }
+      // já tem programação atrelada → ela acompanha a correção
+      const prog = await programacaoDoPedido(atual.id)
+      if (prog) {
+        const r = await sincronizarProgramacao(atual.id, validos, { previsao: f.previsao })
+        if (r?.travadas?.length) { setAvisoSync({ prog, travadas: r.travadas, ped: atual }); setEtapa('aviso'); setSalvando(false); return }
+        return onSalvo(atual)
+      }
+      // atacado sem programação → pergunta se gera
+      if (f.canal === 'Atacado') {
+        setSalvo({ id: atual.id, numero: atual.numero, status: atual.status })
+        setItensSalvos(validos)
+        setEtapa(jaNaPrevia ? 'previa' : 'pergunta')
+        setSalvando(false)
+        return
+      }
+      onSalvo(atual)
     } catch (e) {
       setErro(e.message)
       setSalvando(false)
     }
+  }
+
+  const cliente = clientes.find((x) => x.id === f.parceiro_id)
+  if (etapa === 'previa') {
+    return <ProgramarPedido pedido={pedido} cliente={cliente} previsao={f.previsao} itens={itensSalvos}
+      onCorrigir={() => { setJaNaPrevia(true); setEtapa('form') }}
+      onAgoraNao={() => onSalvo(pedido)}
+      onFinalizado={(r) => { onSalvo(pedido); navigate(`/producao/mapas?imprimir=${r.id}`) }} />
+  }
+  if (etapa === 'pergunta') {
+    return (
+      <div className="modal-bg">
+        <div className="modal pergunta-prog">
+          <div className="pergunta-prog-ic"><Icon name="producao" size={26} /></div>
+          <h2>Gerar programação?</h2>
+          <p>Pedido {numeroPedido(pedido.numero)} salvo. Deseja gerar agora a <b>programação de produção</b> deste pedido (o pedido inteiro, com a marca e a data combinadas com o cliente)?</p>
+          <div className="pergunta-prog-acoes">
+            <button type="button" className="btn btn-dark" onClick={() => setEtapa('previa')} autoFocus>Sim, gerar programação</button>
+            <button type="button" className="btn" onClick={() => onSalvo(pedido)}>Agora não</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  if (etapa === 'aviso' && avisoSync) {
+    return (
+      <div className="modal-bg">
+        <div className="modal pergunta-prog">
+          <div className="pergunta-prog-ic aviso"><Icon name="alerta" size={26} /></div>
+          <h2>Programação atualizada</h2>
+          <p>As cores ainda não iniciadas da programação foram corrigidas junto com o pedido. Estas <b>já estão em produção</b> e ficaram como estavam — confira com a produção:</p>
+          <ul className="pergunta-prog-lista">{avisoSync.travadas.map((x, i) => <li key={i}><b>{x.ref}</b> · {x.cor}</li>)}</ul>
+          <div className="pergunta-prog-acoes">
+            <button type="button" className="btn btn-dark" onClick={() => onSalvo(avisoSync.ped)} autoFocus>Entendi</button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
