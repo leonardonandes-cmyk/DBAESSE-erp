@@ -1364,3 +1364,14 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .com-mods .check { font-size: 12px; gap: 6px; }
 .com-mods .check input { width: 15px; height: 15px; }
 .com-mods-tags { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; }
+
+/* ---------- Aviso: lista de preço de outro segmento ---------- */
+.aviso-lista-bg { z-index: 80; background: rgba(21,21,21,.5); }
+.aviso-lista { max-width: 460px; align-items: center; text-align: center; gap: 12px; border-top: 4px solid var(--bad); }
+.aviso-lista-ic { width: 54px; height: 54px; border-radius: 50%; background: var(--bad-soft); color: var(--bad); display: grid; place-items: center; }
+.aviso-lista h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+.aviso-lista p { margin: 0; color: var(--ink-2); line-height: 1.5; }
+.aviso-lista-q { font-weight: 700; color: var(--ink) !important; }
+.aviso-lista-acoes { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
+.aviso-lista-acoes .btn { width: 100%; justify-content: center; }
+.lista-fora { color: var(--bad); font-weight: 700; font-size: 11px; margin-left: 6px; }

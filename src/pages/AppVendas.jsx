@@ -1,3 +1,5 @@
+import AvisoLista from '../components/AvisoLista.jsx'
+import { listaDoSegmento } from '../lib/modalidades.js'
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import Leitor from '../components/Leitor.jsx'
@@ -233,6 +235,7 @@ function NovoBipando({ indice, parceiros: parceirosBase, onVoltar }) {
   const [canal, setCanal] = useState('Atacado')
   const [listas, setListas] = useState([])
   const [codLista, setCodLista] = useState('atacado')
+  const [avisoLista, setAvisoLista] = useState(null)
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
   const listaPreco = listas.find((l) => l.codigo === codLista)
   const preco = (p) => precoNaLista(p, listaPreco)
@@ -300,11 +303,16 @@ function NovoBipando({ indice, parceiros: parceirosBase, onVoltar }) {
           </select>
         </label>
         <label className="field"><span>Lista de preço</span>
-          <select className="input" value={codLista} onChange={(e) => setCodLista(e.target.value)}>
+          <select className="input" value={codLista} onChange={(e) => (e.target.value !== listaDoSegmento(canal) ? setAvisoLista(e.target.value) : setCodLista(e.target.value))}>
             {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}</option>)}
           </select>
         </label>
       </div>
+      {avisoLista && (
+        <AvisoLista canal={canal} escolhida={avisoLista} esperada={listaDoSegmento(canal)} listas={listas}
+          onVoltar={() => { setAvisoLista(null); setCodLista(listaDoSegmento(canal)) }}
+          onSeguir={() => { setCodLista(avisoLista); setAvisoLista(null) }} />
+      )}
       {cadastrar && (
         <ParceiroForm tipoInicial="cliente" onFechar={() => setCadastrar(false)}
           onSalvo={(novo) => {

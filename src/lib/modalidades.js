@@ -15,3 +15,6 @@ export const MODALIDADE = Object.fromEntries(MODALIDADES.map((m) => [m.id, m]))
 const POR_CANAL = Object.fromEntries(MODALIDADES.flatMap((m) => m.canais.map((c) => [c, m.id])))
 // canal desconhecido/vazio → atacado
 export const modalidadeDoCanal = (canal) => POR_CANAL[canal] || 'atacado'
+
+// lista de preço do segmento do pedido (Atacado → atacado, Variado → variado, Drop → drop, marketplace/varejo → varejo)
+export const listaDoSegmento = (canal) => MODALIDADE[modalidadeDoCanal(canal)]?.lista || 'atacado'
