@@ -1,3 +1,4 @@
+import { resumoEncalhe } from '../lib/encalhe.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
@@ -99,6 +100,7 @@ export default function Painel({ usuario }) {
     const zerados = saldos.filter((s) => skusAtivos.has(s.sku_id) && s.saldo <= 0).length
     const rascunhos = produtos.filter((p) => p.status === 'rascunho').length
 
+    const encalhe = resumoEncalhe({ saldos, produtos, pedidos })
     const alertas = [
       mapasAtras && { n: mapasAtras, titulo: 'Mapas ATRASADOS', sub: 'Passou da previsão e ainda tem ficha em produção', tom: 'bad', para: '/producao/mapas', forte: true },
       mapasAbertos && { n: mapasAbertos, titulo: 'Mapas em produção', sub: 'Ainda não finalizados', tom: 'warn', para: '/producao/mapas' },
@@ -106,6 +108,7 @@ export default function Painel({ usuario }) {
       receberVenc.length && { n: receberVenc.length, titulo: 'Recebimentos em atraso', sub: `${brl(somaV(receberVenc))} para cobrar`, tom: 'warn', para: '/financeiro' },
       atrasados.length && { n: atrasados.length, titulo: 'Pedidos atrasados', sub: 'Previsão de entrega já passou', tom: 'bad', para: '/pedidos' },
       opsAtrasadas.length && { n: opsAtrasadas.length, titulo: 'OPs fora do prazo', sub: 'Ordens de produção atrasadas', tom: 'bad', para: '/producao' },
+      encalhe.itens && { n: encalhe.itens, titulo: 'Produtos encalhados', sub: `+90 dias sem vender · ${encalhe.pares} pares · ${brl(encalhe.valor)} parados`, tom: 'bad', para: '/encalhados', forte: true },
       zerados && { n: zerados, titulo: 'SKUs sem estoque', sub: 'Modelos ativos com saldo zerado', tom: 'warn', para: '/estoque' },
       rascunhos && { n: rascunhos, titulo: 'Modelos em rascunho', sub: 'Faltam nome e cores para ativar', tom: 'neutral', para: '/produtos' },
     ].filter(Boolean)
