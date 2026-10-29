@@ -11,6 +11,9 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     nome: parceiro?.nome || '',
     tipos: parceiro?.tipos || [tipoInicial || 'cliente'],
     documento: parceiro?.documento || '',
+    razao_social: parceiro?.razao_social || '',
+    inscricao_estadual: parceiro?.inscricao_estadual || '',
+    contato: parceiro?.contato || '',
     telefone: parceiro?.telefone || '',
     email: parceiro?.email || '',
     cep: parceiro?.cep || '',
@@ -58,11 +61,11 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     setF((x) => ({
       ...x,
       nome: pega(x.nome, r.fantasia || r.razao),
+      razao_social: pega(x.razao_social, r.razao),
       telefone: pega(x.telefone, r.telefone), email: pega(x.email, r.email),
       cep: pega(x.cep, r.cep), endereco: pega(x.endereco, r.endereco), numero: pega(x.numero, r.numero),
       complemento: pega(x.complemento, r.complemento), bairro: pega(x.bairro, r.bairro),
       cidade: pega(x.cidade, r.cidade), uf: pega(x.uf, r.uf),
-      observacoes: x.observacoes || (r.fantasia && r.razao ? `Razão social: ${r.razao}` : ''),
     }))
     setBusca((b) => ({ ...b, cnpj: `✓ Dados da Receita aplicados — confira e ajuste o que o cliente passou diferente` }))
     setReceita(null)
@@ -152,7 +155,10 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
               </div>
             </div>
           )}
-          <label className="field span-2"><span>Nome / razão social *</span><input required value={f.nome} onChange={set('nome')} placeholder="Loja Primavera" /></label>
+          <label className="field span-2"><span>Nome (fantasia) *</span><input required value={f.nome} onChange={set('nome')} placeholder="Loja Primavera" /></label>
+          <label className="field"><span>Inscrição estadual</span><input value={f.inscricao_estadual} onChange={set('inscricao_estadual')} placeholder="Isento ou número" /></label>
+          <label className="field span-2"><span>Razão social</span><input value={f.razao_social} onChange={set('razao_social')} placeholder="Primavera Calçados Ltda" /></label>
+          <label className="field"><span>Contato / responsável</span><input value={f.contato} onChange={set('contato')} placeholder="Nome de quem compra" /></label>
           <label className="field"><span>Telefone / WhatsApp</span><input value={f.telefone} onChange={set('telefone')} placeholder="(37) 99999-0000" inputMode="tel" /></label>
           <label className="field span-2"><span>E-mail</span><input type="email" value={f.email} onChange={set('email')} /></label>
           <div className="field">

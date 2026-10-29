@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FotoProduto } from './FotoProduto.jsx'
 import AcoesDocumento from './AcoesDocumento.jsx'
-import { brl, inteiro, numeroPedido, rotuloNum } from '../lib/format.js'
+import { brl, inteiro, numeroPedido, rotuloNum, soDigitos } from '../lib/format.js'
 import { MODALIDADE, modalidadeDoCanal } from '../lib/modalidades.js'
 import { supabase } from '../lib/supabase.js'
+import { enderecoCompleto } from '../lib/parceiros.js'
 
 /*
   Pedido / orçamento para o cliente: visualizar, imprimir, baixar PDF e enviar pelo WhatsApp.
@@ -19,6 +20,9 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
     return () => document.body.classList.remove('imprimindo')
   }, [])
 
+  const enderecoCli = enderecoCompleto(cliente)
+  const entregaOutra = Boolean(entrega && entrega !== enderecoCli)
+  const faltando = cliente ? [!cliente.documento && 'CPF/CNPJ', !cliente.endereco && 'endereço', !cliente.cep && 'CEP', !cliente.telefone && 'telefone'].filter(Boolean) : []
   const orcamento = pedido.status === 'orcamento'
   const titulo = orcamento ? 'Orçamento' : 'Pedido de venda'
   const nomeArq = `${orcamento ? 'Orcamento' : 'Pedido'}-${numeroPedido(pedido.numero)}-${(cliente?.nome || 'cliente').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/-+$/, '')}.pdf`
@@ -31,7 +35,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
   return createPortal(
     <div className="print-root">
       <div className="print-barra no-print">
-        <div><b>{titulo} {numeroPedido(pedido.numero)}</b> <span className="faint">· {cliente?.nome || 'sem cliente'}</span></div>
+        <div><b>{titulo} {numeroPedido(pedido.numero)}</b> <span className="faint">· {cliente?.nome || 'sem cliente'}</span>{faltando.length > 0 && <span className="doc-falta">Cadastro do cliente incompleto: falta {faltando.join(', ')}</span>}</div>
         <AcoesDocumento alvo={folha} nome={nomeArq} telefone={cliente?.telefone} mensagem={mensagem} pasta="pedidos" onFechar={onFechar} />
       </div>
 
@@ -46,13 +50,15 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
             <div>
               <small>Cliente</small>
               <b>{cliente?.nome || '—'}</b>
-              {cliente?.documento && <span>CPF/CNPJ {cliente.documento}</span>}
-              {cliente?.telefone && <span>{cliente.telefone}</span>}
+              {cliente?.razao_social && cliente.razao_social.toLowerCase() !== (cliente.nome || '').toLowerCase() && <span>{cliente.razao_social}</span>}
+              {(cliente?.documento || cliente?.inscricao_estadual) && <span>{[cliente.documento && `${soDigitos(cliente.documento).length === 11 ? 'CPF' : 'CNPJ'} ${cliente.documento}`, cliente.inscricao_estadual && `IE ${cliente.inscricao_estadual}`].filter(Boolean).join(' · ')}</span>}
+              {enderecoCli && <span>{enderecoCli}</span>}
+              {(cliente?.contato || cliente?.telefone) && <span>{[cliente.contato, cliente.telefone].filter(Boolean).join(' · ')}</span>}
               {cliente?.email && <span>{cliente.email}</span>}
             </div>
             <div>
               <small>Entrega</small>
-              <span>{entrega || '—'}</span>
+              <span>{entregaOutra ? entrega : (enderecoCli ? 'No endereço do cliente' : (entrega || '—'))}</span>
               {pedido.previsao && <span><b>Previsão: {dataLonga(pedido.previsao)}</b></span>}
               {(pedido.transp?.nome || pedido.frete_por) && <span>{pedido.transp?.nome ? <>Transportadora: <b>{pedido.transp.nome}</b>{pedido.transp.telefone ? ` · ${pedido.transp.telefone}` : ''}</> : 'Sem transportadora'}{pedido.frete_por ? ` · frete por conta ${pedido.frete_por === 'empresa' ? 'da DBAESSE (CIF)' : 'do cliente (FOB)'}` : ''}</span>}
             </div>

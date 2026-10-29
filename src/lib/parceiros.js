@@ -12,7 +12,7 @@ export const CANAIS = ['Atacado', 'Variado', 'Drop', 'Shopee', 'TikTok Shop', 'M
 export async function listarParceiros() {
   return todas(() => supabase
     .from('parceiros')
-    .select('id,nome,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,grupo,transportadora_id,observacoes,ativo')
+    .select('id,nome,razao_social,inscricao_estadual,contato,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,grupo,transportadora_id,observacoes,ativo')
     .order('nome').order('id'))
 }
 
@@ -21,6 +21,9 @@ export async function salvarParceiro(dados, id) {
     nome: dados.nome.trim(),
     tipos: dados.tipos,
     documento: dados.documento?.trim() || null,
+    razao_social: dados.razao_social?.trim() || null,
+    inscricao_estadual: dados.inscricao_estadual?.trim() || null,
+    contato: dados.contato?.trim() || null,
     telefone: dados.telefone?.trim() || null,
     email: dados.email?.trim() || null,
     cep: dados.cep?.trim() || null,

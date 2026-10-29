@@ -1476,3 +1476,5 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .tp-preco small { font-size: 7pt; color: #666; font-weight: 500; font-family: var(--font); }
 .transp-linha { display: grid; grid-template-columns: minmax(0, 1.4fr) auto; gap: 14px; align-items: end; }
 @media (max-width: 640px) { .transp-linha { grid-template-columns: 1fr; } }
+.doc-partes { grid-template-columns: 1.6fr 1.3fr .9fr; }
+.doc-falta { display: block; margin-top: 2px; font-size: 12px; color: #b4561c; font-weight: 600; }
