@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useImperativeHandle, useMemo, useRef, useState, forwardRef } from 'react'
 import { NOME_REGIAO, REGIOES, regiaoDe } from '../lib/geo.js'
 
 /*
@@ -20,10 +20,17 @@ const ESFERAS = {
 }
 const H_BASE = 5, H_MAX = 34
 
-export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf = {}, detalheUf = {}, cor = '#1f6fd6', sel, onSel, fmt = String, altura = 620 }) {
+function MapaBrasilBase({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf = {}, detalheUf = {}, cor = '#1f6fd6', sel, onSel, fmt = String, altura = 620 }) {
+  // a dica (tooltip) vive num componente à parte: mover o mouse NÃO redesenha o mapa
   const caixaRef = useRef(null)
-  const [dica, setDica] = useState(null)
-  const mostrar = (ev, d) => { const b = caixaRef.current?.getBoundingClientRect(); if (b) setDica({ ...d, x: ev.clientX - b.left, y: ev.clientY - b.top, w: b.width }) }
+  const dicaRef = useRef(null)
+  const quadro = useRef(0)
+  const mostrar = useCallback((ev, d) => {
+    const b = caixaRef.current?.getBoundingClientRect(); if (!b) return
+    const x = ev.clientX - b.left, y = ev.clientY - b.top
+    cancelAnimationFrame(quadro.current)
+    quadro.current = requestAnimationFrame(() => dicaRef.current?.mostrar({ ...d, x, y, w: b.width }))
+  }, [])
   const naReg = (uf) => reg === 'BR' || REGIOES[reg]?.includes(uf)
   const calor = visao === 'calor'
   const off = (uf) => (reg === 'BR' && !calor ? SEP[regiaoDe(uf)] || [0, 0] : [0, 0])
@@ -76,8 +83,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
     return { k, x: P[0], y: P[1], anc: P[2] }
   })
 
-  return (
-    <div className="mapa-caixa" ref={caixaRef} onMouseLeave={() => setDica(null)}>
+  const desenho = (
     <svg className="mapa-br" viewBox={viewBox} style={{ height: altura }} role="img" aria-label={`Mapa de clientes — ${NOME_REGIAO[reg]}`}
       onClick={(e) => { if (e.target === e.currentTarget) onSel?.(null) }}>
       <defs>
@@ -110,7 +116,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
           const on = sel?.tipo === 'estado' && sel.id === uf
           const clicavel = dentro && porUf[uf] > 0
           const camadas = []
-          for (let k = 0; k < h; k += 1.5) camadas.push(<path key={k} d={e.d} transform={`translate(${o[0]},${o[1] - k})`} fill="#c9c3ba" fillOpacity={(0.75 + 0.25 * k / h).toFixed(2)} />)
+          for (let k = 0; k < h; k += 2.5) camadas.push(<path key={k} d={e.d} transform={`translate(${o[0]},${o[1] - k})`} fill="#c9c3ba" fillOpacity={(0.75 + 0.25 * k / h).toFixed(2)} />)
           return (
             <g key={uf} className={`mapa-uf ${clicavel ? 'clicavel' : ''}`} style={{ opacity: dentro ? 1 : 0.28 }}
               onMouseMove={(ev) => dentro && mostrar(ev, { titulo: e.nome, sub: `${uf} · ${NOME_REGIAO[regiaoDe(uf)]}`, valor: porUf[uf] ? fmt(porUf[uf]) : 'sem vendas', detalhe: detalheUf[uf] })}
@@ -165,14 +171,30 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
         <text key={`r${p.id}`} x={p.x} y={p.y} dy=".35em" textAnchor={p.anc} className={`mapa-cidade-rotulo ${p.forte ? '' : 'leve'}`} style={{ fontSize: p.fs, strokeWidth: 4.5 * zm }}>{p.nome}</text>
       ))}
     </svg>
-    {dica && (
-      <div className="mapa-dica" style={{ left: Math.min(dica.x + 14, dica.w - 230), top: dica.y + 14 }}>
-        <b>{dica.titulo}</b>
-        <span>{dica.sub}</span>
-        {dica.valor != null && <strong style={{ color: cor }}>{dica.valor}</strong>}
-        {dica.detalhe && <em>{dica.detalhe}</em>}
-      </div>
-    )}
+  )
+
+  return (
+    <div className="mapa-caixa" ref={caixaRef} onMouseLeave={() => { cancelAnimationFrame(quadro.current); dicaRef.current?.mostrar(null) }}>
+    {desenho}
+    <Dica ref={dicaRef} cor={cor} />
     </div>
   )
 }
+
+const Dica = forwardRef(function Dica({ cor }, ref) {
+  const [dica, setDica] = useState(null)
+  useImperativeHandle(ref, () => ({ mostrar: setDica }), [])
+  if (!dica) return null
+  return (
+    <div className="mapa-dica" style={{ left: Math.min(dica.x + 14, dica.w - 230), top: dica.y + 14 }}>
+      <b>{dica.titulo}</b>
+      <span>{dica.sub}</span>
+      {dica.valor != null && <strong style={{ color: cor }}>{dica.valor}</strong>}
+      {dica.detalhe && <em>{dica.detalhe}</em>}
+    </div>
+  )
+})
+
+// só redesenha quando os dados/filtros mudam (fmt/onSel são funções novas a cada render do pai: comparadas por fora)
+const MapaBrasil = memo(MapaBrasilBase, (a, b) => ['geo', 'reg', 'visao', 'pontos', 'porUf', 'detalheUf', 'cor', 'sel', 'altura'].every((k) => a[k] === b[k]) && a.fmt?.toString() === b.fmt?.toString())
+export default MapaBrasil
