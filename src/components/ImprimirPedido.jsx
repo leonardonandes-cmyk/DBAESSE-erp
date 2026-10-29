@@ -95,7 +95,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
             <div className="doc-totais">
               <span><small>Pares</small><b>{inteiro(totais.pares)}</b></span>
               {totais.desconto > 0 && <span><small>Subtotal</small><b>{brl(totais.bruto)}</b></span>}
-              {totais.desconto > 0 && <span><small>Desconto</small><b>− {brl(totais.desconto)}</b></span>}
+              {totais.desconto > 0 && <span><small>Desconto{totais.bruto ? ` (${(totais.desconto / totais.bruto * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%)` : ''}</small><b>− {brl(totais.desconto)}</b></span>}
               <span className="doc-total"><small>Total</small><b>{brl(totais.total)}</b></span>
             </div>
           </section>
