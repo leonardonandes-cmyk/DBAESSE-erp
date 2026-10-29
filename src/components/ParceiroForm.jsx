@@ -22,6 +22,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     uf: parceiro?.uf || '',
     canal: parceiro?.canal || '',
     lista: parceiro?.lista || '',
+    grupo: parceiro?.grupo || '',
     observacoes: parceiro?.observacoes || '',
     ativo: parceiro?.ativo ?? true,
   }))
@@ -182,6 +183,11 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
               <option value="">Pelo canal</option>
               {listas.map((l) => <option key={l.codigo} value={l.codigo}>{l.nome}</option>)}
             </select>
+          </label>
+          <label className="field">
+            <span>Polo / grupo</span>
+            <input value={f.grupo} onChange={set('grupo')} placeholder="Ex.: Fartura" list="grupos-parceiro" />
+            <datalist id="grupos-parceiro"><option value="Fartura" /></datalist>
           </label>
           <label className="field span-2"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Prazo combinado, preferências, transportadora…" /></label>
         </div>

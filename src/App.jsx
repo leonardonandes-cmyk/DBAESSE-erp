@@ -20,6 +20,7 @@ import MargemLojas from './pages/MargemLojas.jsx'
 import Indicadores from './pages/Indicadores.jsx'
 import MapaClientes from './pages/MapaClientes.jsx'
 import Encalhados from './pages/Encalhados.jsx'
+import Comissoes from './pages/Comissoes.jsx'
 import FichasTecnicas from './pages/FichasTecnicas.jsx'
 import BiparProducao from './components/BiparProducao.jsx'
 
@@ -41,7 +42,8 @@ export const MODULOS = [
   { to: '/compras', icon: 'compras', label: 'Compras', grupo: 'Operações' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
   { to: '/fichas', icon: 'ficha', label: 'Fichas técnicas', grupo: 'Operações', sub: true },
-  { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro' },
+  { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro', exato: true },
+  { to: '/financeiro/comissoes', icon: 'financeiro', label: 'Comissões', grupo: 'Financeiro', sub: true },
   { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
   { to: '/mapa', icon: 'mapa', label: 'Mapa de clientes', grupo: 'Relatórios' },
   { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
@@ -140,6 +142,7 @@ export default function App() {
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/financeiro" element={<Financeiro />} />
+          <Route path="/financeiro/comissoes" element={<Comissoes />} />
           <Route path="/compras" element={<Compras />} />
           <Route path="/relatorios" element={<Indicadores />} />
           <Route path="/indicadores" element={<Indicadores />} />

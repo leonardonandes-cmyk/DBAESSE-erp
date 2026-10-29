@@ -1346,3 +1346,17 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .mapa-legenda-calor { position: absolute; left: 12px; bottom: 6px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); font-weight: 600; }
 .mapa-legenda-calor i { display: block; width: 220px; height: 10px; border-radius: 999px; background: linear-gradient(90deg, #8ccbff 0%, #33a3f2 18%, #1abf8c 38%, #f9d93a 58%, #ff8a2e 78%, #db2130 100%); }
 @media (max-width: 640px) { .mapa-legenda-calor i { width: 140px; } }
+
+/* ---------- Comissões ---------- */
+.com-card { display: flex; flex-direction: column; gap: 10px; border: 1px solid transparent; }
+.com-card.on { border-color: var(--kc); }
+.com-card-topo { all: unset; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+.com-card .btn { align-self: flex-start; }
+.com-status { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--info-soft); color: var(--info); }
+.com-status.pago { background: var(--ok-soft); color: var(--ok); }
+.com-onde { display: flex; gap: 8px; }
+.com-onde .input { min-width: 0; }
+tr.inativa td { opacity: .5; }
+tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
+.form-ok { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--ok-soft); color: var(--ok); font-weight: 600; font-size: 13px; }
+.row-gap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
