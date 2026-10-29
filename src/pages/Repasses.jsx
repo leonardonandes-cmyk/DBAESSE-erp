@@ -5,17 +5,17 @@ import { brl, dataBR, inteiro, numeroPedido } from '../lib/format.js'
 import { listarPedidos } from '../lib/pedidos.js'
 import { criarTitulos, listarTitulos } from '../lib/financeiro.js'
 import { MODALIDADES, MODALIDADE } from '../lib/modalidades.js'
-import { calcularComissoes, descreverRegra, excluirRegra, listarRegras, salvarRegra } from '../lib/comissoes.js'
+import { calcularComissoes, descreverRegra, excluirRegra, listarRegras, salvarRegra } from '../lib/repasses.js'
 
 /*
-  Financeiro › Comissões
+  Financeiro › Repasses (só o dono: menu escondido + bloqueio no banco)
   Quanto pagar para cada pessoa no período (padrão: este mês), pedido a pedido, e lançar no contas a pagar.
   Regras editáveis no fim da tela.
 */
 const CORES = ['#1f6fd6', '#d4537e', '#e8a10c', '#1baf7a', '#6250d6', '#eb6834']
 const isoDia = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-export default function Comissoes() {
+export default function Repasses() {
   const [pedidos, setPedidos] = useState(null)
   const [regras, setRegras] = useState([])
   const [titulos, setTitulos] = useState([])
@@ -46,15 +46,15 @@ export default function Comissoes() {
   const corDe = Object.fromEntries(pessoas.map((p) => [p.nome, p.cor]))
   const total = pessoas.reduce((t, p) => t + p.valor, 0)
   const rotuloPer = per.rotulo.split(' · ')[0]
-  const descTitulo = (nome) => `Comissão ${nome} · ${rotuloPer}`
+  const descTitulo = (nome) => `Repasse ${nome} · ${rotuloPer}`
   const lancado = (nome) => titulos.find((t) => t.tipo === 'pagar' && t.descricao === descTitulo(nome))
 
   async function lancar(p) {
     setErro(''); setMsg('')
     const venc = new Date(per.fim); venc.setDate(1); venc.setMonth(venc.getMonth() + 1); venc.setDate(10)
     try {
-      await criarTitulos({ tipo: 'pagar', descricao: descTitulo(p.nome), categoria: 'Comissão', observacao: `${p.pedidos} pedidos · ${p.pares} pares · ${p.regras.map(descreverRegra).join(' + ')}`, parcelas: [{ valor: Math.round(p.valor * 100) / 100, vencimento: isoDia(venc), parcela: '1/1' }] })
-      setMsg(`Comissão de ${p.nome} lançada no contas a pagar (vence ${dataBR(isoDia(venc))}).`)
+      await criarTitulos({ tipo: 'pagar', descricao: descTitulo(p.nome), categoria: 'Repasse', observacao: `${p.pedidos} pedidos · ${p.pares} pares · ${p.regras.map(descreverRegra).join(' + ')}`, parcelas: [{ valor: Math.round(p.valor * 100) / 100, vencimento: isoDia(venc), parcela: '1/1' }] })
+      setMsg(`Repasse de ${p.nome} lançado no contas a pagar (vence ${dataBR(isoDia(venc))}).`)
       setTitulos(await listarTitulos())
     } catch (e) { setErro(e.message) }
   }
@@ -68,7 +68,7 @@ export default function Comissoes() {
       <header className="page-head">
         <div>
           <div className="eyebrow">Financeiro · {per.rotulo}</div>
-          <h1>Comissões</h1>
+          <h1>Repasses</h1>
         </div>
       </header>
 
@@ -83,7 +83,7 @@ export default function Comissoes() {
       {calc && <>
         <section className="kpis-cor">
           <div className="card kpi-cor" style={{ '--kc': '#151515' }}>
-            <span className="kpi-label">Total de comissões</span>
+            <span className="kpi-label">Total de repasses</span>
             <span className="kpi2-valor">{brl(total)}</span>
             <span className="kpi-note"><em>{pessoas.length} pessoa(s) · {calc.linhas.length} pedidos</em></span>
           </div>
@@ -107,7 +107,7 @@ export default function Comissoes() {
 
         <section className="card card-flush">
           <div className="card-head pad">
-            <div><h2>Pedidos com comissão</h2><div className="card-sub">{filtro === 'todos' ? 'todas as pessoas' : filtro} · faturados ou entregues · valor com desconto</div></div>
+            <div><h2>Pedidos com repasse</h2><div className="card-sub">{filtro === 'todos' ? 'todas as pessoas' : filtro} · faturados ou entregues · valor com desconto</div></div>
             {filtro !== 'todos' && <button className="link-btn" onClick={() => setFiltro('todos')}>ver todos</button>}
           </div>
           <div className="table-wrap">
@@ -133,7 +133,7 @@ export default function Comissoes() {
                     })}
                   </tr>
                 ))}
-                {linhas.length === 0 && <tr><td colSpan={8 + pessoas.length} className="vazio">Nenhum pedido com comissão no período.</td></tr>}
+                {linhas.length === 0 && <tr><td colSpan={8 + pessoas.length} className="vazio">Nenhum pedido com repasse no período.</td></tr>}
               </tbody>
               {linhas.length > 0 && (
                 <tfoot><tr><td colSpan={6}><b>Total</b></td><td className="r"><b>{inteiro(linhas.reduce((t, l) => t + l.pares, 0))}</b></td><td className="r"><b>{brl(linhas.reduce((t, l) => t + l.total, 0))}</b></td>
@@ -192,7 +192,7 @@ function Regras({ regras, onMudou, setErro }) {
   return (
     <section className="card card-flush">
       <div className="card-head pad">
-        <div><h2>Regras de comissão</h2><div className="card-sub">Vendedora: ganha nos pedidos em que ela é a vendedora · Polo: pela cliente · regras do mesmo pedido somam · marketplace não paga ninguém.</div></div>
+        <div><h2>Regras de repasse</h2><div className="card-sub">Vendedora: ganha nos pedidos em que ela é a vendedora · Polo: pela cliente · regras do mesmo pedido somam · marketplace não paga ninguém.</div></div>
         <button className="btn btn-sm" onClick={() => abrir(null)}><Icon name="mais" size={14} />Nova regra</button>
       </div>
       <div className="table-wrap">

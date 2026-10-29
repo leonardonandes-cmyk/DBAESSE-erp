@@ -3,7 +3,7 @@ import { totaisPedido } from './pedidos.js'
 import { MODALIDADE, modalidadeDoCanal } from './modalidades.js'
 
 /*
-  Comissões
+  Repasses (só o dono vê — protegido no banco)
   - Regra por VENDEDORA do pedido (nas modalidades dela), por POLO/GRUPO da cliente (ex.: Fartura) ou por MODALIDADE.
   - tipo 'pct' = % do valor faturado (já com desconto) · 'par' = R$ por par.
   - Regras que valem para o mesmo pedido SOMAM (ex.: pedido de atacado do polo Fartura paga Fartura + Sabrina).
@@ -15,6 +15,13 @@ export async function listarRegras() {
   const { data, error } = await supabase.from('comissao_regras').select('id,beneficiario,parceiro_id,criterio,alvo,modalidades,tipo,valor,ativo,ordem').order('ordem').order('criado_em')
   if (error) throw error
   return data
+}
+
+// só nomes e modalidades das vendedoras (qualquer usuário; sem valores) — formato de regra para vendedoraPadrao
+export async function listarVendedoras() {
+  const { data, error } = await supabase.rpc('vendedoras')
+  if (error) throw error
+  return (data || []).map((v) => ({ beneficiario: v.nome, criterio: 'vendedora', modalidades: v.modalidades || [], ordem: v.ordem, ativo: true }))
 }
 
 export async function salvarRegra(r) {

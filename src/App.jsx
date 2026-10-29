@@ -20,7 +20,7 @@ import MargemLojas from './pages/MargemLojas.jsx'
 import Indicadores from './pages/Indicadores.jsx'
 import MapaClientes from './pages/MapaClientes.jsx'
 import Encalhados from './pages/Encalhados.jsx'
-import Comissoes from './pages/Comissoes.jsx'
+import Repasses from './pages/Repasses.jsx'
 import FichasTecnicas from './pages/FichasTecnicas.jsx'
 import BiparProducao from './components/BiparProducao.jsx'
 
@@ -43,7 +43,7 @@ export const MODULOS = [
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
   { to: '/fichas', icon: 'ficha', label: 'Fichas técnicas', grupo: 'Operações', sub: true },
   { to: '/financeiro', icon: 'financeiro', label: 'Financeiro', grupo: 'Financeiro', exato: true },
-  { to: '/financeiro/comissoes', icon: 'financeiro', label: 'Comissões', grupo: 'Financeiro', sub: true },
+  { to: '/financeiro/repasses', icon: 'financeiro', label: 'Repasses', grupo: 'Financeiro', sub: true, soDono: true },
   { to: '/indicadores', icon: 'relatorios', label: 'Indicadores', grupo: 'Relatórios' },
   { to: '/mapa', icon: 'mapa', label: 'Mapa de clientes', grupo: 'Relatórios' },
   { to: '/configuracoes', icon: 'config', label: 'Configurações', grupo: 'Cadastros' },
@@ -57,6 +57,7 @@ const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Operador' }
 export default function App() {
   const [sessao, setSessao] = useState(undefined)
   const [perfil, setPerfil] = useState(null)
+  const [souDono, setSouDono] = useState(false)
   const [mais, setMais] = useState(false)
 
   // Grade: Enter pula para o próximo número (em qualquer tela). No último, vai para o botão de confirmar.
@@ -85,6 +86,7 @@ export default function App() {
     if (!sessao) { setPerfil(null); return }
     supabase.from('perfis').select('nome,papel,empresas(nome)').eq('id', sessao.user.id).maybeSingle()
       .then(({ data }) => setPerfil(data))
+    supabase.rpc('sou_dono').then(({ data }) => setSouDono(Boolean(data)))
   }, [sessao])
 
   if (sessao === undefined) return null
@@ -107,7 +109,7 @@ export default function App() {
           {GRUPOS.map((g) => (
             <div className="nav-grupo" key={g || 'inicio'}>
               {g && <div className="nav-titulo">{g}</div>}
-              {MODULOS.filter((m) => (m.grupo || '') === g).map((m) => (
+              {MODULOS.filter((m) => (m.grupo || '') === g && (!m.soDono || souDono)).map((m) => (
                 <NavLink key={m.to} to={m.to} end={m.to === '/' || m.exato} className={m.sub ? 'sub' : undefined}>
                   <Icon name={m.icon} size={m.sub ? 16 : 18} />
                   <span>{m.label}</span>
@@ -142,7 +144,7 @@ export default function App() {
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/financeiro" element={<Financeiro />} />
-          <Route path="/financeiro/comissoes" element={<Comissoes />} />
+          {souDono && <Route path="/financeiro/repasses" element={<Repasses />} />}
           <Route path="/compras" element={<Compras />} />
           <Route path="/relatorios" element={<Indicadores />} />
           <Route path="/indicadores" element={<Indicadores />} />
@@ -181,7 +183,7 @@ export default function App() {
         <div className="sheet-bg" onClick={() => setMais(false)}>
           <nav className="sheet" aria-label="Todos os módulos" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-alca" />
-            {MODULOS.map((m) => (
+            {MODULOS.filter((m) => !m.soDono || souDono).map((m) => (
               <NavLink key={m.to} to={m.to} end={m.to === '/'} onClick={() => setMais(false)}>
                 <Icon name={m.icon} size={20} />
                 <span>{m.label}</span>

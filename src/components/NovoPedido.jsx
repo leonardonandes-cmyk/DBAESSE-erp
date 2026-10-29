@@ -1,4 +1,4 @@
-import { listarRegras, vendedoraPadrao, vendedorasDe } from '../lib/comissoes.js'
+import { listarVendedoras, vendedoraPadrao, vendedorasDe } from '../lib/repasses.js'
 import { useEffect, useMemo, useState } from 'react'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
@@ -28,7 +28,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
   const [regras, setRegras] = useState([])
   const [vendManual, setVendManual] = useState(Boolean(pedido))
   useEffect(() => {
-    listarRegras().then((rg) => {
+    listarVendedoras().then((rg) => {
       setRegras(rg)
       if (!pedido) setF((x) => (x.vendedora === undefined ? { ...x, vendedora: vendedoraPadrao(rg, x.canal) } : x))
     }).catch(() => {})
