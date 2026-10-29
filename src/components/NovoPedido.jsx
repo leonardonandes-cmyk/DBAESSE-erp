@@ -90,9 +90,6 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
     return Object.values(g).map((x) => ({ ...x, itens: x.itens.sort((a, b) => a.numero - b.numero) }))
   }, [itens])
 
-  function precoGrupo(chave, valor) {
-    setItens(itens.map((i) => (`${i.produto.id}|${i.cor?.id}` === chave ? { ...i, preco_unit: valor } : i)))
-  }
   function mudarQtd(skuId, valor) {
     const q = Number(String(valor).replace(/\D/g, '')) || 0
     setItens(itens.map((i) => (i.sku_id === skuId ? { ...i, quantidade: q } : i)))
@@ -101,9 +98,14 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
     setItens(itens.filter((i) => `${i.produto.id}|${i.cor?.id}` !== chave))
   }
 
+  // desconto só no pedido inteiro: em R$ ou em % (grava sempre o valor em R$)
+  const [descModo, setDescModo] = useState('rs')
+  const [descPct, setDescPct] = useState('')
   const pares = itens.reduce((t, i) => t + i.quantidade, 0)
   const bruto = itens.reduce((t, i) => t + i.quantidade * (Number(i.preco_unit) || 0), 0)
-  const total = Math.max(0, bruto - (Number(f.desconto) || 0))
+  const numero = (v) => Number(String(v ?? '').replace(',', '.')) || 0
+  const descontoRS = Math.min(bruto, Math.max(0, descModo === 'pct' ? Math.round(bruto * numero(descPct)) / 100 : numero(f.desconto)))
+  const total = Math.max(0, bruto - descontoRS)
 
   async function salvar() {
     setErro('')
@@ -111,7 +113,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
     if (!validos.length) return setErro('Adicione pelo menos um modelo ao pedido.')
     setSalvando(true)
     try {
-      const ped = editando ? await atualizarPedido(pedido.id, { ...f, itens: validos }) : await criarPedido({ ...f, itens: validos })
+      const dados = { ...f, desconto: descontoRS, itens: validos }
+      const ped = editando ? await atualizarPedido(pedido.id, dados) : await criarPedido(dados)
       onSalvo(ped)
     } catch (e) {
       setErro(e.message)
@@ -165,7 +168,19 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
               <option value="aprovado">Aprovado</option>
             </select>
           </label>}
-          <label className="field"><span>Desconto (R$)</span><input type="number" step="0.01" min="0" value={f.desconto} onChange={set('desconto')} /></label>
+          <div className="field">
+            <span>Desconto no pedido</span>
+            <div className="desc-campo">
+              <div className="segmented" role="group" aria-label="Desconto em">
+                <button type="button" className={descModo === 'rs' ? 'on' : ''} onClick={() => { if (descModo === 'pct') setF((x) => ({ ...x, desconto: descontoRS ? String(descontoRS) : '' })); setDescModo('rs') }}>R$</button>
+                <button type="button" className={descModo === 'pct' ? 'on' : ''} onClick={() => { if (descModo === 'rs') setDescPct(bruto && descontoRS ? String(Math.round((descontoRS / bruto) * 10000) / 100) : ''); setDescModo('pct') }}>%</button>
+              </div>
+              {descModo === 'rs'
+                ? <input className="input" inputMode="decimal" value={f.desconto} onChange={set('desconto')} placeholder="0,00" aria-label="Desconto em reais" />
+                : <input className="input" inputMode="decimal" value={descPct} onChange={(e) => setDescPct(e.target.value)} placeholder="0" aria-label="Desconto em porcentagem" />}
+            </div>
+            {descontoRS > 0 && <small className="desc-conv">{descModo === 'pct' ? `= ${brl(descontoRS)}` : bruto ? `= ${(descontoRS / bruto * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% do pedido` : ''}</small>}
+          </div>
         </div>
 
         <div className="divisor"><span>Itens</span></div>
@@ -188,7 +203,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
                         {falta > 0 && <span className="pill warn" style={{ marginTop: 6 }}>Faltam {falta} em estoque · produzir</span>}
                       </td>
                       <td className="r"><b>{qt}</b></td>
-                      <td className="r"><input className="input input-sm" type="number" step="0.01" min="0" value={preco} onChange={(e) => precoGrupo(g.chave, e.target.value)} aria-label="Preço por par" /></td>
+                      <td className="r"><span className="preco-travado" title="Preço da lista do segmento">{brl(Number(preco) || 0)}</span></td>
                       <td className="r">{brl(qt * (Number(preco) || 0))}</td>
                       <td className="r"><button type="button" className="link-btn" onClick={() => removerGrupo(g.chave)}>remover</button></td>
                     </tr>
@@ -228,7 +243,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
         <div className="pedido-rodape">
           <div className="pedido-totais">
             <span>{pares} pares</span>
-            {Number(f.desconto) > 0 && <span>Desconto −{brl(f.desconto)}</span>}
+            {descontoRS > 0 && <span>Desconto −{brl(descontoRS)}</span>}
             <b>{brl(total)}</b>
           </div>
           <div className="actions">

@@ -1387,3 +1387,8 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .guarda p { margin: 0; color: var(--ink-2); line-height: 1.5; font-size: 14px; }
 .guarda-acoes { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
 .guarda-acoes .btn { width: 100%; justify-content: center; }
+.desc-campo { display: flex; gap: 8px; align-items: center; }
+.desc-campo .segmented { flex-shrink: 0; }
+.desc-campo .input { min-width: 0; }
+.desc-conv { color: var(--muted); font-size: 12px; margin-top: 4px; display: block; }
+.preco-travado { font-variant-numeric: tabular-nums; font-weight: 600; }
