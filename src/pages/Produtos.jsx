@@ -225,7 +225,7 @@ export default function Produtos() {
                         </tbody>
                       </table>
                     </div>
-                    <p className="card-sub" style={{ margin: 0 }}>Lucro = preço − custo − despesas da lista (imposto, comissão, frete, perda, investimento…). Preço ideal = o que daria a margem-alvo da lista. Despesas e margem-alvo em Configurações → Listas de preço.</p>
+                    <p className="card-sub" style={{ margin: 0 }}>Lucro = preço − custo − despesas da lista (imposto, frete, perda, investimento…). Preço ideal = o que daria a margem-alvo da lista. Despesas e margem-alvo em Configurações → Listas de preço.</p>
                   </div>
                 ) : (
                   <>

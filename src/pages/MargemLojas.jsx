@@ -251,12 +251,12 @@ function RegrasLoja({ canal, onFechar, onSalvo }) {
         <div>
           <h3 className="regras-tit">Taxa da loja por faixa de preço</h3>
           <table className="lista-cfg-desp">
-            <thead><tr><th>Preço até (R$)</th><th className="r">Comissão %</th><th className="r">Taxa fixa R$</th><th /></tr></thead>
+            <thead><tr><th>Preço até (R$)</th><th className="r">Taxa da loja %</th><th className="r">Taxa fixa R$</th><th /></tr></thead>
             <tbody>
               {f.faixas.map((x, i) => (
                 <tr key={i}>
                   <td><input className="input input-sm" inputMode="decimal" style={{ width: 120, textAlign: 'left' }} value={x.ate} placeholder="sem limite" onChange={(e) => setFx(i, { ate: e.target.value })} aria-label="Preço até" /></td>
-                  <td className="r"><input className="input input-sm" inputMode="decimal" value={x.pct} onChange={(e) => setFx(i, { pct: e.target.value })} aria-label="Comissão %" /></td>
+                  <td className="r"><input className="input input-sm" inputMode="decimal" value={x.pct} onChange={(e) => setFx(i, { pct: e.target.value })} aria-label="Taxa da loja %" /></td>
                   <td className="r"><input className="input input-sm" inputMode="decimal" value={x.fixo} onChange={(e) => setFx(i, { fixo: e.target.value })} aria-label="Taxa fixa" /></td>
                   <td className="r"><button type="button" className="link-btn" onClick={() => setF({ ...f, faixas: f.faixas.filter((_, k) => k !== i) })}>remover</button></td>
                 </tr>

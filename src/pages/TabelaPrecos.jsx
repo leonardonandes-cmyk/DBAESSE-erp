@@ -121,7 +121,7 @@ export default function TabelaPrecos() {
       </section>
       <p className="card-sub no-print" style={{ margin: 0 }}>
         Clique num modelo para corrigir o preço. Preços calculados pelas regras de Configurações → Listas de preço{semPreco ? ` · ${semPreco} modelo(s) sem preço de atacado cadastrado` : ''}.
-        {interno && ' Margem já descontando as despesas de cada lista (imposto, comissão, frete, perda…).'}
+        {interno && ' Margem já descontando as despesas de cada lista (imposto, frete, perda…).'}
       </p>
       {corrigir && <CorrigirPreco produto={corrigir} listas={listas} onFechar={() => setCorrigir(null)}
         onSalvo={(novo) => { setProdutos((ps) => ps.map((x) => (x.id === corrigir.id ? { ...x, ...novo } : x))); setCorrigir(null) }} />}

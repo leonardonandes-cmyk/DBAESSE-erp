@@ -151,7 +151,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido,
           <label className="field">
             <span>Vendedora</span>
             <select className="input" value={f.vendedora ?? ''} onChange={set('vendedora')}>
-              <option value="">Ninguém (sem comissão)</option>
+              <option value="">Sem vendedora</option>
               {[...new Set([...vendedorasDe(regras), ...(f.vendedora ? [f.vendedora] : [])])].map((v) => <option key={v} value={v}>{v}</option>)}
             </select>
           </label>
