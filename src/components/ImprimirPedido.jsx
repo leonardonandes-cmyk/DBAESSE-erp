@@ -48,6 +48,7 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
               <b>{cliente?.nome || '—'}</b>
               {cliente?.documento && <span>CPF/CNPJ {cliente.documento}</span>}
               {cliente?.telefone && <span>{cliente.telefone}</span>}
+              {cliente?.email && <span>{cliente.email}</span>}
             </div>
             <div>
               <small>Entrega</small>
