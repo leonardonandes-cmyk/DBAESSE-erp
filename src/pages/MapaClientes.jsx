@@ -246,7 +246,7 @@ export default function MapaClientes() {
         <section className="mapa-linha">
           <div className="card mapa-card">
             <div className="card-head">
-              <div><h2>Onde estão os clientes</h2><div className="card-sub">{visao === 'calor' ? `mais quente = mais ${medida === 'valor' ? 'venda' : medida === 'pares' ? 'pares' : 'clientes'} concentrados · passe o mouse nos pontos` : visao === 'cidades' ? `esfera = ${medida === 'valor' ? 'faturamento' : medida === 'pares' ? 'pares' : 'nº de clientes'} da cidade · relevo = estado · clique numa esfera` : `estado mais alto = mais ${medida === 'valor' ? 'venda' : medida === 'pares' ? 'pares' : 'clientes'} · clique num estado`}</div></div>
+              <div><h2>Onde estão os clientes</h2><div className="card-sub">{visao === 'calor' ? `mais quente = mais ${medida === 'valor' ? 'venda' : medida === 'pares' ? 'pares' : 'clientes'} concentrados · passe o mouse nos pontos` : visao === 'cidades' ? `esfera = ${medida === 'valor' ? 'faturamento' : medida === 'pares' ? 'pares' : 'nº de clientes'} da cidade · relevo = estado · clique numa esfera` : `esfera e relevo = mais ${medida === 'valor' ? 'venda' : medida === 'pares' ? 'pares' : 'clientes'} no estado · clique numa esfera`}</div></div>
               <div className="segmented" role="group" aria-label="Visão do mapa">
                 <button className={visao === 'estados' ? 'on' : ''} onClick={() => { setVisao('estados'); setSel(null) }}>Estados</button>
                 <button className={visao === 'cidades' ? 'on' : ''} onClick={() => { setVisao('cidades'); setSel(null) }}>Cidades</button>

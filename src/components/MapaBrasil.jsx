@@ -49,7 +49,14 @@ function MapaBrasilBase({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf
   const alt = (uf) => (!naReg(uf) ? 0 : calor ? 6 : porUf[uf] ? H_BASE + (H_MAX - H_BASE) * Math.sqrt(porUf[uf] / maxUf) : H_BASE)
   const ordem = useMemo(() => Object.keys(geo.estados).sort((a, b) => geo.caixa[a].cy - geo.caixa[b].cy), [geo])
 
-  const visiveis = pontos.filter((p) => naReg(p.uf) && p.valor > 0)
+  const ptCidades = pontos.filter((p) => naReg(p.uf) && p.valor > 0)
+  // visão Estados: uma esfera por estado, no centro dele (tamanho = venda do estado)
+  const CENTRO = { DF: [8, -6], RJ: [6, -4], SE: [0, 0], AL: [4, 0], RN: [6, 0], PB: [8, 0], PE: [-20, 2], ES: [2, 4], SC: [6, 0], GO: [-14, 10], MG: [6, 6] }
+  const ptEstados = Object.keys(porUf).filter((u) => naReg(u) && porUf[u] > 0 && geo.caixa[u]).map((u) => {
+    const c = CENTRO[u] || [0, 0]
+    return { id: u, uf: u, nome: geo.estados[u].nome, x: geo.caixa[u].cx + c[0], y: geo.caixa[u].cy + c[1], valor: porUf[u], detalhe: detalheUf[u], estado: true }
+  })
+  const visiveis = visao === 'estados' ? ptEstados : ptCidades
   const maxP = Math.max(1, ...visiveis.map((p) => p.valor))
   const raio = (v) => (6 + 22 * Math.sqrt(v / maxP)) * (0.45 + 0.55 * zm)
   const esfera = ESFERAS[cor] || ESFERAS['#1f6fd6']
@@ -150,16 +157,21 @@ function MapaBrasilBase({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf
 
       {Object.keys(geo.estados).filter((u) => naReg(u)).map((uf) => {
         const b = geo.caixa[uf], o = off(uf), forte = visao === 'estados' && porUf[uf] > 0
+        if (forte) {
+          const p = ptEstados.find((x) => x.uf === uf), rr = raio(p.valor)
+          return <text key={`uf${uf}`} x={p.x + o[0] + rr + 5 * zm} y={p.y + o[1] - alt(uf) - rr * 0.85} dy=".35em" className="mapa-uf-rotulo" style={{ fontSize: 17 * zm, strokeWidth: 4 * zm }}>{uf}</text>
+        }
         const pequeno = (b.x1 - b.x0) < 40 * zm // DF, SE, AL…: sigla menor
         return <text key={`uf${uf}`} x={b.cx + o[0] + (uf === 'DF' ? 14 * zm : 0)} y={b.cy + o[1] - alt(uf) + (uf === 'DF' ? -10 * zm : 6 * zm)} textAnchor="middle"
           className={`mapa-uf-rotulo ${forte ? '' : calor ? 'calor' : 'leve'}`} style={{ fontSize: (forte ? 20 : pequeno ? 10 : 13) * zm, strokeWidth: calor ? 0 : 4 * zm }}>{uf}</text>
       })}
 
-      {visao === 'cidades' && [...visiveis].sort((a, b) => a.y - b.y).map((p) => {
+      {(visao === 'cidades' || visao === 'estados') && [...visiveis].sort((a, b) => a.y - b.y).map((p) => {
         const o = off(p.uf), r = raio(p.valor), x = p.x + o[0], z = p.y + o[1] - alt(p.uf)
-        const on = sel?.tipo === 'cidade' && sel.id === p.id
+        const tipoSel = p.estado ? 'estado' : 'cidade'
+        const on = sel?.tipo === tipoSel && sel.id === p.id
         return (
-          <g key={p.id} className="mapa-esfera" onMouseMove={(ev) => { ev.stopPropagation(); mostrar(ev, { titulo: `${p.nome}/${p.uf}`, sub: `${geo.estados[p.uf]?.nome || p.uf} · ${NOME_REGIAO[regiaoDe(p.uf)]}`, valor: fmt(p.valor), detalhe: p.detalhe }) }} onClick={(ev) => { ev.stopPropagation(); onSel?.(on ? null : { tipo: 'cidade', id: p.id }) }}>
+          <g key={p.id} className="mapa-esfera" onMouseMove={(ev) => { ev.stopPropagation(); mostrar(ev, p.estado ? { titulo: p.nome, sub: `${p.uf} · ${NOME_REGIAO[regiaoDe(p.uf)]}`, valor: fmt(p.valor), detalhe: p.detalhe } : { titulo: `${p.nome}/${p.uf}`, sub: `${geo.estados[p.uf]?.nome || p.uf} · ${NOME_REGIAO[regiaoDe(p.uf)]}`, valor: fmt(p.valor), detalhe: p.detalhe }) }} onClick={(ev) => { ev.stopPropagation(); onSel?.(on ? null : { tipo: tipoSel, id: p.id }) }}>
             <ellipse cx={x + r * 0.25} cy={z + r * 0.15} rx={r * 1.15} ry={r * 0.42} fill="url(#mapaChao)" />
             <circle cx={x} cy={z - r * 0.85} r={r} fill="url(#mapaEsfera)" stroke={on ? '#151515' : 'none'} strokeWidth={2.5 * zm} />
             <ellipse cx={x - r * 0.32} cy={z - r * 1.22} rx={r * 0.28} ry={r * 0.17} fill="#fff" fillOpacity=".55" />
@@ -176,6 +188,9 @@ function MapaBrasilBase({ geo, reg = 'BR', visao = 'cidades', pontos = [], porUf
   return (
     <div className="mapa-caixa" ref={caixaRef} onMouseLeave={() => { cancelAnimationFrame(quadro.current); dicaRef.current?.mostrar(null) }}>
     {desenho}
+    {visao === 'calor' && (
+      <div className="mapa-legenda-calor"><span>Menor</span><i /><span>Maior</span></div>
+    )}
     <Dica ref={dicaRef} cor={cor} />
     </div>
   )
