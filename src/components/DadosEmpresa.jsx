@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
-import { buscarCep, buscarCnpj, titulo } from '../lib/consultas.js'
+import { buscarCep, buscarCnpj, conferirEndereco, fmtCepBR, titulo } from '../lib/consultas.js'
 import { soDigitos } from '../lib/format.js'
 import { supabase } from '../lib/supabase.js'
 
@@ -45,7 +45,7 @@ export default function DadosEmpresa({ podeEditar, onSalvo }) {
     setBuscando('cep'); setMsg('')
     try {
       const d = await buscarCep(v)
-      setF((x) => ({ ...x, cep: fmtCep(d.cep), endereco: titulo(d.logradouro) || x.endereco, bairro: titulo(d.bairro) || x.bairro, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
+      setF((x) => ({ ...x, numero: soDigitos(x.numero) === d.cep ? '' : x.numero, cep: fmtCep(d.cep), endereco: titulo(d.logradouro) || x.endereco, bairro: titulo(d.bairro) || x.bairro, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
       setMudou(true); setMsg(`✓ ${d.cidade}/${d.uf} — confira o número`); setTimeout(() => campoNumero.current?.focus(), 50)
     } catch (e) { setMsg(e.message) } finally { setBuscando('') }
   }
@@ -53,6 +53,9 @@ export default function DadosEmpresa({ podeEditar, onSalvo }) {
     setErro('')
     const linha = Object.fromEntries(CAMPOS.map((k) => [k, (f[k] || '').trim() || null]))
     if (!linha.nome) return setErro('Informe o nome da empresa.')
+    const errEnd = conferirEndereco(linha)
+    if (errEnd) return setErro(errEnd)
+    if (linha.cep) linha.cep = fmtCepBR(linha.cep)
     if (linha.uf) linha.uf = linha.uf.toUpperCase()
     const { error } = await supabase.from('empresas').update(linha).eq('id', id)
     if (error) return setErro(error.message)
@@ -79,14 +82,14 @@ export default function DadosEmpresa({ podeEditar, onSalvo }) {
         <div className="field">
           <span>CEP</span>
           <div className="campo-busca">
-            <input value={f.cep} disabled={dis} inputMode="numeric" placeholder="00000-000"
+            <input name="erp-cep" autoComplete="off" value={f.cep} disabled={dis} inputMode="numeric" placeholder="00000-000"
               onChange={(e) => { set('cep')(e); if (soDigitos(e.target.value).length === 8) porCep(e.target.value) }} />
             <button type="button" className="btn icon-btn" disabled={dis || buscando === 'cep' || soDigitos(f.cep).length !== 8} onClick={() => porCep()} aria-label="Buscar endereço pelo CEP" title="Buscar endereço pelo CEP">{buscando === 'cep' ? '…' : <Icon name="busca" size={16} />}</button>
           </div>
         </div>
-        <label className="field span-2"><span>Rua / avenida</span><input value={f.endereco} disabled={dis} onChange={set('endereco')} /></label>
-        <label className="field"><span>Número</span><input ref={campoNumero} value={f.numero} disabled={dis} onChange={set('numero')} /></label>
-        <label className="field"><span>Complemento</span><input value={f.complemento} disabled={dis} onChange={set('complemento')} /></label>
+        <label className="field span-2"><span>Rua / avenida</span><input name="erp-rua" autoComplete="off" value={f.endereco} disabled={dis} onChange={set('endereco')} /></label>
+        <label className="field"><span>Número</span><input name="erp-numero" autoComplete="off" ref={campoNumero} value={f.numero} disabled={dis} onChange={set('numero')} /></label>
+        <label className="field"><span>Complemento</span><input name="erp-compl" autoComplete="off" value={f.complemento} disabled={dis} onChange={set('complemento')} /></label>
         <label className="field"><span>Bairro</span><input value={f.bairro} disabled={dis} onChange={set('bairro')} /></label>
         <label className="field span-2"><span>Cidade</span><input value={f.cidade} disabled={dis} onChange={set('cidade')} /></label>
         <label className="field"><span>UF</span><input value={f.uf} disabled={dis} onChange={set('uf')} maxLength={2} /></label>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { listarListas } from '../lib/precos.js'
 import { supabase } from '../lib/supabase.js'
-import { buscarCep, buscarCnpj, titulo } from '../lib/consultas.js'
+import { buscarCep, buscarCnpj, conferirEndereco, fmtCepBR, titulo } from '../lib/consultas.js'
 import { soDigitos } from '../lib/format.js'
 import Icon from './Icon.jsx'
 import { CANAIS, TIPOS_PARCEIRO, salvarParceiro } from '../lib/parceiros.js'
@@ -83,7 +83,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     setBuscando('cep'); setBusca((b) => ({ ...b, cep: '' }))
     try {
       const d = await buscarCep(valor)
-      setF((x) => ({ ...x, cep: `${d.cep.slice(0, 5)}-${d.cep.slice(5)}`, endereco: titulo(d.logradouro) || x.endereco, bairro: titulo(d.bairro) || x.bairro, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
+      setF((x) => ({ ...x, numero: soDigitos(x.numero) === d.cep ? '' : x.numero, cep: `${d.cep.slice(0, 5)}-${d.cep.slice(5)}`, endereco: titulo(d.logradouro) || x.endereco, bairro: titulo(d.bairro) || x.bairro, cidade: d.cidade || x.cidade, uf: d.uf || x.uf }))
       setTimeout(() => campoNumero.current?.focus(), 50)
       setBusca((b) => ({ ...b, cep: `✓ ${d.cidade}/${d.uf} — digite o número` }))
     } catch (e) { setBusca((b) => ({ ...b, cep: e.message })) } finally { setBuscando('') }
@@ -99,9 +99,11 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     e.preventDefault()
     setErro('')
     if (f.uf && !/^[A-Za-z]{2}$/.test(f.uf.trim())) return setErro('UF com 2 letras (ex.: MG).')
+    const errEnd = conferirEndereco(f)
+    if (errEnd) return setErro(errEnd)
     setSalvando(true)
     try {
-      const dados = { ...f }
+      const dados = { ...f, cep: fmtCepBR(f.cep) }
       if (!(souAdmin && condCarregada)) { delete dados.condicao_especial; delete dados.desconto_par; dados.lista = parceiro?.lista || f.lista }
       else if (dados.condicao_especial && !dados.lista) dados.lista = 'atacado'
       const salvo = await salvarParceiro(dados, parceiro?.id)
@@ -114,7 +116,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
 
   return (
     <div className="modal-bg" onClick={onFechar}>
-      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={salvar}>
+      <form className="modal" autoComplete="off" onClick={(e) => e.stopPropagation()} onSubmit={salvar}>
         <div className="modal-head">
           <div>
             <div className="eyebrow">Cadastro</div>
@@ -174,17 +176,17 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
           <div className="field">
             <span>CEP</span>
             <div className="campo-busca">
-              <input value={f.cep} inputMode="numeric" placeholder="00000-000"
+              <input name="erp-cep" autoComplete="off" value={f.cep} inputMode="numeric" placeholder="00000-000"
                 onChange={(e) => { setF({ ...f, cep: e.target.value }); if (soDigitos(e.target.value).length === 8) porCep(e.target.value) }} />
               <button type="button" className="btn icon-btn" title="Buscar endereço pelo CEP" aria-label="Buscar endereço pelo CEP" onClick={() => porCep()} disabled={buscando === 'cep' || soDigitos(f.cep).length !== 8}>{buscando === 'cep' ? '…' : <Icon name="busca" size={16} />}</button>
             </div>
             {busca.cep && <small className={busca.cep.startsWith('✓') ? 'busca-ok' : 'busca-erro'}>{busca.cep}</small>}
           </div>
-          <label className="field span-2"><span>Rua / avenida</span><input value={f.endereco} onChange={set('endereco')} placeholder="Rua Para de Minas" /></label>
-          <label className="field"><span>Número</span><input ref={campoNumero} value={f.numero} onChange={set('numero')} placeholder="1200 ou S/N" /></label>
-          <label className="field"><span>Complemento</span><input value={f.complemento} onChange={set('complemento')} placeholder="Sala 2, galpão B…" /></label>
-          <label className="field"><span>Bairro</span><input value={f.bairro} onChange={set('bairro')} /></label>
-          <label className="field"><span>Cidade</span><input value={f.cidade} onChange={set('cidade')} /></label>
+          <label className="field span-2"><span>Rua / avenida</span><input name="erp-rua" autoComplete="off" value={f.endereco} onChange={set('endereco')} placeholder="Rua Para de Minas" /></label>
+          <label className="field"><span>Número</span><input name="erp-numero" autoComplete="off" ref={campoNumero} value={f.numero} onChange={set('numero')} placeholder="1200 ou S/N" /></label>
+          <label className="field"><span>Complemento</span><input name="erp-compl" autoComplete="off" value={f.complemento} onChange={set('complemento')} placeholder="Sala 2, galpão B…" /></label>
+          <label className="field"><span>Bairro</span><input name="erp-bairro" autoComplete="off" value={f.bairro} onChange={set('bairro')} /></label>
+          <label className="field"><span>Cidade</span><input name="erp-cidade" autoComplete="off" value={f.cidade} onChange={set('cidade')} /></label>
           <label className="field"><span>UF</span><input value={f.uf} onChange={set('uf')} maxLength={2} placeholder="MG" /></label>
           <label className="field">
             <span>Canal principal</span>

@@ -22,6 +22,16 @@ export async function buscarCep(cep) {
   }
 }
 
+// confere o endereço antes de salvar — pega o erro clássico do preenchimento automático
+// do navegador (CEP caindo no Número, número caindo no Complemento)
+export const fmtCepBR = (v) => { const c = soDigitos(v); return c.length === 8 ? `${c.slice(0, 5)}-${c.slice(5)}` : (v || '').trim() }
+export function conferirEndereco({ cep, numero }) {
+  const c = soDigitos(cep), n = soDigitos(numero)
+  if (cep && c.length !== 8) return 'CEP precisa ter 8 números.'
+  if (numero && (n.length >= 8 || (c && n === c))) return 'O campo Número está com o CEP. Coloque só o número do imóvel (ou S/N).'
+  return ''
+}
+
 export function cnpjValido(v) {
   const c = soDigitos(v)
   if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false
@@ -43,6 +53,9 @@ const tel = (t) => {
 const MINUSC = new Set(['de', 'da', 'do', 'das', 'dos', 'e'])
 const titulo = (s) => (s || '').toLowerCase().replace(/(^|\s|\/|-)(\p{L}+)/gu, (m, a, w) => a + (a && MINUSC.has(w) ? w : w[0].toUpperCase() + w.slice(1)))
 
+// número que veio com cara de CEP (8+ dígitos) é descartado
+const numeroOk = (n) => (soDigitos(n).length >= 8 ? '' : n)
+
 export async function buscarCnpj(cnpj) {
   const c = soDigitos(cnpj)
   if (!cnpjValido(c)) throw new Error('CNPJ inválido — confira os números.')
@@ -51,7 +64,7 @@ export async function buscarCnpj(cnpj) {
     return {
       cnpj: c, razao: d.razao_social, fantasia: d.nome_fantasia, situacao: d.descricao_situacao_cadastral,
       telefone: tel(d.ddd_telefone_1), email: (d.email || '').toLowerCase(), cep: soDigitos(d.cep),
-      logradouro: [d.descricao_tipo_de_logradouro, d.logradouro].filter(Boolean).join(' '), numero: d.numero,
+      logradouro: [d.descricao_tipo_de_logradouro, d.logradouro].filter(Boolean).join(' '), numero: numeroOk(d.numero),
       complemento: d.complemento, bairro: d.bairro, cidade: d.municipio, uf: d.uf,
     }
   } catch {
@@ -61,7 +74,7 @@ export async function buscarCnpj(cnpj) {
       return {
         cnpj: c, razao: d.razao_social, fantasia: e.nome_fantasia, situacao: e.situacao_cadastral,
         telefone: tel(`${e.ddd1 || ''}${e.telefone1 || ''}`), email: (e.email || '').toLowerCase(), cep: soDigitos(e.cep),
-        logradouro: [e.tipo_logradouro, e.logradouro].filter(Boolean).join(' '), numero: e.numero,
+        logradouro: [e.tipo_logradouro, e.logradouro].filter(Boolean).join(' '), numero: numeroOk(e.numero),
         complemento: e.complemento, bairro: e.bairro, cidade: e.cidade?.nome, uf: e.estado?.sigla,
       }
     } catch { throw new Error('Não encontrei esse CNPJ agora. Tente de novo em alguns segundos.') }
