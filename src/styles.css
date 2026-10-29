@@ -1317,3 +1317,12 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .mapa-dica strong { font-size: 16px; margin-top: 4px; }
 .mapa-dica em { font-style: normal; color: var(--ink-2); }
 .mapa-uf-rotulo.leve { fill: #a8a197; font-weight: 600; letter-spacing: .06em; }
+.det-barra { gap: 2px; background: transparent; }
+.det-barra i { border-radius: 3px; }
+.det-mods { display: grid; gap: 6px; margin-top: 10px; }
+.det-mods div { display: grid; grid-template-columns: 10px 1fr auto 44px; gap: 8px; align-items: center; font-size: 13px; }
+.det-mods i { width: 9px; height: 9px; border-radius: 50%; }
+.det-mods b { font-variant-numeric: tabular-nums; font-weight: 700; }
+.det-mods em { font-style: normal; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mapa-detalhe .icon-btn { padding: 0; justify-content: center; }
+.mapa-detalhe .icon-btn svg { flex-shrink: 0; }

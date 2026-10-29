@@ -335,7 +335,7 @@ function Kpi({ cor, rotulo, valor, nota, v }) {
 
 function Detalhe({ a, titulo, onFechar, diasInativo }) {
   if (!a) return null
-  const canais = Object.entries(a.canais).sort((x, y) => y[1] - x[1])
+  const canais = Object.entries(a.canais).filter(([, v]) => v > 0).sort((x, y) => y[1] - x[1])
   const totCan = canais.reduce((t, [, v]) => t + v, 0)
   const tiposP = Object.entries(a.tiposProd).sort((x, y) => y[1] - x[1]).slice(0, 4)
   const maxTp = Math.max(1, ...tiposP.map(([, v]) => v))
@@ -356,22 +356,24 @@ function Detalhe({ a, titulo, onFechar, diasInativo }) {
       </div>
 
       <div className="det-bloco">
-        <h3>Clientes</h3>
+        <h3>Carteira de clientes</h3>
         <div className="det-situ">
           <div className="ok"><b>{a.ativos}</b><span>ativos</span></div>
           <div className="bad"><b>{a.inativos}</b><span>inativos</span></div>
-          <div><b>{a.nunca}</b><span>nunca compraram</span></div>
+          <div><b>{a.nunca}</b><span>sem compra</span></div>
         </div>
       </div>
 
       {canais.length > 0 && <div className="det-bloco">
-        <h3>De onde vem a venda</h3>
-        <div className="det-barra">{canais.map(([k, v]) => <i key={k} style={{ width: `${(v / totCan) * 100}%`, background: TIPOS_CLIENTE[k]?.cor }} title={`${TIPOS_CLIENTE[k]?.label}: ${brl(v)}`} />)}</div>
-        <div className="det-leg">{canais.map(([k, v]) => <span key={k}><i style={{ background: TIPOS_CLIENTE[k]?.cor }} />{TIPOS_CLIENTE[k]?.label} {Math.round((v / totCan) * 100)}%</span>)}</div>
+        <h3>Vendas por modalidade</h3>
+        <div className="det-barra">{canais.map(([k, v]) => <i key={k} style={{ width: `max(3px, ${(v / totCan) * 100}%)`, background: TIPOS_CLIENTE[k]?.cor }} />)}</div>
+        <div className="det-mods">{canais.map(([k, v]) => (
+          <div key={k}><i style={{ background: TIPOS_CLIENTE[k]?.cor }} /><span>{TIPOS_CLIENTE[k]?.label}</span><b>{brlCurto(v)}</b><em>{(v / totCan * 100).toLocaleString('pt-BR', { maximumFractionDigits: v / totCan < 0.1 ? 1 : 0 })}%</em></div>
+        ))}</div>
       </div>}
 
       {tiposP.length > 0 && <div className="det-bloco">
-        <h3>O que mais sai (pares)</h3>
+        <h3>Mix de produtos <small>em pares</small></h3>
         {tiposP.map(([k, v]) => (
           <div key={k} className="det-tp"><span>{k}</span><span className="hbar-trilho"><i style={{ width: `${(v / maxTp) * 100}%`, background: '#1f6fd6' }} /></span><b>{inteiro(v)}</b></div>
         ))}
@@ -381,7 +383,7 @@ function Detalhe({ a, titulo, onFechar, diasInativo }) {
       </div>}
 
       {inativos.length > 0 && <div className="det-bloco">
-        <h3>Para reativar <small>sem comprar há mais de {diasInativo} dias</small></h3>
+        <h3>Reativar clientes <small>sem comprar há mais de {diasInativo} dias</small></h3>
         <ul className="det-inativos">
           {inativos.map((c) => <li key={c.id}><b>{c.nome}</b><span>{c.cidade}/{c.uf} · última {c.ultima ? dataBR(isoDia(c.ultima)) : '—'}</span></li>)}
         </ul>
