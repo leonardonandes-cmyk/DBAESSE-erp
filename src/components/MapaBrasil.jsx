@@ -64,7 +64,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
       const caixa = (t) => { const x0 = t.anc === 'start' ? t.x : t.anc === 'end' ? t.x - w : t.x - w / 2; return { x0, x1: x0 + w, y0: t.y - h / 2, y1: t.y + h / 2 } }
       const ok = tentativas.find((t) => !bate(caixa(t))) || tentativas[0]
       caixas.push(caixa(ok))
-      if (!calor || i < 8) rotulos.push({ id: p.id, nome: p.nome, x: ok.x, y: ok.y, anc: ok.anc, fs, forte: i < 6 })
+      if (!calor) rotulos.push({ id: p.id, nome: p.nome, x: ok.x, y: ok.y, anc: ok.anc, fs, forte: i < 6 })
     })
   }
 
@@ -146,7 +146,7 @@ export default function MapaBrasil({ geo, reg = 'BR', visao = 'cidades', pontos 
         const b = geo.caixa[uf], o = off(uf), forte = visao === 'estados' && porUf[uf] > 0
         const pequeno = (b.x1 - b.x0) < 40 * zm // DF, SE, AL…: sigla menor
         return <text key={`uf${uf}`} x={b.cx + o[0] + (uf === 'DF' ? 14 * zm : 0)} y={b.cy + o[1] - alt(uf) + (uf === 'DF' ? -10 * zm : 6 * zm)} textAnchor="middle"
-          className={`mapa-uf-rotulo ${forte ? '' : 'leve'}`} style={{ fontSize: (forte ? 20 : pequeno ? 11 : 14) * zm, strokeWidth: 4 * zm }}>{uf}</text>
+          className={`mapa-uf-rotulo ${forte ? '' : calor ? 'calor' : 'leve'}`} style={{ fontSize: (forte ? 20 : pequeno ? 10 : 13) * zm, strokeWidth: calor ? 0 : 4 * zm }}>{uf}</text>
       })}
 
       {visao === 'cidades' && [...visiveis].sort((a, b) => a.y - b.y).map((p) => {

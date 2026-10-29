@@ -1326,3 +1326,4 @@ td.vazio { color: var(--muted); padding: 28px !important; }
 .det-mods em { font-style: normal; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 .mapa-detalhe .icon-btn { padding: 0; justify-content: center; }
 .mapa-detalhe .icon-btn svg { flex-shrink: 0; }
+.mapa-uf-rotulo.calor { fill: rgba(21,21,21,.42); font-weight: 600; letter-spacing: .06em; stroke: none; }
