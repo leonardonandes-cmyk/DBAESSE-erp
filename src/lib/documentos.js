@@ -46,12 +46,19 @@ export function baixar(blob, nome) {
 
 const numeroWhats = (tel) => { let d = soDigitos(tel); if (!d) return ''; if (d.length <= 11) d = `55${d}`; return d }
 
+// código curto e fácil de ler (sem 0/O, 1/I/l)
+const ALFA = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+const codigoCurto = (n = 8) => Array.from(crypto.getRandomValues(new Uint32Array(n)), (x) => ALFA[x % ALFA.length]).join('')
+
+// mensagem pode ter uma linha com {LINK}: vira o link curto (computador) ou some (celular, o PDF vai anexado)
+// Sem emoji: o WhatsApp do computador quebra emoji vindo pelo link wa.me (aparece "�").
 // → 'compartilhado' (celular) | 'link' (abriu o WhatsApp com o link)
 export async function enviarWhats({ blob, nome, telefone, mensagem, pasta = 'pedidos' }) {
   const arquivo = new File([blob], nome, { type: 'application/pdf' })
   const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
   if (celular && navigator.canShare?.({ files: [arquivo] })) {
-    try { await navigator.share({ files: [arquivo], text: mensagem }); return 'compartilhado' } catch (e) { if (e?.name === 'AbortError') return 'cancelado' }
+    const semLink = mensagem.split('\n').filter((l) => !l.includes('{LINK}')).join('\n').replace(/\n{3,}/g, '\n\n')
+    try { await navigator.share({ files: [arquivo], text: semLink }); return 'compartilhado' } catch (e) { if (e?.name === 'AbortError') return 'cancelado' }
   }
   // computador: guarda o PDF e manda o link
   const janela = window.open('about:blank', '_blank') // abre já (navegador bloqueia pop-up depois de esperar o upload)
@@ -62,9 +69,12 @@ export async function enviarWhats({ blob, nome, telefone, mensagem, pasta = 'ped
     const caminho = `${perfil.empresa_id}/${pasta}/${Date.now()}-${nome}`
     const { error: e1 } = await supabase.storage.from('documentos').upload(caminho, blob, { contentType: 'application/pdf', upsert: true })
     if (e1) throw e1
-    const { data: s, error: e2 } = await supabase.storage.from('documentos').createSignedUrl(caminho, 60 * 60 * 24 * 30)
+    // link curto no endereço do sistema (dbaesse-erp.vercel.app/d/XXXX) — nada de link gigante com token
+    const codigo = codigoCurto()
+    const { error: e2 } = await supabase.from('documentos_links').insert({ codigo, caminho, nome })
     if (e2) throw e2
-    const texto = `${mensagem}\n\n📄 ${s.signedUrl}`
+    const link = `${window.location.origin}/d/${codigo}`
+    const texto = mensagem.includes('{LINK}') ? mensagem.replace('{LINK}', link) : `${mensagem}\n\n${link}`
     const num = numeroWhats(telefone)
     const url = num ? `https://wa.me/${num}?text=${encodeURIComponent(texto)}` : `https://wa.me/?text=${encodeURIComponent(texto)}`
     if (janela) janela.location.href = url; else window.open(url, '_blank')

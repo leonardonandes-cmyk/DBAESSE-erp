@@ -30,7 +30,20 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
   const seg = MODALIDADE[modalidadeDoCanal(pedido.canal)]?.label
   const nums = [...new Set(grupos.flatMap((g) => g.itens.map((i) => i.skus.numero)))].sort((a, b) => a - b)
   const linhaEmpresa = empresa ? [empresa.razao_social, empresa.cnpj && `CNPJ ${empresa.cnpj}`, empresa.telefone, empresa.email, empresa.cidade && `${empresa.cidade}${empresa.uf ? `/${empresa.uf}` : ''}`].filter(Boolean).join(' · ') : ''
-  const mensagem = `Olá${cliente?.nome ? `, ${cliente.nome.split(' ')[0]}` : ''}! Segue ${orcamento ? 'o orçamento' : 'o pedido'} ${numeroPedido(pedido.numero)} da DBAESSE: ${inteiro(totais.pares)} pares · ${brl(totais.total)}${pedido.previsao ? ` · previsão ${dataLonga(pedido.previsao)}` : ''}.\n\nConfira os itens no PDF${empresa?.pix_chave || empresa?.pagamento_instrucoes ? ' e, estando tudo certo, o pagamento pode ser feito por aqui:' : '. Estando tudo certo, é só nos confirmar.'}${empresa?.pix_chave ? `\n💳 Pix: ${empresa.pix_chave}` : ''}${empresa?.pagamento_instrucoes ? `\n${empresa.pagamento_instrucoes}` : ''}`
+  const doc = orcamento ? 'orçamento' : 'pedido'
+  const mensagem = [
+    `Olá${cliente?.nome ? `, ${cliente.nome.split(' ')[0]}` : ''}! Tudo bem?`,
+    '',
+    `Segue o ${doc} ${numeroPedido(pedido.numero)} da DBAESSE.`,
+    `${inteiro(totais.pares)} pares · ${brl(totais.total)}`,
+    ...(pedido.previsao ? [`Previsão de entrega: ${dataLonga(pedido.previsao)}`] : []),
+    '',
+    `${orcamento ? 'Orçamento' : 'Pedido'} em PDF: {LINK}`,
+    '',
+    empresa?.pix_chave || empresa?.pagamento_instrucoes ? 'Estando tudo certo, o pagamento pode ser feito por aqui:' : 'Estando tudo certo, é só nos confirmar por aqui.',
+    ...(empresa?.pix_chave ? [`Pix: ${empresa.pix_chave}`] : []),
+    ...(empresa?.pagamento_instrucoes ? [empresa.pagamento_instrucoes] : []),
+  ].join('\n')
 
   return createPortal(
     <div className="print-root">
