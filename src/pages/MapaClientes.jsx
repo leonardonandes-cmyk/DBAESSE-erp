@@ -14,12 +14,12 @@ import { MODALIDADES, modalidadeDoCanal } from '../lib/modalidades.js'
   Relatórios › Mapa de clientes.
   Onde estão os clientes (cadastro: cidade/UF) e quanto cada praça compra (pedidos faturados ou entregues, pela data do pedido).
   - Ativo = comprou nos últimos N dias (N editável, padrão 90) · Inativo = já comprou, parou há mais de N dias · Nunca comprou = cadastrado sem pedido.
-  - Modalidade (Atacado, Mesclado, Drop, Marketplace, Varejo): do cliente pelo canal do cadastro; da venda pelo canal do pedido.
+  - Modalidade (Atacado, Variado, Drop, Marketplace, Varejo): do cliente pelo canal do cadastro; da venda pelo canal do pedido.
 */
 const VENDIDO = ['faturado', 'entregue']
 const TIPOS_CLIENTE = Object.fromEntries(MODALIDADES.map((m) => [m.id, m]))
 const COR_TODOS = '#1f6fd6'
-const tipoDoParceiro = (p) => (p?.canal ? modalidadeDoCanal(p.canal) : p?.tipos?.includes('revendedora') ? 'mesclado' : 'atacado')
+const tipoDoParceiro = (p) => (p?.canal ? modalidadeDoCanal(p.canal) : p?.tipos?.includes('revendedora') ? 'variado' : 'atacado')
 const tipoDaVenda = (canal, p) => (canal ? modalidadeDoCanal(canal) : tipoDoParceiro(p))
 const ehCliente = (p) => p.tipos?.some((t) => t === 'cliente' || t === 'revendedora')
 const DIAS_INATIVO = [60, 90, 120, 180]

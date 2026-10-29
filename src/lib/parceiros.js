@@ -7,7 +7,7 @@ export const TIPOS_PARCEIRO = [
   { valor: 'transportadora', label: 'Transportadora', plural: 'Transportadoras' },
 ]
 
-export const CANAIS = ['Atacado', 'Mesclado', 'Drop', 'Shopee', 'TikTok Shop', 'Mercado Livre', 'Instagram', 'Loja / varejo']
+export const CANAIS = ['Atacado', 'Variado', 'Drop', 'Shopee', 'TikTok Shop', 'Mercado Livre', 'Instagram', 'Loja / varejo']
 
 export async function listarParceiros() {
   return todas(() => supabase

@@ -18,7 +18,7 @@ export async function salvarLista(id, { acrescimo, descricao, despesas, margem_a
 
 // Lista sugerida para cada canal (o cliente pode ter a dele, que manda)
 export const LISTA_POR_CANAL = {
-  Atacado: 'atacado', Mesclado: 'mesclado', Drop: 'drop',
+  Atacado: 'atacado', Variado: 'variado', Drop: 'drop',
   Shopee: 'varejo', 'TikTok Shop': 'varejo', 'Mercado Livre': 'varejo', Instagram: 'varejo', 'Loja / varejo': 'varejo',
 }
 export const listaSugerida = (cliente, canal) => cliente?.lista || LISTA_POR_CANAL[canal] || 'atacado'

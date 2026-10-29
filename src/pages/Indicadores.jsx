@@ -259,7 +259,7 @@ export default function Indicadores() {
       </section>
 
       <section className="card card-flush">
-        <div className="card-head pad"><div><h2>Por modalidade</h2><div className="card-sub">Atacado · Mesclado · Drop · Marketplace · Varejo{tipo !== 'Todos' ? ` · ${tipo}` : ''}</div></div></div>
+        <div className="card-head pad"><div><h2>Por modalidade</h2><div className="card-sub">Atacado · Variado · Drop · Marketplace · Varejo{tipo !== 'Todos' ? ` · ${tipo}` : ''}</div></div></div>
         <div className="table-wrap">
           <table>
             <thead className="tinted"><tr><th>Modalidade</th><th className="r">Pedidos</th><th className="r">Pares</th><th className="r">Faturamento</th><th>Participação</th><th className="r">Preço médio do par</th><th className="r">Ticket médio</th></tr></thead>
