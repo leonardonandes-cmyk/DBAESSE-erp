@@ -2,10 +2,10 @@
   "rewrites": [
     {
       "source": "/d/:codigo",
-      "destination": "https://etjdygbelgjqeodefjuw.supabase.co/functions/v1/doc?c=:codigo"
+      "destination": "/api/d?c=:codigo"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

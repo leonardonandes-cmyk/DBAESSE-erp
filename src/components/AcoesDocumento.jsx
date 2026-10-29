@@ -7,7 +7,7 @@ import { baixar, enviarWhats, gerarPdf } from '../lib/documentos.js'
   alvo = ref do elemento com a(s) folha(s) A4 · nome = nome do arquivo .pdf
   telefone (opcional) = abre direto a conversa daquele número · mensagem = texto que vai junto
 */
-export default function AcoesDocumento({ alvo, nome, telefone, mensagem, pasta = 'documentos', onFechar, imprimirEscuro = false }) {
+export default function AcoesDocumento({ alvo, nome, telefone, mensagem, pasta = 'documentos', onFechar, imprimirEscuro = false, previa }) {
   const [ocupado, setOcupado] = useState('')
   const [msg, setMsg] = useState('')
   const [erro, setErro] = useState('')
@@ -21,7 +21,7 @@ export default function AcoesDocumento({ alvo, nome, telefone, mensagem, pasta =
     setErro(''); setMsg(''); setOcupado('whats')
     try {
       const blob = await gerarPdf(alvo.current, arquivo)
-      const r = await enviarWhats({ blob, nome: arquivo, telefone, mensagem, pasta })
+      const r = await enviarWhats({ blob, nome: arquivo, telefone, mensagem, pasta, titulo: previa?.titulo || `DBAESSE · ${nome.replace(/-/g, " ")}`, descricao: previa?.descricao })
       if (r === 'link') setMsg(telefone ? 'WhatsApp aberto na conversa com o link do PDF.' : 'WhatsApp aberto com o link do PDF — escolha o contato.')
       if (r === 'compartilhado') setMsg('PDF enviado.')
     } catch (e) { setErro(e.message) } finally { setOcupado('') }

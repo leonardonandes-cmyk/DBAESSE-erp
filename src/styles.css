@@ -1120,7 +1120,9 @@ td.vazio { color: var(--muted); padding: 28px !important; }
   .no-print { display: none !important; }
   .print-folhas { display: block; padding: 0; }
   .folha { box-shadow: none; margin: 0; page-break-after: always; break-after: page; }
-  .folha:last-child { page-break-after: auto; }
+  .folha:last-child { page-break-after: auto; break-after: auto; }
+  /* 1 folha = 1 página: altura um tiquinho menor que o A4 para o arredondamento não empurrar uma página em branco */
+  .folha { min-height: 296mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 .pr-ficha-corpo { align-items: start; min-height: 0; }
@@ -1461,7 +1463,7 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .doc-pag p { margin: 1mm 0 0; font-size: 9.5pt; }
 /* geração de PDF: folhas sem sombra/margem de tela, largura exata do A4 */
 .gerando-pdf .print-folhas { display: block; width: 210mm; padding: 0; gap: 0; }
-.gerando-pdf .folha { box-shadow: none; margin: 0; }
+.gerando-pdf .folha { box-shadow: none; margin: 0; min-height: 296mm; }
 .acoes-doc { justify-content: flex-end; }
 /* tabela de preços para o cliente */
 .tp-folha { gap: 6mm; padding: 13mm 12mm; }

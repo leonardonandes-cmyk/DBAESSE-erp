@@ -53,7 +53,7 @@ const codigoCurto = (n = 8) => Array.from(crypto.getRandomValues(new Uint32Array
 // mensagem pode ter uma linha com {LINK}: vira o link curto (computador) ou some (celular, o PDF vai anexado)
 // Sem emoji: o WhatsApp do computador quebra emoji vindo pelo link wa.me (aparece "�").
 // → 'compartilhado' (celular) | 'link' (abriu o WhatsApp com o link)
-export async function enviarWhats({ blob, nome, telefone, mensagem, pasta = 'pedidos' }) {
+export async function enviarWhats({ blob, nome, telefone, mensagem, pasta = 'pedidos', titulo, descricao }) {
   const arquivo = new File([blob], nome, { type: 'application/pdf' })
   const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
   if (celular && navigator.canShare?.({ files: [arquivo] })) {
@@ -71,7 +71,7 @@ export async function enviarWhats({ blob, nome, telefone, mensagem, pasta = 'ped
     if (e1) throw e1
     // link curto no endereço do sistema (dbaesse-erp.vercel.app/d/XXXX) — nada de link gigante com token
     const codigo = codigoCurto()
-    const { error: e2 } = await supabase.from('documentos_links').insert({ codigo, caminho, nome })
+    const { error: e2 } = await supabase.from('documentos_links').insert({ codigo, caminho, nome, titulo: titulo || null, descricao: descricao || null })
     if (e2) throw e2
     const link = `${window.location.origin}/d/${codigo}`
     const texto = mensagem.includes('{LINK}') ? mensagem.replace('{LINK}', link) : `${mensagem}\n\n${link}`

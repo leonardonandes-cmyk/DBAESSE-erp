@@ -49,7 +49,8 @@ export default function ImprimirPedido({ pedido, grupos, cliente, entrega, totai
     <div className="print-root">
       <div className="print-barra no-print">
         <div><b>{titulo} {numeroPedido(pedido.numero)}</b> <span className="faint">· {cliente?.nome || 'sem cliente'}</span>{faltando.length > 0 && <span className="doc-falta">Cadastro do cliente incompleto: falta {faltando.join(', ')}</span>}</div>
-        <AcoesDocumento alvo={folha} nome={nomeArq} telefone={cliente?.telefone} mensagem={mensagem} pasta="pedidos" onFechar={onFechar} />
+        <AcoesDocumento alvo={folha} nome={nomeArq} telefone={cliente?.telefone} mensagem={mensagem} pasta="pedidos"
+          previa={{ titulo: `DBAESSE · ${orcamento ? 'Orçamento' : 'Pedido'} ${numeroPedido(pedido.numero)}`, descricao: [cliente?.nome, `${inteiro(totais.pares)} pares`, brl(totais.total)].filter(Boolean).join(' · ') }} onFechar={onFechar} />
       </div>
 
       <div className="print-folhas">
