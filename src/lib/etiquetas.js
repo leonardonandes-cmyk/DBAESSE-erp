@@ -2,7 +2,7 @@
 // Padrão das duas etiquetas: 100×60 mm (800×480 pontos), o mesmo rolo para unitária e coletiva.
 // A impressão vai para o ETIQUETAS-V2 rodando no PC da fábrica (o PC ligado na Zebra).
 import { supabase } from './supabase.js'
-import { desenhoDoTipo } from './produtos.js'
+import { desenhoDe, desenhoDoTipo } from './produtos.js'
 
 export const ETQ = { largura: 800, altura: 480 }
 const SERV_PADRAO = 'http://localhost:9192'
@@ -114,7 +114,7 @@ export function zplUnitaria({ ref, tipo, cor, numero, sku, usa, eur, quantidade 
 export async function zplUnitarias(linhas) {
   const out = []
   for (const l of linhas) {
-    const desenho = await desenhoParaZpl(desenhoDoTipo(l.tipo))
+    const desenho = await desenhoParaZpl(l.desenhoUrl !== undefined ? l.desenhoUrl : desenhoDoTipo(l.tipo)) // sem desenho = quadro em branco
     out.push(zplUnitaria({ ...l, desenho }))
   }
   return out.join('\n')
@@ -182,7 +182,7 @@ export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1, des
 export async function zplColetivas(itens) {
   const out = []
   for (const i of itens) {
-    const desenho = await desenhoParaZpl(desenhoDoTipo(i.tipo), 408, 160)
+    const desenho = await desenhoParaZpl(i.desenhoUrl !== undefined ? i.desenhoUrl : desenhoDoTipo(i.tipo), 408, 160)
     out.push(zplColetiva({ ...i, desenho }))
   }
   return out.join('\n')
@@ -212,7 +212,7 @@ export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes 
 // Unitárias de um pedido: uma etiqueta por par, a partir dos itens (sku, número, quantidade)
 export function zplDoPedido(linhas, tamanhos) {
   return zplUnitarias(linhas.filter((l) => l.quantidade > 0).map((l) => ({
-    ref: l.produto?.ref, tipo: l.produto?.tipo, cor: l.cor?.nome, numero: l.numero, sku: l.sku,
+    ref: l.produto?.ref, tipo: l.produto?.tipo, cor: l.cor?.nome, numero: l.numero, sku: l.sku, desenhoUrl: desenhoDe(l.produto),
     usa: tamanhos[l.numero]?.usa, eur: tamanhos[l.numero]?.eur, quantidade: l.quantidade,
   })))
 }
@@ -234,4 +234,9 @@ export function baixarZpl(zpl, nome = 'etiquetas.zpl') {
   const a = Object.assign(document.createElement('a'), { href: url, download: nome })
   document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 2000)
+}
+
+// REFs sem desenho (para o aviso antes de imprimir — elas saem com o quadro em branco)
+export function refsSemDesenho(produtos) {
+  return [...new Set(produtos.filter((p) => p && !desenhoDe(p)).map((p) => p.ref))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR', { numeric: true }))
 }

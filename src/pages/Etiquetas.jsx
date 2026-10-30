@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import SeletorGrade from '../components/SeletorGrade.jsx'
 import RomaneioAvulso from '../components/RomaneioAvulso.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
-import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
+import { desenhoDe, listarCores, listarProdutos } from '../lib/produtos.js'
+import DesenhosEtiqueta from '../components/DesenhosEtiqueta.jsx'
 import {
-  baixarZpl, codigoCaixa, enviarParaZebra, listarTamanhos, salvarServidor, servidorEtiquetas, zplColetivas, zplUnitarias,
+  baixarZpl, codigoCaixa, enviarParaZebra, listarTamanhos, salvarServidor, servidorEtiquetas, zplColetivas, zplUnitarias, refsSemDesenho,
 } from '../lib/etiquetas.js'
 
 /*
@@ -40,7 +41,7 @@ export default function Etiquetas() {
     const novas = linhas.map((l) => ({
       chave: `${l.sku_id}-${Date.now()}`, tipo: 'unitaria', produto: l.produto, corId: l.cor?.id,
       ref: l.produto.ref, tipoProd: l.produto.tipo, cor: l.cor?.nome, numero: l.numero, sku: l.sku,
-      usa: tamanhos[l.numero]?.usa, eur: tamanhos[l.numero]?.eur, quantidade: l.quantidade,
+      usa: tamanhos[l.numero]?.usa, eur: tamanhos[l.numero]?.eur, quantidade: l.quantidade, desenhoUrl: desenhoDe(l.produto),
     }))
     setFila((f) => [...f, ...novas])
     setMsg('')
@@ -55,7 +56,7 @@ export default function Etiquetas() {
     setFila((f) => [...f, {
       chave: `cx-${p.id}-${cor?.id}-${Date.now()}`, tipo: 'coletiva', produto: p, corId: cor?.id,
       ref: p.ref, tipoProd: p.tipo, cor: cor?.nome, grade, total,
-      codigo: codigoCaixa(p.ref, cor?.sigla || '', total), quantidade: Math.max(1, Number(caixas) || 1),
+      codigo: codigoCaixa(p.ref, cor?.sigla || '', total), quantidade: Math.max(1, Number(caixas) || 1), desenhoUrl: desenhoDe(p),
     }])
     setMsg('')
   }
@@ -80,6 +81,7 @@ export default function Etiquetas() {
   const mudarQtd = (chave, v) => setFila((f) => f.map((i) => (i.chave === chave ? { ...i, quantidade: v } : i)))
   const tirar = (chave) => setFila((f) => f.filter((i) => i.chave !== chave))
   const previa = fila[fila.length - 1]
+  const semDesenho = refsSemDesenho(fila.map((i) => i.produto))
 
   return (
     <>
@@ -104,7 +106,7 @@ export default function Etiquetas() {
       )}
 
       <div className="segmented" role="tablist" style={{ marginBottom: 16 }}>
-        {[['unitaria', 'Unitária · por par'], ['coletiva', 'Coletiva · por caixa'], ['romaneio', 'Romaneio de envio']].map(([k, l]) => (
+        {[['unitaria', 'Unitária · por par'], ['coletiva', 'Coletiva · por caixa'], ['romaneio', 'Romaneio de envio'], ['desenhos', 'Desenhos']].map(([k, l]) => (
           <button key={k} role="tab" aria-selected={aba === k} className={aba === k ? 'on' : ''} onClick={() => trocarAba(k)}>{l}</button>
         ))}
       </div>
@@ -112,7 +114,7 @@ export default function Etiquetas() {
       {erro && <p className="form-error" role="alert">{erro}</p>}
       {msg && <p className="pill ok" role="status" style={{ display: 'inline-block', marginBottom: 12 }}>{msg}</p>}
 
-      {aba === 'romaneio' ? <RomaneioAvulso /> : (
+      {aba === 'romaneio' ? <RomaneioAvulso /> : aba === 'desenhos' ? <DesenhosEtiqueta produtos={produtos} onMudou={(id, url) => setProdutos((ps) => ps.map((p) => (p.id === id ? { ...p, desenho_url: url } : p)))} /> : (
       <>
       <section className="etq-grid">
         <div className="card">
@@ -143,7 +145,9 @@ export default function Etiquetas() {
 
       <section className="card" style={{ marginTop: 16 }}>
         <div className="card-head">
-          <div><h2>Fila de impressão</h2><div className="card-sub">{totalEtq} etiqueta(s)</div></div>
+          <div><h2>Fila de impressão</h2><div className="card-sub">{totalEtq} etiqueta(s)</div>
+            {semDesenho.length > 0 && <p className="aviso-desenho">Sem desenho: REF {semDesenho.join(', ')} — sai com o quadro em branco. <button className="link-btn" onClick={() => trocarAba('desenhos')}>Incluir desenho</button></p>}
+          </div>
           <div className="actions">
             <button className="btn" disabled={!fila.length} onClick={async () => baixarZpl(await zpl(), `etiquetas-${aba}.zpl`)}>Baixar .zpl</button>
             <button className="btn btn-dark" disabled={!fila.length || enviando} onClick={imprimir}>{enviando ? 'Enviando…' : `Imprimir ${totalEtq || ''}`}</button>
@@ -179,7 +183,7 @@ function Barras({ texto }) {
 }
 
 function PreviaUnitaria({ i }) {
-  const desenho = desenhoDoTipo(i.tipoProd)
+  const desenho = desenhoDe(i.produto)
   return (
     <div className="etq etq-v2">
       <div className="v2-topo">
@@ -200,7 +204,7 @@ function PreviaUnitaria({ i }) {
 }
 
 function PreviaColetiva({ i }) {
-  const desenho = desenhoDoTipo(i.tipoProd)
+  const desenho = desenhoDe(i.produto)
   return (
     <div className="etq etq-v2 col-v2">
       <div className="v2-topo">

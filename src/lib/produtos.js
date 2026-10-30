@@ -11,7 +11,7 @@ export async function listarCores() {
 export async function listarProdutos() {
   return todas(() => supabase
     .from('produtos')
-    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,fotos,preco_atacado,preco_varejo,ficha,origem,custo_compra,fornecedor_id,skus(id,cor_id,numero,sku,ean)')
+    .select('id,ref,nome,tipo,colecao,ncm,grade_de,grade_ate,status,foto_url,fotos,desenho_url,preco_atacado,preco_varejo,ficha,origem,custo_compra,fornecedor_id,skus(id,cor_id,numero,sku,ean)')
     .order('ref'))
 }
 
@@ -103,6 +103,24 @@ export function desenhoDoTipo(tipo) {
   return DESENHOS.includes(slug) ? `/desenhos/${slug}.png` : null
 }
 const DESENHOS = ['mocassim', 'fisherman']
+
+// Desenho da ETIQUETA de uma referência: o desenho próprio da REF → o desenho padrão do tipo → nenhum (quadro em branco)
+export function desenhoDe(p) {
+  return p?.desenho_url || desenhoDoTipo(p?.tipo) || null
+}
+
+// Sobe (ou substitui) o desenho da REF no armazenamento 'desenhos' e grava no produto
+export async function subirDesenho(produto, arquivo) {
+  const ext = (arquivo.name.split('.').pop() || 'png').toLowerCase().replace('jpeg', 'jpg')
+  const caminho = `${String(produto.ref).replace(/[^\w-]/g, '_')}.${ext}`
+  const { error } = await supabase.storage.from('desenhos').upload(caminho, arquivo, { upsert: true, contentType: arquivo.type || 'image/png', cacheControl: '60' })
+  if (error) throw error
+  const { data } = supabase.storage.from('desenhos').getPublicUrl(caminho)
+  const url = `${data.publicUrl}?v=${Date.now()}` // muda a cada troca → etiqueta e prévia pegam o novo na hora
+  const { error: e2 } = await supabase.from('produtos').update({ desenho_url: url }).eq('id', produto.id)
+  if (e2) throw e2
+  return url
+}
 
 // Correção rápida de preço (Tabela de preços) — as outras listas recalculam sozinhas
 export async function salvarPrecosModelo(id, { precoAtacado, precoVarejo }) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FotoProduto } from './FotoProduto.jsx'
 import { numeroPedido } from '../lib/format.js'
-import { baixarZpl, enviarParaZebra, listarTamanhos, zplDoPedido, zplVolume } from '../lib/etiquetas.js'
+import { baixarZpl, enviarParaZebra, listarTamanhos, refsSemDesenho, zplDoPedido, zplVolume } from '../lib/etiquetas.js'
 
 /*
   Etiquetas do PEDIDO.
@@ -49,6 +49,9 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
         {modo === 'unitaria' ? (
           <>
             <p className="card-sub" style={{ margin: 0 }}>Uma etiqueta por par, gerada a partir do pedido.</p>
+            {refsSemDesenho(grupos.map((g) => g.produto)).length > 0 && (
+              <p className="aviso-desenho">Sem desenho: REF {refsSemDesenho(grupos.map((g) => g.produto)).join(', ')} — sai com o quadro em branco. Inclua em Operações → Etiquetas → Desenhos.</p>
+            )}
             <table>
               <tbody>
                 {grupos.map((g) => (
