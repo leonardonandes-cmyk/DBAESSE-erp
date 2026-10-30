@@ -3,7 +3,7 @@ import SeletorGrade from '../components/SeletorGrade.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
 import {
-  baixarZpl, codigoCaixa, enviarParaZebra, listarTamanhos, salvarServidor, servidorEtiquetas, zplColetiva, zplUnitarias,
+  baixarZpl, codigoCaixa, enviarParaZebra, listarTamanhos, salvarServidor, servidorEtiquetas, zplColetivas, zplUnitarias,
 } from '../lib/etiquetas.js'
 
 /*
@@ -62,8 +62,8 @@ export default function Etiquetas() {
   const totalEtq = fila.reduce((s, i) => s + (Number(i.quantidade) || 0), 0)
   async function zpl() {
     const un = fila.filter((i) => i.tipo === 'unitaria').map((i) => ({ ...i, tipo: i.tipoProd }))
-    const co = fila.filter((i) => i.tipo === 'coletiva').map((i) => zplColetiva({ ...i, tipo: i.tipoProd }))
-    return [un.length ? await zplUnitarias(un) : '', ...co].filter(Boolean).join('\n')
+    const co = fila.filter((i) => i.tipo === 'coletiva').map((i) => ({ ...i, tipo: i.tipoProd }))
+    return [un.length ? await zplUnitarias(un) : '', co.length ? await zplColetivas(co) : ''].filter(Boolean).join('\n')
   }
 
   async function imprimir() {
@@ -131,10 +131,10 @@ export default function Etiquetas() {
         </div>
 
         <div className="card">
-          <div className="card-head"><div><h2>Prévia</h2><div className="card-sub">{aba === 'unitaria' ? '100×60 mm' : '100×150 mm (rolo da Shopee) · horizontal'} · Zebra ZD230</div></div></div>
+          <div className="card-head"><div><h2>Prévia</h2><div className="card-sub">100×60 mm · Zebra ZD230</div></div></div>
           {previa
             ? (previa.tipo === 'unitaria' ? <PreviaUnitaria i={previa} /> : <PreviaColetiva i={previa} />)
-            : <div className={`etq etq-vazia ${aba === 'coletiva' ? 'etq-deitada' : ''}`}>A prévia aparece aqui</div>}
+            : <div className={`etq etq-vazia `}>A prévia aparece aqui</div>}
         </div>
       </section>
 
@@ -195,24 +195,25 @@ function PreviaUnitaria({ i }) {
 }
 
 function PreviaColetiva({ i }) {
+  const desenho = desenhoDoTipo(i.tipoProd)
   return (
-    <div className="etq etq-deitada">
-      <div className="etq-topo" style={{ flex: 'none', height: '48%' }}>
-        <div className="etq-esq">
-          <div className="etq-ref">{i.ref}</div>
-          {i.tipoProd && <div className="etq-tipo">{i.tipoProd}</div>}
-          <div className="etq-cor">{i.cor}</div>
+    <div className="etq etq-v2 col-v2">
+      <div className="v2-topo">
+        <div className="v2-esq">
+          <div className="v2-quadro">{desenho && <img src={desenho} alt="" />}</div>
+          <div className="v2-ref">REF {i.ref}</div>
+          <div className="v2-cor">COR: {String(i.cor || '').toUpperCase().replace(/\s*\/\s*/g, ' / ')}</div>
         </div>
-        <div className="etq-dir">
-          <small>CAIXA</small>
-          <div className="etq-num" style={{ fontSize: '3.6em' }}>{i.total}</div>
-          <small>PARES</small>
+        <div className="v2-dir">
+          <div className="v2-num">{i.total}</div>
+          <div className="v2-intl">PARES</div>
+          <div className="v2-tipo">{i.tipoProd}</div>
+          <div className="etq-barras" style={{ marginTop: 'auto' }}><div className="etq-listras" style={{ width: '80%' }} /><span>{i.codigo}</span></div>
         </div>
       </div>
       <div className="etq-grade">
         {i.grade.map((g) => <div key={g.numero}><b>{g.numero}</b><span>{g.pares}</span></div>)}
       </div>
-      <Barras texto={i.codigo} />
     </div>
   )
 }

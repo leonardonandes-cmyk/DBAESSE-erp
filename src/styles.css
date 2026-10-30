@@ -1573,3 +1573,8 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .v2-intl { font-size: .85em; } .v2-tipo { font-size: .75em; text-transform: uppercase; }
 .etq-v2 .etq-barras { padding-top: 2%; }
 .etq-v2 .etq-listras { width: 40%; height: 1.6em; }
+.col-v2 .v2-quadro { height: 52%; }
+.col-v2 .v2-ref { font-size: 1.6em; }
+.col-v2 .v2-num { font-size: 3.6em; }
+.col-v2 .etq-grade { margin: 2% 0 0; }
+.col-v2 .etq-grade b, .col-v2 .etq-grade span { font-size: .9em; }

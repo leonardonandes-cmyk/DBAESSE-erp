@@ -32,10 +32,11 @@ function xCentroBarras(texto, modulo = 2) {
 
 // Desenho de linha do calçado → gráfico ZPL (^GFA, 1 bit). Converte no navegador; guarda em cache por URL.
 const cacheGF = {}
-export function desenhoParaZpl(url, maxW = 408, maxH = 190) {
+export function desenhoParaZpl(url, maxW = 408, maxH = 190, girar = false) {
   if (!url) return Promise.resolve(null)
-  if (cacheGF[url]) return cacheGF[url]
-  cacheGF[url] = new Promise((resolve) => {
+  const chave = `${url}|${maxW}|${maxH}|${girar}`
+  if (cacheGF[chave]) return cacheGF[chave]
+  cacheGF[chave] = new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
@@ -52,10 +53,15 @@ export function desenhoParaZpl(url, maxW = 408, maxH = 190) {
       const cw = x1 - x0 + 1, ch = y1 - y0 + 1
       // 2) encaixa no quadro o maior possível
       const k = Math.min(maxW / cw, maxH / ch)
-      const w = Math.max(8, Math.floor((cw * k) / 8) * 8)
-      const h = Math.max(1, Math.round(ch * k))
+      // deitada: a altura do desenho vira a largura na Zebra (múltiplo de 8)
+      const dw = girar ? Math.max(1, Math.round(cw * k)) : Math.max(8, Math.floor((cw * k) / 8) * 8)
+      const dh = girar ? Math.max(8, Math.floor((ch * k) / 8) * 8) : Math.max(1, Math.round(ch * k))
+      const w = girar ? dh : dw
+      const h = girar ? dw : dh
       const c = document.createElement('canvas'); c.width = w; c.height = h
-      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(o, x0, y0, cw, ch, 0, 0, w, h)
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h)
+      if (girar) { g.translate(w, 0); g.rotate(Math.PI / 2) } // gira 90° no sentido do texto (R)
+      g.drawImage(o, x0, y0, cw, ch, 0, 0, dw, dh)
       const px = g.getImageData(0, 0, w, h).data
       const bpr = w / 8
       let hex = ''
@@ -70,7 +76,7 @@ export function desenhoParaZpl(url, maxW = 408, maxH = 190) {
           hex += v.toString(16).padStart(2, '0').toUpperCase()
         }
       }
-      resolve({ w, h, gf: `^GFA,${bpr * h},${bpr * h},${bpr},${hex}` })
+      resolve({ w, h, lw: dw, lh: dh, gf: `^GFA,${bpr * h},${bpr * h},${bpr},${hex}` })
     }
     img.onerror = () => resolve(null)
     img.src = url
@@ -115,12 +121,12 @@ export async function zplUnitarias(linhas) {
 }
 
 export function codigoCaixa(ref, sigla, total) {
-  return `CX-${t(ref)}-${t(sigla)}-${total}`
+  return `${t(ref)}-${t(sigla)}-C${total}` // ex.: 801-NUD-C12 (C = caixa com 12 pares)
 }
 
-// COLETIVA — rolo 100×150 mm da Shopee, impressa na HORIZONTAL (lê-se deitada: 150 de largura × 100 de altura).
+// ROMANEIO — rolo 100×150 mm da Shopee, impresso na HORIZONTAL (lê-se deitado: 150 de largura × 100 de altura).
 // Desenho em coordenadas "deitadas" (1200×800) e convertido para a Zebra (800×1200) com campos girados (R).
-export const ETQ_COLETIVA = { largura: 1200, altura: 800 }
+export const ETQ_ROMANEIO = { largura: 1200, altura: 800 }
 const PW = 800
 const cab = () => ['^XA', '^CI28', `^PW${PW}`, '^LL1200', '^LH0,0']
 // texto: (x,y) canto de cima/esquerda na etiqueta deitada; h = altura da letra; bw = largura do bloco (centralizar/quebrar)
@@ -133,32 +139,53 @@ const B = (x, y, w, h, e = 3) => `^FO${PW - y - h},${x}^GB${h},${w},${e}^FS`
 const BAR = (x, y, h, mod, texto) => `^FO${PW - y - h},${x}^BY${mod},3^BCR,${h},N,N,N^FD${texto}^FS`
 const largBarras = (texto, mod) => (texto.length * 11 + 35) * mod
 
-// Caixa master (reposição): REF, tipo, cor | CAIXA total PARES | grade número × pares | código da caixa
-export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1 }) {
+// COLETIVA (caixa master) — 100×60, MESMO tamanho e padrão da unitária:
+// esquerda: DESENHO · "REF 801" · linha · "COR: …" | direita: TOTAL de pares · PARES · TIPO · código da caixa
+// faixa de baixo: GRADE número × pares
+export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1, desenho }) {
   const nums = grade.filter((g) => g.pares > 0)
   const total = nums.reduce((s, g) => s + g.pares, 0)
-  const cel = Math.floor(1120 / Math.max(nums.length, 1))
-  const fn = nums.length > 8 ? 46 : 58
-  const celulas = nums.flatMap((g, i) => {
-    const x = 40 + i * cel
-    return [B(x, 420, cel, 170, 3), T(x, 438, fn, fn - 4, t(g.numero), { bw: cel, al: 'C' }), T(x, 515, fn, fn - 4, String(g.pares), { bw: cel, al: 'C' })]
+  const corTxt = cima(cor).replace(/\s*\/\s*/g, ' / ')
+  const cel = Math.floor(760 / Math.max(nums.length, 1))
+  const fn = nums.length > 9 ? 32 : 40
+  const celulas = nums.map((g, i) => {
+    const x = 20 + i * cel
+    return [
+      `^FO${x},350^GB${cel},112,2^FS`,
+      `^FO${x},362^FB${cel},1,0,C^A0N,${fn},${fn - 4}^FD${t(g.numero)}^FS`,
+      `^FO${x},410^FB${cel},1,0,C^A0N,${fn},${fn - 4}^FD${g.pares}^FS`,
+    ].join('\n')
   })
+  const larg = (t(codigo).length * 11 + 35) * 2
   return [
-    ...cab(),
-    T(40, 30, 150, 150, t(ref)),
-    tipo ? T(44, 190, 44, 44, cima(tipo)) : '',
-    T(40, 248, 58, 54, cima(cor), { bw: 700, linhas: 2, esp: 6 }),
-    B(770, 30, 3, 360, 3),
-    T(790, 50, 44, 44, 'CAIXA', { bw: 380, al: 'C' }),
-    T(790, 110, 200, 180, String(total), { bw: 380, al: 'C' }),
-    T(790, 320, 44, 44, 'PARES', { bw: 380, al: 'C' }),
-    B(30, 400, 1140, 3, 3),
+    '^XA', '^CI28', `^PW${ETQ.largura}`, `^LL${ETQ.altura}`, '^LH0,0',
+    '^FO20,20^GB420,170,2^FS',
+    desenho ? `^FO${20 + Math.round((420 - desenho.w) / 2)},${20 + Math.round((170 - desenho.h) / 2)}${desenho.gf}^FS` : '',
+    `^FO22,200^A0N,52,50^FDREF ${t(ref)}^FS`,
+    '^FO20,258^GB420,2,2^FS',
+    `^FO22,270^FB420,2,4,L^A0N,${corTxt.length > 26 ? 26 : 30},${corTxt.length > 26 ? 24 : 28}^FDCOR: ${corTxt}^FS`,
+    '^FO455,20^GB2,316,2^FS',
+    `^FO460,22^FB340,1,0,C^A0N,132,115^FD${total}^FS`,
+    '^FO480,158^GB300,2,2^FS',
+    `^FO460,168^FB340,1,0,C^A0N,28,28^FDPARES^FS`,
+    '^FO480,204^GB300,2,2^FS',
+    tipo ? `^FO460,214^FB340,1,0,C^A0N,24,22^FD${cima(tipo)}^FS` : '',
+    `^FO${457 + Math.max(0, Math.round((343 - larg) / 2))},248^BY2,3^BCN,50,N,N,N^FD${t(codigo)}^FS`,
+    `^FO460,306^FB340,1,0,C^A0N,22,22^FD${t(codigo)}^FS`,
     ...celulas,
-    BAR(Math.max(40, Math.round((1200 - largBarras(codigo, 3)) / 2)), 615, 120, 3, t(codigo)),
-    T(0, 748, 36, 36, t(codigo), { bw: 1200, al: 'C' }),
     `^PQ${Math.max(1, Number(quantidade) || 1)},0,1,Y`,
     '^XZ',
   ].filter(Boolean).join('\n')
+}
+
+// Monta as coletivas já com o desenho do tipo
+export async function zplColetivas(itens) {
+  const out = []
+  for (const i of itens) {
+    const desenho = await desenhoParaZpl(desenhoDoTipo(i.tipo), 408, 160)
+    out.push(zplColetiva({ ...i, desenho }))
+  }
+  return out.join('\n')
 }
 
 // ROMANEIO DE ENVIO (ao faturar, um por volume). FOCO: NOME DO CLIENTE → CIDADE - ESTADO, bem grandes.
