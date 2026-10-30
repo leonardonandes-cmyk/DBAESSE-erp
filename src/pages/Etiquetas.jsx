@@ -176,19 +176,17 @@ function Barras({ texto }) {
 function PreviaUnitaria({ i }) {
   const desenho = desenhoDoTipo(i.tipoProd)
   return (
-    <div className="etq">
-      <div className="etq-topo">
-        <div className="etq-esq etq-esq-v8">
-          {desenho && <div className="etq-quadro"><img src={desenho} alt="" /></div>}
-          <div className="etq-esq-txt">
-            <div className="etq-ref">{i.ref}</div>
-            <div className="etq-cor">{i.cor}</div>
-          </div>
+    <div className="etq etq-v2">
+      <div className="v2-topo">
+        <div className="v2-esq">
+          <div className="v2-quadro">{desenho && <img src={desenho} alt="" />}</div>
+          <div className="v2-ref">REF {i.ref}</div>
+          <div className="v2-cor">COR: {String(i.cor || '').toUpperCase().replace(/\s*\/\s*/g, ' / ')}</div>
         </div>
-        <div className="etq-dir">
-          <div className="etq-num">{i.numero}</div>
-          {(i.usa || i.eur) && <div className="etq-intl">USA {i.usa} | EUR {i.eur}</div>}
-          {i.tipoProd && <div className="etq-tipo" style={{ marginTop: '.3em' }}>{i.tipoProd}</div>}
+        <div className="v2-dir">
+          <div className="v2-num">{i.numero}</div>
+          <div className="v2-intl">{(i.usa || i.eur) ? `USA ${i.usa}  |  EUR ${i.eur}` : ''}</div>
+          <div className="v2-tipo">{i.tipoProd}</div>
         </div>
       </div>
       <Barras texto={`SKU: ${i.sku}`} />

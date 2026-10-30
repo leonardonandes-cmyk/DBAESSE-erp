@@ -32,7 +32,7 @@ function xCentroBarras(texto, modulo = 2) {
 
 // Desenho de linha do calçado → gráfico ZPL (^GFA, 1 bit). Converte no navegador; guarda em cache por URL.
 const cacheGF = {}
-export function desenhoParaZpl(url, maxW = 184, maxH = 184) {
+export function desenhoParaZpl(url, maxW = 400, maxH = 184) {
   if (!url) return Promise.resolve(null)
   if (cacheGF[url]) return cacheGF[url]
   cacheGF[url] = new Promise((resolve) => {
@@ -66,25 +66,27 @@ export function desenhoParaZpl(url, maxW = 184, maxH = 184) {
   return cacheGF[url]
 }
 
-// UNITÁRIA (caixa do par) — padrão aprovado do ETIQUETAS-V2 (v8), 100×60:
-// esquerda: DESENHO em quadro + REF grande + COR · direita: NÚMERO enorme, USA | EUR e TIPO · rodapé: código de barras do SKU
-export function zplUnitaria({ ref, tipo, cor, numero, sku, usa, eur, quantidade = 1, desenho }) {
-  const Q = 196 // quadro do desenho
-  const xTxt = desenho ? 24 + Q + 18 : 30
-  const bwTxt = 505 - xTxt
+// UNITÁRIA (caixa do par) — layout APROVADO e impresso no ETIQUETAS-V2, 100×60:
+// esquerda: DESENHO em quadro largo · "REF 500" · linha · "COR: …" | direita: NÚMERO enorme · linha · USA | EUR · linha · TIPO
+// rodapé: código de barras + "SKU: …" centralizados · "FAB. xxx" pequeno no canto (lote, quando houver)
+export function zplUnitaria({ ref, tipo, cor, numero, sku, usa, eur, quantidade = 1, desenho, lote }) {
+  const corTxt = cima(cor).replace(/\s*\/\s*/g, ' / ')
   return [
     '^XA', '^CI28', `^PW${ETQ.largura}`, `^LL${ETQ.altura}`, '^LH0,0',
-    desenho ? `^FO24,24^GB${Q},${Q},2^FS` : '',
-    desenho ? `^FO${24 + Math.round((Q - desenho.w) / 2)},${24 + Math.round((Q - desenho.h) / 2)}${desenho.gf}^FS` : '',
-    `^FO${xTxt},26^A0N,${desenho ? 100 : 110},${desenho ? 92 : 100}^FD${t(ref)}^FS`,
-    `^FO${xTxt},${desenho ? 140 : 150}^FB${bwTxt},2,4,L^A0N,44,40^FD${cima(cor)}^FS`,
-    '^FO515,20^GB3,295,3^FS',
-    `^FO520,22^FB270,1,0,C^A0N,190,165^FD${t(numero)}^FS`,
-    (usa || eur) ? `^FO520,218^FB270,1,0,C^A0N,30,28^FDUSA ${t(usa)} | EUR ${t(eur)}^FS` : '',
-    tipo ? `^FO520,262^FB270,1,0,C^A0N,28,26^FD${cima(tipo)}^FS` : '',
-    '^FO20,328^GB760,3,3^FS',
-    `^FO${xCentroBarras(sku)},346^BY2,3^BCN,78,N,N,N^FD${t(sku)}^FS`,
-    `^FO0,436^FB${ETQ.largura},1,0,C^A0N,28,28^FDSKU: ${t(sku)}^FS`,
+    '^FO20,20^GB420,200,2^FS',
+    desenho ? `^FO${20 + Math.round((420 - desenho.w) / 2)},${20 + Math.round((200 - desenho.h) / 2)}${desenho.gf}^FS` : '',
+    `^FO22,234^A0N,58,56^FDREF ${t(ref)}^FS`,
+    '^FO20,300^GB420,2,2^FS',
+    `^FO22,314^FB420,2,4,L^A0N,${corTxt.length > 26 ? 28 : 32},${corTxt.length > 26 ? 26 : 30}^FDCOR: ${corTxt}^FS`,
+    '^FO455,20^GB2,370,2^FS',
+    `^FO460,36^FB340,1,0,C^A0N,180,150^FD${t(numero)}^FS`,
+    '^FO480,236^GB300,2,2^FS',
+    (usa || eur) ? `^FO460,252^FB340,1,0,C^A0N,30,28^FDUSA ${t(usa)}  |  EUR ${t(eur)}^FS` : '',
+    '^FO480,296^GB300,2,2^FS',
+    tipo ? `^FO460,312^FB340,1,0,C^A0N,26,24^FD${cima(tipo)}^FS` : '',
+    `^FO${xCentroBarras(sku)},400^BY2,3^BCN,44,N,N,N^FD${t(sku)}^FS`,
+    `^FO0,450^FB${ETQ.largura},1,0,C^A0N,22,22^FDSKU: ${t(sku)}^FS`,
+    lote ? `^FO690,454^A0N,18,18^FDFAB. ${t(lote)}^FS` : '',
     `^PQ${Math.max(1, Number(quantidade) || 1)},0,1,Y`,
     '^XZ',
   ].filter(Boolean).join('\n')
@@ -160,7 +162,7 @@ export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes 
     T(40, 40, hN, hN - 10, nome, { bw: 1120, linhas: 2, esp: 14 }),
     T(40, 40 + hN * 2 + 14 + 40, hL, hL - 6, local, { bw: 1120 }),
     B(30, 640, 1140, 3, 3),
-    T(40, 664, 72, 66, `VOLUME ${volume}/${volumes}`),
+    T(40, 664, 72, 66, `VOL. ${volume}/${volumes}`),
     T(610, 690, 32, 30, `${pares} PARES`),
     BAR(830, 662, 80, 2, codigo),
     T(810, 748, 26, 26, codigo, { bw: 370, al: 'C' }),

@@ -1559,3 +1559,17 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .etq-vol-local { font-size: 1.9em; font-weight: 800; text-transform: uppercase; line-height: 1.05; }
 .etq-vol-base { margin-top: auto; display: flex; align-items: center; gap: 6%; padding-top: 3%; border-top: 2px solid #111; font-weight: 700; font-size: 1em; }
 .etq-vol-base .etq-barras { margin-left: auto; width: 30%; padding-top: 0; }
+/* unitária no layout aprovado do V2 */
+.etq-v2 { padding: 2.5% 2.5% 2%; }
+.v2-topo { flex: 1; display: flex; min-height: 0; }
+.v2-esq { flex: 0 0 55%; display: flex; flex-direction: column; }
+.v2-quadro { height: 50%; border: 1.5px solid #111; display: grid; place-items: center; padding: 2%; overflow: hidden; }
+.v2-quadro img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.v2-ref { font-size: 1.9em; font-weight: 800; line-height: 1.1; padding: 2% 0; border-bottom: 1.5px solid #111; }
+.v2-cor { font-size: .95em; font-weight: 700; padding-top: 2%; line-height: 1.15; }
+.v2-dir { flex: 1; margin-left: 2%; border-left: 1.5px solid #111; display: flex; flex-direction: column; align-items: center; padding-bottom: 4%; }
+.v2-num { font-size: 5em; font-weight: 800; line-height: 1.05; }
+.v2-intl, .v2-tipo { width: 88%; text-align: center; border-top: 1.5px solid #111; padding: 3% 0; font-weight: 700; }
+.v2-intl { font-size: .85em; } .v2-tipo { font-size: .75em; text-transform: uppercase; }
+.etq-v2 .etq-barras { padding-top: 2%; }
+.etq-v2 .etq-listras { width: 40%; height: 1.6em; }
