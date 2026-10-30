@@ -13,7 +13,7 @@ const TIPO_MOV = {
 }
 const MOTIVO = { producao: 'Produção', venda: 'Venda', inventario: 'Inventário', cancelamento: 'Pedido cancelado', replenishment: 'Replenishment' }
 
-export default function Estoque() {
+export default function Estoque({ restrito = false }) {
   const [produtos, setProdutos] = useState([])
   const [cores, setCores] = useState([])
   const [saldos, setSaldos] = useState([])
@@ -73,11 +73,11 @@ export default function Estoque() {
           <div className="eyebrow">Saldo por modelo, cor e número</div>
           <h1>Estoque</h1>
         </div>
-        <div className="actions">
+        {!restrito && <div className="actions">
           <button className="btn" onClick={() => setModal('inventario')}>Inventário / ajuste</button>
           <button className="btn" onClick={() => setModal('transferencia')}>Replenishment</button>
           <button className="btn btn-dark" onClick={() => setModal('entrada')}><Icon name="mais" size={16} stroke={2} />Entrada de produção</button>
-        </div>
+        </div>}
       </header>
 
       {erro && <p className="form-error" role="alert">Não consegui ler o banco: {erro}</p>}

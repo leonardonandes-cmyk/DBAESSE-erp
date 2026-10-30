@@ -15,7 +15,7 @@ import ImprimirTabela from '../components/ImprimirTabela.jsx'
 const lerPref = (k, padrao) => { try { const v = localStorage.getItem(k); return v == null ? padrao : v === '1' } catch { return padrao } }
 const gravarPref = (k, v) => { try { localStorage.setItem(k, v ? '1' : '0') } catch { /* sem storage */ } }
 
-export default function TabelaPrecos() {
+export default function TabelaPrecos({ restrito = false }) {
   const [produtos, setProdutos] = useState([])
   const [listas, setListas] = useState([])
   const [custos, setCustos] = useState({})
@@ -23,7 +23,7 @@ export default function TabelaPrecos() {
   const [erro, setErro] = useState('')
   const [busca, setBusca] = useState('')
   const [tipo, setTipo] = useState('Todos')
-  const [interno, setInterno] = useState(() => lerPref('precos.interno', false))
+  const [interno, setInterno] = useState(() => !restrito && lerPref('precos.interno', false))
   const [inativos, setInativos] = useState(false)
   const [corrigir, setCorrigir] = useState(null)
   const [enviar, setEnviar] = useState(false)
@@ -54,9 +54,9 @@ export default function TabelaPrecos() {
           <h1>Tabela de preços</h1>
         </div>
         <div className="actions">
-          <button className={`btn ${interno ? 'btn-dark' : ''}`} onClick={alternarInterno} aria-pressed={interno} title="Custo e margem são dados internos">
+          {!restrito && <button className={`btn ${interno ? 'btn-dark' : ''}`} onClick={alternarInterno} aria-pressed={interno} title="Custo e margem são dados internos">
             {interno ? 'Esconder custo e margem' : 'Mostrar custo e margem'}
-          </button>
+          </button>}
           <button className="btn btn-dark" onClick={() => setEnviar(true)} disabled={!listas.length}>Tabela para o cliente · PDF · WhatsApp</button>
         </div>
       </header>
@@ -95,7 +95,7 @@ export default function TabelaPrecos() {
               {visiveis.map((p) => {
                 const c = custos[p.id]
                 return (
-                  <tr key={p.id} className="clickable" title="Clique para corrigir o preço" onClick={() => setCorrigir(p)} style={p.status === 'inativo' ? { opacity: 0.5 } : undefined}>
+                  <tr key={p.id} className={restrito ? undefined : 'clickable'} title={restrito ? undefined : 'Clique para corrigir o preço'} onClick={restrito ? undefined : () => setCorrigir(p)} style={p.status === 'inativo' ? { opacity: 0.5 } : undefined}>
                     <td>
                       <div className="prod-cell">
                         <FotoProduto p={p} size={40} />

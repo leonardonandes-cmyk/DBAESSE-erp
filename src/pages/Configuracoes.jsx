@@ -7,8 +7,8 @@ import { supabase } from '../lib/supabase.js'
 
 const PAPEIS = [
   { v: 'admin', l: 'Administrador', d: 'tudo, inclusive configurações' },
-  { v: 'gestor', l: 'Gestor', d: 'operação completa' },
-  { v: 'operador', l: 'Operador', d: 'uso do dia a dia' },
+  { v: 'gestor', l: 'Gestor', d: 'tudo liberado, menos comissão' },
+  { v: 'operador', l: 'Vendedora', d: 'pedidos, clientes, app, preços e estoque (consulta)' },
 ]
 
 export default function Configuracoes() {
@@ -164,7 +164,6 @@ export default function Configuracoes() {
             </div>
           )}
           <MinhaSenha onTrocar={trocarMinhaSenha} />
-</div>
         </div>
       </section>
 

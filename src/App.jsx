@@ -52,7 +52,9 @@ const GRUPOS = [...new Set(MODULOS.map((m) => m.grupo || ''))]
 
 const TABBAR = ['/', '/pedidos', '/app', '/estoque']
 
-const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Operador' }
+const PAPEL = { admin: 'Administrador', gestor: 'Gestor', operador: 'Vendedora' }
+// Vendedora (papel "operador"): só vendas. Estoque só consulta; preço sem custo/margem.
+export const TELAS_VENDEDORA = ['/pedidos', '/clientes', '/app', '/precos', '/estoque']
 
 export default function App() {
   const [sessao, setSessao] = useState(undefined)
@@ -85,12 +87,15 @@ export default function App() {
   useEffect(() => {
     if (!sessao) { setPerfil(null); return }
     supabase.from('perfis').select('nome,papel,empresas(nome)').eq('id', sessao.user.id).maybeSingle()
-      .then(({ data }) => setPerfil(data))
+      .then(({ data }) => setPerfil(data || { papel: 'operador' }))
     supabase.rpc('sou_dono').then(({ data }) => setSouDono(Boolean(data)))
   }, [sessao])
 
   if (sessao === undefined) return null
   if (!sessao) return <Login />
+  if (!perfil) return null
+  const vendedora = perfil.papel === 'operador'
+  const pode = (m) => (!m.soDono || souDono) && (!vendedora || TELAS_VENDEDORA.includes(m.to))
 
   const EMPRESA = {
     nome: perfil?.empresas?.nome || 'DBAESSE',
@@ -106,10 +111,10 @@ export default function App() {
           <div className="brand-sub">Gestão</div>
         </div>
         <nav className="nav" aria-label="Menu principal">
-          {GRUPOS.map((g) => (
+          {GRUPOS.filter((g) => MODULOS.some((m) => (m.grupo || '') === g && pode(m))).map((g) => (
             <div className="nav-grupo" key={g || 'inicio'}>
               {g && <div className="nav-titulo">{g}</div>}
-              {MODULOS.filter((m) => (m.grupo || '') === g && (!m.soDono || souDono)).map((m) => (
+              {MODULOS.filter((m) => (m.grupo || '') === g && pode(m)).map((m) => (
                 <NavLink key={m.to} to={m.to} end={m.to === '/' || m.exato} className={m.sub ? 'sub' : undefined}>
                   <Icon name={m.icon} size={m.sub ? 16 : 18} />
                   <span>{m.label}</span>
@@ -134,40 +139,51 @@ export default function App() {
           <div className="brand-word">{EMPRESA.nome}</div>
           <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
         </div>
-        <Routes>
-          <Route path="/" element={<Painel usuario={EMPRESA.usuario} />} />
-          <Route path="/produtos" element={<Produtos />} />
-          <Route path="/simulador" element={<Simulador />} />
-          <Route path="/precos" element={<TabelaPrecos />} />
-          <Route path="/lojas" element={<MargemLojas />} />
-          <Route path="/pedidos" element={<Pedidos />} />
-          <Route path="/estoque" element={<Estoque />} />
-          <Route path="/clientes" element={<Clientes />} />
-          <Route path="/financeiro" element={<Financeiro />} />
-          {souDono && <Route path="/financeiro/repasses" element={<Repasses />} />}
-          <Route path="/compras" element={<Compras />} />
-          <Route path="/relatorios" element={<Indicadores />} />
-          <Route path="/indicadores" element={<Indicadores />} />
-          <Route path="/mapa" element={<MapaClientes />} />
-          <Route path="/estoque/encalhados" element={<Encalhados />} />
-          <Route path="/encalhados" element={<Encalhados />} />
-          <Route path="/fichas" element={<FichasTecnicas />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/producao" element={<Producao visao="quadro" />} />
-          <Route path="/producao/mapas" element={<Producao visao="mapas" />} />
-          <Route path="/producao/palmilhas" element={<Producao visao="palmilhas" />} />
-          <Route path="/producao/pcp" element={<Producao visao="pcp" />} />
-          <Route path="/producao/bipar" element={<BiparProducao />} />
-          <Route path="/app" element={<AppVendas />} />
-          {MODULOS.filter((m) => m.fase).map((m) => (
-            <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />
-          ))}
-          <Route path="*" element={<Painel usuario={EMPRESA.usuario} />} />
-        </Routes>
+        {vendedora ? (
+          <Routes>
+            <Route path="/pedidos" element={<Pedidos />} />
+            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/app" element={<AppVendas />} />
+            <Route path="/precos" element={<TabelaPrecos restrito />} />
+            <Route path="/estoque" element={<Estoque restrito />} />
+            <Route path="*" element={<Pedidos />} />
+          </Routes>
+        ) : (
+          <Routes>
+            <Route path="/" element={<Painel usuario={EMPRESA.usuario} />} />
+            <Route path="/produtos" element={<Produtos />} />
+            <Route path="/simulador" element={<Simulador />} />
+            <Route path="/precos" element={<TabelaPrecos />} />
+            <Route path="/lojas" element={<MargemLojas />} />
+            <Route path="/pedidos" element={<Pedidos />} />
+            <Route path="/estoque" element={<Estoque />} />
+            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/financeiro" element={<Financeiro />} />
+            {souDono && <Route path="/financeiro/repasses" element={<Repasses />} />}
+            <Route path="/compras" element={<Compras />} />
+            <Route path="/relatorios" element={<Indicadores />} />
+            <Route path="/indicadores" element={<Indicadores />} />
+            <Route path="/mapa" element={<MapaClientes />} />
+            <Route path="/estoque/encalhados" element={<Encalhados />} />
+            <Route path="/encalhados" element={<Encalhados />} />
+            <Route path="/fichas" element={<FichasTecnicas />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
+            <Route path="/producao" element={<Producao visao="quadro" />} />
+            <Route path="/producao/mapas" element={<Producao visao="mapas" />} />
+            <Route path="/producao/palmilhas" element={<Producao visao="palmilhas" />} />
+            <Route path="/producao/pcp" element={<Producao visao="pcp" />} />
+            <Route path="/producao/bipar" element={<BiparProducao />} />
+            <Route path="/app" element={<AppVendas />} />
+            {MODULOS.filter((m) => m.fase).map((m) => (
+              <Route key={m.to} path={m.to} element={<EmBreve modulo={m} />} />
+            ))}
+            <Route path="*" element={<Painel usuario={EMPRESA.usuario} />} />
+          </Routes>
+        )}
       </main>
 
       <nav className="tabbar" aria-label="Menu">
-        {MODULOS.filter((m) => TABBAR.includes(m.to)).map((m) => (
+        {MODULOS.filter((m) => (vendedora ? ['/pedidos', '/app', '/estoque', '/clientes'] : TABBAR).includes(m.to)).map((m) => (
           <NavLink key={m.to} to={m.to} end={m.to === '/'}>
             <Icon name={m.icon} size={20} />
             {m.curto || m.label}
@@ -183,7 +199,7 @@ export default function App() {
         <div className="sheet-bg" onClick={() => setMais(false)}>
           <nav className="sheet" aria-label="Todos os módulos" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-alca" />
-            {MODULOS.filter((m) => !m.soDono || souDono).map((m) => (
+            {MODULOS.filter(pode).map((m) => (
               <NavLink key={m.to} to={m.to} end={m.to === '/'} onClick={() => setMais(false)}>
                 <Icon name={m.icon} size={20} />
                 <span>{m.label}</span>
