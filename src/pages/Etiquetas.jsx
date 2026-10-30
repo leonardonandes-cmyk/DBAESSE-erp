@@ -129,10 +129,10 @@ export default function Etiquetas() {
         </div>
 
         <div className="card">
-          <div className="card-head"><div><h2>Prévia</h2><div className="card-sub">100×60 mm · Zebra ZD230</div></div></div>
+          <div className="card-head"><div><h2>Prévia</h2><div className="card-sub">{aba === 'unitaria' ? '100×60 mm' : '100×150 mm (rolo da Shopee) · horizontal'} · Zebra ZD230</div></div></div>
           {previa
             ? (previa.tipo === 'unitaria' ? <PreviaUnitaria i={previa} /> : <PreviaColetiva i={previa} />)
-            : <div className="etq etq-vazia">A prévia aparece aqui</div>}
+            : <div className={`etq etq-vazia ${aba === 'coletiva' ? 'etq-deitada' : ''}`}>A prévia aparece aqui</div>}
         </div>
       </section>
 
@@ -192,16 +192,16 @@ function PreviaUnitaria({ i }) {
 
 function PreviaColetiva({ i }) {
   return (
-    <div className="etq">
-      <div className="etq-topo" style={{ flex: 'none', height: '42%' }}>
+    <div className="etq etq-deitada">
+      <div className="etq-topo" style={{ flex: 'none', height: '48%' }}>
         <div className="etq-esq">
-          <div className="etq-ref" style={{ fontSize: '2.4em' }}>{i.ref}</div>
+          <div className="etq-ref">{i.ref}</div>
           {i.tipoProd && <div className="etq-tipo">{i.tipoProd}</div>}
           <div className="etq-cor">{i.cor}</div>
         </div>
-        <div className="etq-dir" style={{ flexBasis: '27%' }}>
+        <div className="etq-dir">
           <small>CAIXA</small>
-          <div className="etq-num" style={{ fontSize: '3em' }}>{i.total}</div>
+          <div className="etq-num" style={{ fontSize: '3.6em' }}>{i.total}</div>
           <small>PARES</small>
         </div>
       </div>

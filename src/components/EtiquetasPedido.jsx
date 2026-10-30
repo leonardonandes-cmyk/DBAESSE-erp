@@ -19,13 +19,12 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
   const num = numeroPedido(pedido.numero)
   const linhas = grupos.flatMap((g) => g.itens.map((i) => ({ produto: g.produto, cor: g.cor, numero: i.skus.numero, sku: i.skus.sku, quantidade: i.quantidade })))
   const nVol = Math.max(0, Math.floor(Number(volumes) || 0))
-  const cidade = cliente?.cidade ? `${cliente.cidade}${cliente.uf ? `/${cliente.uf}` : ''}` : ''
 
   function zpl() {
     if (modo === 'unitaria') return zplDoPedido(linhas, tamanhos)
     return Array.from({ length: nVol }, (_, k) => zplVolume({
-      cliente: pedido.parceiros?.nome || cliente?.nome || 'Cliente', cidade, pedido: num, pares,
-      volume: k + 1, volumes: nVol, transportadora: pedido.transp?.nome,
+      cliente: pedido.parceiros?.nome || cliente?.nome || 'Cliente', cidade: cliente?.cidade, uf: cliente?.uf, pedido: num, pares,
+      volume: k + 1, volumes: nVol,
     })).join('\n')
   }
   const qtd = modo === 'unitaria' ? linhas.reduce((s, l) => s + l.quantidade, 0) : nVol
@@ -69,7 +68,19 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
               <input className="input" type="number" min={1} inputMode="numeric" autoFocus value={volumes}
                 onChange={(e) => setVolumes(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && nVol > 0 && imprimir()} />
             </label>
-            {nVol > 0 && <p className="card-sub" style={{ margin: 0 }}>Sai uma etiqueta por volume: 1/{nVol} até {nVol}/{nVol}.</p>}
+            {nVol > 0 && <p className="card-sub" style={{ margin: 0 }}>Sai uma etiqueta por volume (100×150, rolo da Shopee): 1/{nVol} até {nVol}/{nVol}.</p>}
+            {nVol > 0 && (
+              <div className="etq etq-deitada etq-volume">
+                <div className="etq-vol-nome">{pedido.parceiros?.nome || cliente?.nome}</div>
+                <div className="etq-vol-local">{[cliente?.cidade, cliente?.uf].filter(Boolean).join(' - ') || '—'}</div>
+                <div className="etq-vol-base">
+                  <div><small>PARES</small><b>{pares}</b></div>
+                  <div><small>VOLUME</small><b>1/{nVol}</b></div>
+                  <div className="etq-barras"><div className="etq-listras" style={{ width: '90%' }} /><span>{num}-V1</span></div>
+                </div>
+              </div>
+            )}
+            {cliente && (!cliente.cidade || !cliente.uf) && <p className="form-error" style={{ margin: 0 }}>O cadastro do cliente está sem cidade/estado — a etiqueta sai com "—".</p>}
           </>
         )}
 

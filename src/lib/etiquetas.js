@@ -51,54 +51,70 @@ export function codigoCaixa(ref, sigla, total) {
   return `CX-${t(ref)}-${t(sigla)}-${total}`
 }
 
-// COLETIVA (caixa master / Bulk): REF, tipo, cor | total de pares | grade número × pares | código da caixa
+// COLETIVA — rolo 100×150 mm da Shopee, impressa na HORIZONTAL (lê-se deitada: 150 de largura × 100 de altura).
+// Desenho em coordenadas "deitadas" (1200×800) e convertido para a Zebra (800×1200) com campos girados (R).
+export const ETQ_COLETIVA = { largura: 1200, altura: 800 }
+const PW = 800
+const cab = () => ['^XA', '^CI28', `^PW${PW}`, '^LL1200', '^LH0,0']
+// texto: (x,y) canto de cima/esquerda na etiqueta deitada; h = altura da letra; bw = largura do bloco (centralizar/quebrar)
+function T(x, y, h, w, texto, { bw, al = 'L', linhas = 1, esp = 0 } = {}) {
+  const alt = linhas * h + (linhas - 1) * esp
+  const fb = bw ? `^FB${bw},${linhas},${esp},${al}` : ''
+  return `^FO${PW - y - alt},${x}${fb}^A0R,${h},${w}^FD${texto}^FS`
+}
+const B = (x, y, w, h, e = 3) => `^FO${PW - y - h},${x}^GB${h},${w},${e}^FS`
+const BAR = (x, y, h, mod, texto) => `^FO${PW - y - h},${x}^BY${mod},3^BCR,${h},N,N,N^FD${texto}^FS`
+const largBarras = (texto, mod) => (texto.length * 11 + 35) * mod
+
+// Caixa master (reposição): REF, tipo, cor | CAIXA total PARES | grade número × pares | código da caixa
 export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1 }) {
   const nums = grade.filter((g) => g.pares > 0)
   const total = nums.reduce((s, g) => s + g.pares, 0)
-  const x0 = 30
-  const larg = 740
-  const cel = Math.floor(larg / Math.max(nums.length, 1))
-  const celulas = nums.map((g, i) => {
-    const x = x0 + i * cel
-    return [
-      `^FO${x},218^GB${cel},92,2^FS`,
-      `^FO${x},228^FB${cel},1,0,C^A0N,34,32^FD${t(g.numero)}^FS`,
-      `^FO${x},268^FB${cel},1,0,C^A0N,32,30^FD${g.pares}^FS`,
-    ].join('\n')
+  const cel = Math.floor(1120 / Math.max(nums.length, 1))
+  const fn = nums.length > 8 ? 46 : 58
+  const celulas = nums.flatMap((g, i) => {
+    const x = 40 + i * cel
+    return [B(x, 420, cel, 170, 3), T(x, 438, fn, fn - 4, t(g.numero), { bw: cel, al: 'C' }), T(x, 515, fn, fn - 4, String(g.pares), { bw: cel, al: 'C' })]
   })
   return [
-    '^XA', '^CI28', `^PW${ETQ.largura}`, `^LL${ETQ.altura}`, '^LH0,0',
-    `^FO30,24^A0N,80,80^FD${t(ref)}^FS`,
-    tipo ? `^FO32,112^A0N,28,28^FD${cima(tipo)}^FS` : '',
-    `^FO30,150^FB520,1,0,L^A0N,40,38^FD${cima(cor)}^FS`,
-    '^FO575,20^GB3,180,3^FS',
-    `^FO580,22^FB210,1,0,C^A0N,26,26^FDCAIXA^FS`,
-    `^FO580,52^FB210,1,0,C^A0N,110,100^FD${total}^FS`,
-    `^FO580,162^FB210,1,0,C^A0N,26,26^FDPARES^FS`,
+    ...cab(),
+    T(40, 30, 150, 150, t(ref)),
+    tipo ? T(44, 190, 44, 44, cima(tipo)) : '',
+    T(40, 248, 58, 54, cima(cor), { bw: 700, linhas: 2, esp: 6 }),
+    B(770, 30, 3, 360, 3),
+    T(790, 50, 44, 44, 'CAIXA', { bw: 380, al: 'C' }),
+    T(790, 110, 200, 180, String(total), { bw: 380, al: 'C' }),
+    T(790, 320, 44, 44, 'PARES', { bw: 380, al: 'C' }),
+    B(30, 400, 1140, 3, 3),
     ...celulas,
-    `^FO${xCentroBarras(codigo)},330^BY2,3^BCN,92,N,N,N^FD${t(codigo)}^FS`,
-    `^FO0,436^FB${ETQ.largura},1,0,C^A0N,28,28^FD${t(codigo)}^FS`,
+    BAR(Math.max(40, Math.round((1200 - largBarras(codigo, 3)) / 2)), 615, 120, 3, t(codigo)),
+    T(0, 748, 36, 36, t(codigo), { bw: 1200, al: 'C' }),
     `^PQ${Math.max(1, Number(quantidade) || 1)},0,1,Y`,
     '^XZ',
   ].filter(Boolean).join('\n')
 }
 
-// VOLUME (faturamento): cliente, cidade/UF, pedido, total de pares | VOLUME i/N grande | código do volume
-export function zplVolume({ cliente, cidade, pedido, pares, volume, volumes, transportadora }) {
+// VOLUME do faturamento (dados do cliente), de cima para baixo:
+// NOME DO CLIENTE em destaque → CIDADE - UF → PARES | VOLUME i/N | código pequeno p/ conferência
+export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes }) {
   const codigo = `${t(pedido)}-V${volume}`
+  const frac = `${volume}/${volumes}`
+  const local = [cidade, uf].filter(Boolean).map(cima).join(' - ') || '—'
+  const nome = cima(cliente)
+  const hNome = nome.length > 40 ? 84 : 104
   return [
-    '^XA', '^CI28', `^PW${ETQ.largura}`, `^LL${ETQ.altura}`, '^LH0,0',
-    `^FO30,24^FB520,2,4,L^A0N,46,44^FD${cima(cliente)}^FS`,
-    cidade ? `^FO30,126^FB520,1,0,L^A0N,32,30^FD${cima(cidade)}^FS` : '',
-    `^FO30,172^A0N,30,30^FDPEDIDO ${t(pedido)}^FS`,
-    `^FO30,212^A0N,30,30^FD${pares} PARES NO PEDIDO^FS`,
-    transportadora ? `^FO30,252^FB520,1,0,L^A0N,26,26^FDTRANSP.: ${cima(transportadora)}^FS` : '',
-    '^FO575,20^GB3,290,3^FS',
-    `^FO580,26^FB210,1,0,C^A0N,28,28^FDVOLUME^FS`,
-    `^FO580,70^FB210,1,0,C^A0N,120,${volumes > 9 ? 70 : 100}^FD${volume}/${volumes}^FS`,
-    '^FO20,322^GB760,3,3^FS',
-    `^FO${xCentroBarras(codigo)},340^BY2,3^BCN,84,N,N,N^FD${codigo}^FS`,
-    `^FO0,436^FB${ETQ.largura},1,0,C^A0N,28,28^FD${codigo}^FS`,
+    ...cab(),
+    T(40, 36, hNome, hNome - 6, nome, { bw: 1120, linhas: 2, esp: 10 }),
+    T(40, 270, 72, 66, local, { bw: 1120 }),
+    B(30, 372, 1140, 3, 3),
+    T(40, 400, 36, 36, 'PARES'),
+    T(40, 450, 190, 170, String(pares)),
+    B(400, 400, 3, 360, 3),
+    T(420, 400, 36, 36, 'VOLUME', { bw: 420, al: 'C' }),
+    T(420, 450, 190, frac.length > 5 ? 100 : frac.length > 3 ? 130 : 170, frac, { bw: 420, al: 'C' }),
+    B(860, 400, 3, 360, 3),
+    BAR(890, 470, 120, 2, codigo),
+    T(870, 610, 30, 28, codigo, { bw: 310, al: 'C' }),
     '^XZ',
   ].filter(Boolean).join('\n')
 }
