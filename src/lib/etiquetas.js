@@ -32,18 +32,30 @@ function xCentroBarras(texto, modulo = 2) {
 
 // Desenho de linha do calçado → gráfico ZPL (^GFA, 1 bit). Converte no navegador; guarda em cache por URL.
 const cacheGF = {}
-export function desenhoParaZpl(url, maxW = 400, maxH = 184) {
+export function desenhoParaZpl(url, maxW = 408, maxH = 190) {
   if (!url) return Promise.resolve(null)
   if (cacheGF[url]) return cacheGF[url]
   cacheGF[url] = new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
-      const k = Math.min(maxW / img.width, maxH / img.height)
-      const w = Math.max(8, Math.floor((img.width * k) / 8) * 8)
-      const h = Math.max(1, Math.round(img.height * k))
+      // 1) corta a margem branca do desenho (para ele ocupar o quadro todo)
+      const o = document.createElement('canvas'); o.width = img.width; o.height = img.height
+      const og = o.getContext('2d'); og.fillStyle = '#fff'; og.fillRect(0, 0, o.width, o.height); og.drawImage(img, 0, 0)
+      const od = og.getImageData(0, 0, o.width, o.height).data
+      let x0 = o.width, y0 = o.height, x1 = -1, y1 = -1
+      for (let y = 0; y < o.height; y++) for (let x = 0; x < o.width; x++) {
+        const q = (y * o.width + x) * 4
+        if ((od[q] * 299 + od[q + 1] * 587 + od[q + 2] * 114) / 1000 < 200) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y }
+      }
+      if (x1 < 0) { x0 = 0; y0 = 0; x1 = o.width - 1; y1 = o.height - 1 }
+      const cw = x1 - x0 + 1, ch = y1 - y0 + 1
+      // 2) encaixa no quadro o maior possível
+      const k = Math.min(maxW / cw, maxH / ch)
+      const w = Math.max(8, Math.floor((cw * k) / 8) * 8)
+      const h = Math.max(1, Math.round(ch * k))
       const c = document.createElement('canvas'); c.width = w; c.height = h
-      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h)
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(o, x0, y0, cw, ch, 0, 0, w, h)
       const px = g.getImageData(0, 0, w, h).data
       const bpr = w / 8
       let hex = ''
