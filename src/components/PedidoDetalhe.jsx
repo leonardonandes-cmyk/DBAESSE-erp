@@ -63,7 +63,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
     try {
       await mudarStatus(pedido.id, status)
       await onMudou(true)
-      if (status === 'faturado') setEtiquetas('volumes') // faturou → pergunta quantos volumes e imprime a coletiva
+      if (status === 'faturado') setEtiquetas('volumes') // faturou → pergunta quantos volumes e imprime o romaneio de envio
     } catch (e) { setErro(e.message) } finally { setOcupado(false) }
   }
 
@@ -184,8 +184,8 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
               <button type="button" className="btn" onClick={() => setProgramar(true)}>Gerar programação</button>
             )}
             {prog && <button type="button" className="btn" onClick={() => navigate(`/producao/mapas?imprimir=${prog.id}`)}>Programação {numeroMapa(prog.numero)}</button>}
-            {prog && itens && pedido.status !== 'cancelado' && <button type="button" className="btn" onClick={() => setEtiquetas('unitaria')}>Imprimir etiquetas</button>}
-            {['faturado', 'entregue'].includes(pedido.status) && itens && <button type="button" className="btn" onClick={() => setEtiquetas('volumes')}>Etiquetas dos volumes</button>}
+            {prog && itens && pedido.status !== 'cancelado' && <button type="button" className="btn" onClick={() => setEtiquetas('unitaria')}>Etiquetas unitárias</button>}
+            {['faturado', 'entregue'].includes(pedido.status) && itens && <button type="button" className="btn" onClick={() => setEtiquetas('volumes')}>Romaneio de envio</button>}
             <button type="button" className="btn" onClick={copiarResumo}>{copiado ? 'Copiado ✓' : 'Copiar resumo'}</button>
             {editando
               ? <button type="button" className="btn" disabled={ocupado} onClick={salvarDados}>Salvar dados</button>

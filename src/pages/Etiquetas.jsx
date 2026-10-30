@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import SeletorGrade from '../components/SeletorGrade.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
-import { listarCores, listarProdutos } from '../lib/produtos.js'
+import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
 import {
-  baixarZpl, codigoCaixa, enviarParaZebra, listarTamanhos, salvarServidor, servidorEtiquetas, zplColetiva, zplUnitaria,
+  baixarZpl, codigoCaixa, enviarParaZebra, listarTamanhos, salvarServidor, servidorEtiquetas, zplColetiva, zplUnitarias,
 } from '../lib/etiquetas.js'
 
 /*
@@ -60,14 +60,16 @@ export default function Etiquetas() {
   }
 
   const totalEtq = fila.reduce((s, i) => s + (Number(i.quantidade) || 0), 0)
-  const zpl = () => fila.map((i) => (i.tipo === 'unitaria'
-    ? zplUnitaria({ ...i, tipo: i.tipoProd })
-    : zplColetiva({ ...i, tipo: i.tipoProd }))).join('\n')
+  async function zpl() {
+    const un = fila.filter((i) => i.tipo === 'unitaria').map((i) => ({ ...i, tipo: i.tipoProd }))
+    const co = fila.filter((i) => i.tipo === 'coletiva').map((i) => zplColetiva({ ...i, tipo: i.tipoProd }))
+    return [un.length ? await zplUnitarias(un) : '', ...co].filter(Boolean).join('\n')
+  }
 
   async function imprimir() {
     setErro(''); setMsg(''); setEnviando(true)
     try {
-      await enviarParaZebra(zpl())
+      await enviarParaZebra(await zpl())
       setMsg(`${totalEtq} etiqueta(s) enviada(s) para a Zebra.`)
       setFila([])
     } catch (e) { setErro(e.message) }
@@ -140,7 +142,7 @@ export default function Etiquetas() {
         <div className="card-head">
           <div><h2>Fila de impressão</h2><div className="card-sub">{totalEtq} etiqueta(s)</div></div>
           <div className="actions">
-            <button className="btn" disabled={!fila.length} onClick={() => baixarZpl(zpl(), `etiquetas-${aba}.zpl`)}>Baixar .zpl</button>
+            <button className="btn" disabled={!fila.length} onClick={async () => baixarZpl(await zpl(), `etiquetas-${aba}.zpl`)}>Baixar .zpl</button>
             <button className="btn btn-dark" disabled={!fila.length || enviando} onClick={imprimir}>{enviando ? 'Enviando…' : `Imprimir ${totalEtq || ''}`}</button>
           </div>
         </div>
@@ -172,17 +174,21 @@ function Barras({ texto }) {
 }
 
 function PreviaUnitaria({ i }) {
+  const desenho = desenhoDoTipo(i.tipoProd)
   return (
     <div className="etq">
       <div className="etq-topo">
-        <div className="etq-esq">
-          <div className="etq-ref">{i.ref}</div>
-          {i.tipoProd && <div className="etq-tipo">{i.tipoProd}</div>}
-          <div className="etq-cor">{i.cor}</div>
+        <div className="etq-esq etq-esq-v8">
+          {desenho && <div className="etq-quadro"><img src={desenho} alt="" /></div>}
+          <div className="etq-esq-txt">
+            <div className="etq-ref">{i.ref}</div>
+            <div className="etq-cor">{i.cor}</div>
+          </div>
         </div>
         <div className="etq-dir">
           <div className="etq-num">{i.numero}</div>
           {(i.usa || i.eur) && <div className="etq-intl">USA {i.usa} | EUR {i.eur}</div>}
+          {i.tipoProd && <div className="etq-tipo" style={{ marginTop: '.3em' }}>{i.tipoProd}</div>}
         </div>
       </div>
       <Barras texto={`SKU: ${i.sku}`} />

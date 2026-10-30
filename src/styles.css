@@ -1562,3 +1562,8 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .etq-vol-base > div + div { border-left: 2px solid #111; }
 .etq-vol-base small { font-size: .8em; font-weight: 700; letter-spacing: .06em; }
 .etq-vol-base b { font-size: 3.4em; font-weight: 800; line-height: 1; }
+.etq-esq-v8 { flex-direction: row; gap: 4%; align-items: flex-start; }
+.etq-quadro { flex: 0 0 40%; aspect-ratio: 1; border: 1.5px solid #111; display: grid; place-items: center; padding: 4%; }
+.etq-quadro img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.etq-esq-txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.etq-esq-v8 .etq-ref { font-size: 2.6em; }

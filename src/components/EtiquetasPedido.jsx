@@ -6,7 +6,7 @@ import { baixarZpl, enviarParaZebra, listarTamanhos, zplDoPedido, zplVolume } fr
 /*
   Etiquetas do PEDIDO.
   modo 'unitaria' → pedido programado: uma etiqueta por par, gerada sozinha a partir dos itens.
-  modo 'volumes'  → ao faturar: pergunta quantos volumes e imprime uma etiqueta por volume (1/N, 2/N…). Sem caixa padrão.
+  modo 'volumes'  → ROMANEIO DE ENVIO ao faturar: pergunta quantos volumes e imprime um por volume (1/N, 2/N…), com os dados do cliente. Sem caixa padrão.
 */
 export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, onFechar }) {
   const [tamanhos, setTamanhos] = useState({})
@@ -20,7 +20,7 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
   const linhas = grupos.flatMap((g) => g.itens.map((i) => ({ produto: g.produto, cor: g.cor, numero: i.skus.numero, sku: i.skus.sku, quantidade: i.quantidade })))
   const nVol = Math.max(0, Math.floor(Number(volumes) || 0))
 
-  function zpl() {
+  async function zpl() {
     if (modo === 'unitaria') return zplDoPedido(linhas, tamanhos)
     return Array.from({ length: nVol }, (_, k) => zplVolume({
       cliente: pedido.parceiros?.nome || cliente?.nome || 'Cliente', cidade: cliente?.cidade, uf: cliente?.uf, pedido: num, pares,
@@ -31,7 +31,7 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
 
   async function imprimir() {
     setErro(''); setOk(''); setEnviando(true)
-    try { await enviarParaZebra(zpl()); setOk(`${qtd} etiqueta(s) enviada(s) para a Zebra.`) } catch (e) { setErro(e.message) }
+    try { await enviarParaZebra(await zpl()); setOk(`${qtd} ${modo === 'unitaria' ? 'etiqueta(s)' : 'romaneio(s)'} enviado(s) para a Zebra.`) } catch (e) { setErro(e.message) }
     setEnviando(false)
   }
 
@@ -41,7 +41,7 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
         <div className="modal-head">
           <div>
             <div className="eyebrow">{num} · {pedido.parceiros?.nome || 'Sem cliente'}</div>
-            <h2>{modo === 'unitaria' ? 'Etiquetas dos pares' : 'Etiquetas dos volumes'}</h2>
+            <h2>{modo === 'unitaria' ? 'Etiquetas unitárias' : 'Romaneio de envio'}</h2>
           </div>
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
@@ -68,7 +68,7 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
               <input className="input" type="number" min={1} inputMode="numeric" autoFocus value={volumes}
                 onChange={(e) => setVolumes(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && nVol > 0 && imprimir()} />
             </label>
-            {nVol > 0 && <p className="card-sub" style={{ margin: 0 }}>Sai uma etiqueta por volume (100×150, rolo da Shopee): 1/{nVol} até {nVol}/{nVol}.</p>}
+            {nVol > 0 && <p className="card-sub" style={{ margin: 0 }}>Sai um romaneio por volume (100×150, rolo da Shopee): 1/{nVol} até {nVol}/{nVol}.</p>}
             {nVol > 0 && (
               <div className="etq etq-deitada etq-volume">
                 <div className="etq-vol-nome">{pedido.parceiros?.nome || cliente?.nome}</div>
@@ -80,7 +80,7 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
                 </div>
               </div>
             )}
-            {cliente && (!cliente.cidade || !cliente.uf) && <p className="form-error" style={{ margin: 0 }}>O cadastro do cliente está sem cidade/estado — a etiqueta sai com "—".</p>}
+            {cliente && (!cliente.cidade || !cliente.uf) && <p className="form-error" style={{ margin: 0 }}>O cadastro do cliente está sem cidade/estado — o romaneio sai com "—".</p>}
           </>
         )}
 
@@ -89,7 +89,7 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
 
         <div className="actions" style={{ justifyContent: 'flex-end' }}>
           <button type="button" className="btn" onClick={onFechar}>{ok ? 'Fechar' : 'Agora não'}</button>
-          <button type="button" className="btn" disabled={!qtd} onClick={() => baixarZpl(zpl(), `${num}-${modo}.zpl`)}>Baixar .zpl</button>
+          <button type="button" className="btn" disabled={!qtd} onClick={async () => baixarZpl(await zpl(), `${num}-${modo}.zpl`)}>Baixar .zpl</button>
           <button type="button" className="btn btn-dark" disabled={!qtd || enviando} onClick={imprimir}>{enviando ? 'Enviando…' : `Imprimir ${qtd || ''}`}</button>
         </div>
       </div>

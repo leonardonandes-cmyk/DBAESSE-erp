@@ -2,6 +2,7 @@
 // Padrão das duas etiquetas: 100×60 mm (800×480 pontos), o mesmo rolo para unitária e coletiva.
 // A impressão vai para o ETIQUETAS-V2 rodando no PC da fábrica (o PC ligado na Zebra).
 import { supabase } from './supabase.js'
+import { desenhoDoTipo } from './produtos.js'
 
 export const ETQ = { largura: 800, altura: 480 }
 const SERV_PADRAO = 'http://localhost:9192'
@@ -29,22 +30,74 @@ function xCentroBarras(texto, modulo = 2) {
   return Math.max(10, Math.round((ETQ.largura - larg) / 2))
 }
 
-// UNITÁRIA (caixa do par): REF grande, tipo, cor | número enorme + USA/EUR | código de barras do SKU
-export function zplUnitaria({ ref, tipo, cor, numero, sku, usa, eur, quantidade = 1 }) {
+// Desenho de linha do calçado → gráfico ZPL (^GFA, 1 bit). Converte no navegador; guarda em cache por URL.
+const cacheGF = {}
+export function desenhoParaZpl(url, maxW = 184, maxH = 184) {
+  if (!url) return Promise.resolve(null)
+  if (cacheGF[url]) return cacheGF[url]
+  cacheGF[url] = new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const k = Math.min(maxW / img.width, maxH / img.height)
+      const w = Math.max(8, Math.floor((img.width * k) / 8) * 8)
+      const h = Math.max(1, Math.round(img.height * k))
+      const c = document.createElement('canvas'); c.width = w; c.height = h
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h)
+      const px = g.getImageData(0, 0, w, h).data
+      const bpr = w / 8
+      let hex = ''
+      for (let y = 0; y < h; y++) {
+        for (let b = 0; b < bpr; b++) {
+          let v = 0
+          for (let bit = 0; bit < 8; bit++) {
+            const o = (y * w + b * 8 + bit) * 4
+            const lum = (px[o] * 299 + px[o + 1] * 587 + px[o + 2] * 114) / 1000
+            if (px[o + 3] > 40 && lum < 150) v |= 0x80 >> bit
+          }
+          hex += v.toString(16).padStart(2, '0').toUpperCase()
+        }
+      }
+      resolve({ w, h, gf: `^GFA,${bpr * h},${bpr * h},${bpr},${hex}` })
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+  return cacheGF[url]
+}
+
+// UNITÁRIA (caixa do par) — padrão aprovado do ETIQUETAS-V2 (v8), 100×60:
+// esquerda: DESENHO em quadro + REF grande + COR · direita: NÚMERO enorme, USA | EUR e TIPO · rodapé: código de barras do SKU
+export function zplUnitaria({ ref, tipo, cor, numero, sku, usa, eur, quantidade = 1, desenho }) {
+  const Q = 196 // quadro do desenho
+  const xTxt = desenho ? 24 + Q + 18 : 30
+  const bwTxt = 505 - xTxt
   return [
     '^XA', '^CI28', `^PW${ETQ.largura}`, `^LL${ETQ.altura}`, '^LH0,0',
-    `^FO30,28^A0N,96,96^FD${t(ref)}^FS`,
-    tipo ? `^FO32,132^A0N,30,30^FD${cima(tipo)}^FS` : '',
-    `^FO30,178^FB470,2,4,L^A0N,42,40^FD${cima(cor)}^FS`,
+    desenho ? `^FO24,24^GB${Q},${Q},2^FS` : '',
+    desenho ? `^FO${24 + Math.round((Q - desenho.w) / 2)},${24 + Math.round((Q - desenho.h) / 2)}${desenho.gf}^FS` : '',
+    `^FO${xTxt},26^A0N,${desenho ? 100 : 110},${desenho ? 92 : 100}^FD${t(ref)}^FS`,
+    `^FO${xTxt},${desenho ? 140 : 150}^FB${bwTxt},2,4,L^A0N,44,40^FD${cima(cor)}^FS`,
     '^FO515,20^GB3,295,3^FS',
-    `^FO520,24^FB270,1,0,C^A0N,205,175^FD${t(numero)}^FS`,
-    (usa || eur) ? `^FO520,250^FB270,1,0,C^A0N,32,30^FDUSA ${t(usa)} | EUR ${t(eur)}^FS` : '',
+    `^FO520,22^FB270,1,0,C^A0N,190,165^FD${t(numero)}^FS`,
+    (usa || eur) ? `^FO520,218^FB270,1,0,C^A0N,30,28^FDUSA ${t(usa)} | EUR ${t(eur)}^FS` : '',
+    tipo ? `^FO520,262^FB270,1,0,C^A0N,28,26^FD${cima(tipo)}^FS` : '',
     '^FO20,328^GB760,3,3^FS',
     `^FO${xCentroBarras(sku)},346^BY2,3^BCN,78,N,N,N^FD${t(sku)}^FS`,
     `^FO0,436^FB${ETQ.largura},1,0,C^A0N,28,28^FDSKU: ${t(sku)}^FS`,
     `^PQ${Math.max(1, Number(quantidade) || 1)},0,1,Y`,
     '^XZ',
   ].filter(Boolean).join('\n')
+}
+
+// Monta as unitárias já com o desenho de cada tipo (mocassim, fisherman…). Sem desenho do tipo = sai sem quadro.
+export async function zplUnitarias(linhas) {
+  const out = []
+  for (const l of linhas) {
+    const desenho = await desenhoParaZpl(desenhoDoTipo(l.tipo))
+    out.push(zplUnitaria({ ...l, desenho }))
+  }
+  return out.join('\n')
 }
 
 export function codigoCaixa(ref, sigla, total) {
@@ -94,7 +147,7 @@ export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1 }) {
   ].filter(Boolean).join('\n')
 }
 
-// VOLUME do faturamento (dados do cliente), de cima para baixo:
+// ROMANEIO DE ENVIO (ao faturar, um por volume, dados do cliente), de cima para baixo:
 // NOME DO CLIENTE em destaque → CIDADE - UF → PARES | VOLUME i/N | código pequeno p/ conferência
 export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes }) {
   const codigo = `${t(pedido)}-V${volume}`
@@ -121,10 +174,10 @@ export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes 
 
 // Unitárias de um pedido: uma etiqueta por par, a partir dos itens (sku, número, quantidade)
 export function zplDoPedido(linhas, tamanhos) {
-  return linhas.filter((l) => l.quantidade > 0).map((l) => zplUnitaria({
+  return zplUnitarias(linhas.filter((l) => l.quantidade > 0).map((l) => ({
     ref: l.produto?.ref, tipo: l.produto?.tipo, cor: l.cor?.nome, numero: l.numero, sku: l.sku,
     usa: tamanhos[l.numero]?.usa, eur: tamanhos[l.numero]?.eur, quantidade: l.quantidade,
-  })).join('\n')
+  })))
 }
 
 // Manda o ZPL para o servidor do ETIQUETAS-V2 (PC da Zebra)
