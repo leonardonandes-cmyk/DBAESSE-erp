@@ -23,6 +23,7 @@ import MapaClientes from './pages/MapaClientes.jsx'
 import Encalhados from './pages/Encalhados.jsx'
 import Repasses from './pages/Repasses.jsx'
 import FichasTecnicas from './pages/FichasTecnicas.jsx'
+import Etiquetas from './pages/Etiquetas.jsx'
 import BiparProducao from './components/BiparProducao.jsx'
 
 // Menu = mapa dos módulos. "fase" marca o que ainda não foi construído.
@@ -40,6 +41,7 @@ export const MODULOS = [
   { to: '/producao/bipar', icon: 'leitor', label: 'Bipar fichas', grupo: 'Operações', sub: true },
   { to: '/estoque', icon: 'estoque', label: 'Estoque', grupo: 'Operações', exato: true },
   { to: '/estoque/encalhados', icon: 'alerta', label: 'Produtos encalhados', grupo: 'Operações', sub: true },
+  { to: '/etiquetas', icon: 'leitor', label: 'Etiquetas', grupo: 'Operações' },
   { to: '/compras', icon: 'compras', label: 'Compras', grupo: 'Operações' },
   { to: '/produtos', icon: 'produtos', label: 'Produtos', grupo: 'Operações' },
   { to: '/fichas', icon: 'ficha', label: 'Fichas técnicas', grupo: 'Operações', sub: true },
@@ -177,6 +179,7 @@ export default function App() {
             <Route path="/estoque/encalhados" element={<Encalhados />} />
             <Route path="/encalhados" element={<Encalhados />} />
             <Route path="/fichas" element={<FichasTecnicas />} />
+            <Route path="/etiquetas" element={<Etiquetas />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
             <Route path="/producao" element={<Producao visao="quadro" />} />
             <Route path="/producao/mapas" element={<Producao visao="mapas" />} />

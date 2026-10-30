@@ -1530,3 +1530,26 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .ped-total td { font-weight: 700; background: var(--surface-2); border-top: 1px solid var(--line); }
 @media (max-width: 720px) { .ped-filtros > select.input { flex: 1 1 45%; min-width: 0; } }
 .user button + button { margin-left: 0; }
+
+/* ===== Etiquetas (reposição) — prévia em escala da etiqueta 100×60 ===== */
+.etq-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .etq-grid { grid-template-columns: 1fr; } }
+.etq { aspect-ratio: 100 / 60; width: 100%; max-width: 460px; background: #fff; color: #111; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.08); padding: 4% 4% 3%; display: flex; flex-direction: column; font-family: Arial, Helvetica, sans-serif; font-size: clamp(9px, 2.6vw, 14px); container-type: inline-size; }
+.etq-vazia { align-items: center; justify-content: center; color: var(--muted); font-family: inherit; border-style: dashed; box-shadow: none; }
+.etq-topo { display: flex; flex: 1; min-height: 0; border-bottom: 2px solid #111; }
+.etq-esq { flex: 1; min-width: 0; padding-right: 3%; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }
+.etq-dir { flex: 0 0 34%; border-left: 2px solid #111; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.etq-dir small { font-size: .75em; font-weight: 700; letter-spacing: .08em; }
+.etq-ref { font-size: 3em; font-weight: 800; line-height: 1; }
+.etq-tipo { font-size: .9em; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.etq-cor { font-size: 1.25em; font-weight: 700; text-transform: uppercase; line-height: 1.1; }
+.etq-num { font-size: 5.2em; font-weight: 800; line-height: .95; }
+.etq-intl { font-size: .85em; font-weight: 600; }
+.etq-grade { display: flex; margin: 3% 0; border: 1.5px solid #111; }
+.etq-grade > div { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 2px 0; }
+.etq-grade > div + div { border-left: 1.5px solid #111; }
+.etq-grade b { font-size: 1em; } .etq-grade span { font-size: .95em; font-weight: 600; }
+.etq-barras { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 3%; }
+.etq-listras { width: 52%; height: 2.4em; background: repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px, #111 4px 5px, transparent 5px 8px, #111 8px 11px, transparent 11px 12px); }
+.etq-barras span { font-size: .8em; font-weight: 600; }
