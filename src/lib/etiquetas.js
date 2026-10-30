@@ -83,6 +83,34 @@ export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1 }) {
   ].filter(Boolean).join('\n')
 }
 
+// VOLUME (faturamento): cliente, cidade/UF, pedido, total de pares | VOLUME i/N grande | código do volume
+export function zplVolume({ cliente, cidade, pedido, pares, volume, volumes, transportadora }) {
+  const codigo = `${t(pedido)}-V${volume}`
+  return [
+    '^XA', '^CI28', `^PW${ETQ.largura}`, `^LL${ETQ.altura}`, '^LH0,0',
+    `^FO30,24^FB520,2,4,L^A0N,46,44^FD${cima(cliente)}^FS`,
+    cidade ? `^FO30,126^FB520,1,0,L^A0N,32,30^FD${cima(cidade)}^FS` : '',
+    `^FO30,172^A0N,30,30^FDPEDIDO ${t(pedido)}^FS`,
+    `^FO30,212^A0N,30,30^FD${pares} PARES NO PEDIDO^FS`,
+    transportadora ? `^FO30,252^FB520,1,0,L^A0N,26,26^FDTRANSP.: ${cima(transportadora)}^FS` : '',
+    '^FO575,20^GB3,290,3^FS',
+    `^FO580,26^FB210,1,0,C^A0N,28,28^FDVOLUME^FS`,
+    `^FO580,70^FB210,1,0,C^A0N,120,${volumes > 9 ? 70 : 100}^FD${volume}/${volumes}^FS`,
+    '^FO20,322^GB760,3,3^FS',
+    `^FO${xCentroBarras(codigo)},340^BY2,3^BCN,84,N,N,N^FD${codigo}^FS`,
+    `^FO0,436^FB${ETQ.largura},1,0,C^A0N,28,28^FD${codigo}^FS`,
+    '^XZ',
+  ].filter(Boolean).join('\n')
+}
+
+// Unitárias de um pedido: uma etiqueta por par, a partir dos itens (sku, número, quantidade)
+export function zplDoPedido(linhas, tamanhos) {
+  return linhas.filter((l) => l.quantidade > 0).map((l) => zplUnitaria({
+    ref: l.produto?.ref, tipo: l.produto?.tipo, cor: l.cor?.nome, numero: l.numero, sku: l.sku,
+    usa: tamanhos[l.numero]?.usa, eur: tamanhos[l.numero]?.eur, quantidade: l.quantidade,
+  })).join('\n')
+}
+
 // Manda o ZPL para o servidor do ETIQUETAS-V2 (PC da Zebra)
 export async function enviarParaZebra(zpl) {
   const base = servidorEtiquetas()

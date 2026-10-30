@@ -3,6 +3,7 @@ import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import TituloForm from './TituloForm.jsx'
 import ImprimirPedido from './ImprimirPedido.jsx'
 import ProgramarPedido from './ProgramarPedido.jsx'
+import EtiquetasPedido from './EtiquetasPedido.jsx'
 import { useNavigate } from 'react-router-dom'
 import { programacaoDoPedido, numeroMapa } from '../lib/mapas.js'
 import { titulosDoPedido } from '../lib/financeiro.js'
@@ -25,6 +26,7 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   const navigate = useNavigate()
   const [prog, setProg] = useState(undefined) // undefined = carregando · null = não tem
   const [programar, setProgramar] = useState(false)
+  const [etiquetas, setEtiquetas] = useState(null) // 'unitaria' | 'volumes'
   useEffect(() => { programacaoDoPedido(pedido.id).then(setProg).catch(() => setProg(null)) }, [pedido.id])
 
   useEffect(() => { titulosDoPedido(pedido.id).then(setTitulos).catch(() => setTitulos([])) }, [pedido.id, pedido.status])
@@ -58,7 +60,11 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
   async function acao(status, confirmar) {
     if (confirmar && !window.confirm(confirmar)) return
     setErro(''); setOcupado(true)
-    try { await mudarStatus(pedido.id, status); await onMudou(true) } catch (e) { setErro(e.message) } finally { setOcupado(false) }
+    try {
+      await mudarStatus(pedido.id, status)
+      await onMudou(true)
+      if (status === 'faturado') setEtiquetas('volumes') // faturou → pergunta quantos volumes e imprime a coletiva
+    } catch (e) { setErro(e.message) } finally { setOcupado(false) }
   }
 
   async function salvarDados() {
@@ -178,6 +184,8 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
               <button type="button" className="btn" onClick={() => setProgramar(true)}>Gerar programação</button>
             )}
             {prog && <button type="button" className="btn" onClick={() => navigate(`/producao/mapas?imprimir=${prog.id}`)}>Programação {numeroMapa(prog.numero)}</button>}
+            {prog && itens && pedido.status !== 'cancelado' && <button type="button" className="btn" onClick={() => setEtiquetas('unitaria')}>Imprimir etiquetas</button>}
+            {['faturado', 'entregue'].includes(pedido.status) && itens && <button type="button" className="btn" onClick={() => setEtiquetas('volumes')}>Etiquetas dos volumes</button>}
             <button type="button" className="btn" onClick={copiarResumo}>{copiado ? 'Copiado ✓' : 'Copiar resumo'}</button>
             {editando
               ? <button type="button" className="btn" disabled={ocupado} onClick={salvarDados}>Salvar dados</button>
@@ -204,6 +212,11 @@ export default function PedidoDetalhe({ pedido, produtos, cores, parceiros = [],
             onCorrigir={() => { setProgramar(false); onCorrigir?.() }}
             onAgoraNao={() => setProgramar(false)}
             onFinalizado={(r) => { setProgramar(false); onMudou?.(); navigate(`/producao/mapas?imprimir=${r.id}`) }} />
+        </div>
+      )}
+      {etiquetas && itens && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <EtiquetasPedido modo={etiquetas} pedido={pedido} grupos={grupos} cliente={clienteCad} pares={pares} onFechar={() => setEtiquetas(null)} />
         </div>
       )}
       {completar && clienteCad && (
