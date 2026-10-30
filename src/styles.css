@@ -1588,3 +1588,13 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .desenho-quadro.vazio { border-style: dashed; border-color: var(--line); }
 .desenho-quadro.vazio span { font-size: 12px; color: var(--muted); }
 .aviso-desenho { margin: 6px 0 0; padding: 6px 10px; border-radius: 8px; background: var(--warn-soft, #FBF1DE); color: var(--warn, #8A5A00); font-size: 13px; }
+/* status do desenho: laranja = falta · preto = ok */
+.desenho-card.sem { border: 2px solid #E8772E; background: #FFF6EE; }
+.desenho-card.com { border: 2px solid #151515; }
+.desenho-selo { margin-left: auto; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.desenho-card.sem .desenho-selo { background: #E8772E; color: #fff; }
+.desenho-card.com .desenho-selo { background: #151515; color: #fff; }
+.desenho-card.sem .desenho-quadro.vazio { border-color: #E8772E; }
+.desenho-card.sem .desenho-quadro.vazio span { color: #C25E1B; font-weight: 600; }
+.btn-laranja { background: #E8772E; border-color: #E8772E; color: #fff; }
+.btn-laranja:hover { background: #CF6620; border-color: #CF6620; }

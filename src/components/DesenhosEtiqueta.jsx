@@ -75,16 +75,17 @@ export default function DesenhosEtiqueta({ produtos, onMudou }) {
         {lista.map((p) => {
           const d = desenhoDe(p)
           return (
-            <div key={p.id} className="desenho-card">
+            <div key={p.id} className={`desenho-card ${d ? 'com' : 'sem'}`}>
               <div className="desenho-topo">
                 <FotoProduto p={p} className="sm" size={18} />
                 <div><b>REF {p.ref}</b><span>{p.tipo || p.nome}</span></div>
+                <span className="desenho-selo">{d ? 'com desenho' : 'sem desenho'}</span>
               </div>
               <div className={`desenho-quadro ${d ? '' : 'vazio'}`}>
                 {d ? <img src={d} alt={`Desenho REF ${p.ref}`} loading="lazy" /> : <span>sem desenho</span>}
               </div>
               {!p.desenho_url && d && <small className="muted">usando o desenho padrão do tipo</small>}
-              <button className={`btn btn-sm ${p.desenho_url ? '' : 'btn-dark'}`} disabled={enviando === p.id} onClick={() => escolher(p)}>
+              <button className={`btn btn-sm ${d ? 'btn-dark' : 'btn-laranja'}`} disabled={enviando === p.id} onClick={() => escolher(p)}>
                 {enviando === p.id ? 'Enviando…' : p.desenho_url ? 'Substituir desenho' : 'Incluir desenho'}
               </button>
             </div>
