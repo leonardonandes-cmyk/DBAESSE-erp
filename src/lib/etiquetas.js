@@ -147,27 +147,23 @@ export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1 }) {
   ].filter(Boolean).join('\n')
 }
 
-// ROMANEIO DE ENVIO (ao faturar, um por volume, dados do cliente), de cima para baixo:
-// NOME DO CLIENTE em destaque → CIDADE - UF → PARES | VOLUME i/N | código pequeno p/ conferência
+// ROMANEIO DE ENVIO (ao faturar, um por volume). FOCO: NOME DO CLIENTE → CIDADE - ESTADO, bem grandes.
+// Rodapé pequeno: pares · volume i/N · código de conferência.
 export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes }) {
   const codigo = `${t(pedido)}-V${volume}`
-  const frac = `${volume}/${volumes}`
-  const local = [cidade, uf].filter(Boolean).map(cima).join(' - ') || '—'
   const nome = cima(cliente)
-  const hNome = nome.length > 40 ? 84 : 104
+  const local = [cidade, uf].filter(Boolean).map(cima).join(' - ') || '—'
+  const hN = nome.length > 30 ? 118 : nome.length > 18 ? 140 : 160
+  const hL = local.length > 30 ? 64 : local.length > 24 ? 74 : local.length > 16 ? 90 : 110 // cidade - UF numa linha só
   return [
     ...cab(),
-    T(40, 36, hNome, hNome - 6, nome, { bw: 1120, linhas: 2, esp: 10 }),
-    T(40, 270, 72, 66, local, { bw: 1120 }),
-    B(30, 372, 1140, 3, 3),
-    T(30, 400, 36, 36, 'PARES', { bw: 370, al: 'C' }),
-    T(30, 460, 170, String(pares).length > 3 ? 110 : 140, String(pares), { bw: 370, al: 'C' }),
-    B(400, 400, 3, 360, 3),
-    T(410, 400, 36, 36, 'VOLUME', { bw: 450, al: 'C' }),
-    T(410, 460, 170, frac.length > 5 ? 90 : frac.length > 3 ? 115 : 140, frac, { bw: 450, al: 'C' }),
-    B(860, 400, 3, 360, 3),
-    BAR(890, 470, 120, 2, codigo),
-    T(870, 610, 30, 28, codigo, { bw: 310, al: 'C' }),
+    T(40, 40, hN, hN - 10, nome, { bw: 1120, linhas: 2, esp: 14 }),
+    T(40, 40 + hN * 2 + 14 + 40, hL, hL - 6, local, { bw: 1120 }),
+    B(30, 640, 1140, 3, 3),
+    T(40, 676, 44, 42, `PARES: ${pares}`),
+    T(380, 676, 44, 42, `VOLUME: ${volume}/${volumes}`),
+    BAR(790, 662, 80, 2, codigo),
+    T(780, 748, 26, 26, codigo, { bw: 400, al: 'C' }),
     '^XZ',
   ].filter(Boolean).join('\n')
 }

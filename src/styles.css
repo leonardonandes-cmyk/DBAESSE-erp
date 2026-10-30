@@ -1554,16 +1554,8 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .etq-listras { width: 52%; height: 2.4em; background: repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px, #111 4px 5px, transparent 5px 8px, #111 8px 11px, transparent 11px 12px); }
 .etq-barras span { font-size: .8em; font-weight: 600; }
 .etq-deitada { aspect-ratio: 150 / 100; max-width: 480px; }
-.etq-volume { gap: 2%; }
-.etq-vol-nome { font-size: 2.3em; font-weight: 800; line-height: 1.05; text-transform: uppercase; }
-.etq-vol-local { font-size: 1.5em; font-weight: 700; text-transform: uppercase; padding-bottom: 3%; border-bottom: 2px solid #111; }
-.etq-vol-base { flex: 1; display: grid; grid-template-columns: 1fr 1.1fr 0.9fr; align-items: center; }
-.etq-vol-base > div { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; }
-.etq-vol-base > div + div { border-left: 2px solid #111; }
-.etq-vol-base small { font-size: .8em; font-weight: 700; letter-spacing: .06em; }
-.etq-vol-base b { font-size: 3.4em; font-weight: 800; line-height: 1; }
-.etq-esq-v8 { flex-direction: row; gap: 4%; align-items: flex-start; }
-.etq-quadro { flex: 0 0 40%; aspect-ratio: 1; border: 1.5px solid #111; display: grid; place-items: center; padding: 4%; }
-.etq-quadro img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.etq-esq-txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.etq-esq-v8 .etq-ref { font-size: 2.6em; }
+.etq-volume { gap: 3%; }
+.etq-vol-nome { font-size: 2.9em; font-weight: 800; line-height: 1.02; text-transform: uppercase; }
+.etq-vol-local { font-size: 1.9em; font-weight: 800; text-transform: uppercase; line-height: 1.05; }
+.etq-vol-base { margin-top: auto; display: flex; align-items: center; gap: 6%; padding-top: 3%; border-top: 2px solid #111; font-weight: 700; font-size: 1em; }
+.etq-vol-base .etq-barras { margin-left: auto; width: 30%; padding-top: 0; }

@@ -74,9 +74,9 @@ export default function EtiquetasPedido({ modo, pedido, grupos, cliente, pares, 
                 <div className="etq-vol-nome">{pedido.parceiros?.nome || cliente?.nome}</div>
                 <div className="etq-vol-local">{[cliente?.cidade, cliente?.uf].filter(Boolean).join(' - ') || '—'}</div>
                 <div className="etq-vol-base">
-                  <div><small>PARES</small><b>{pares}</b></div>
-                  <div><small>VOLUME</small><b>1/{nVol}</b></div>
-                  <div className="etq-barras"><div className="etq-listras" style={{ width: '90%' }} /><span>{num}-V1</span></div>
+                  <span>PARES: {pares}</span>
+                  <span>VOLUME: 1/{nVol}</span>
+                  <div className="etq-barras"><div className="etq-listras" style={{ width: '100%', height: '1.6em' }} /><span>{num}-V1</span></div>
                 </div>
               </div>
             )}
