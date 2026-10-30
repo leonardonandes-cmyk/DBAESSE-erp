@@ -20,6 +20,10 @@ export default function Configuracoes() {
   const [msg, setMsg] = useState('')
   const [erro, setErro] = useState('')
   const [backup, setBackup] = useState('')
+  const [logins, setLogins] = useState({})
+  const [novoU, setNovoU] = useState(null) // { nome, email, senha, papel }
+  const [trocaSenha, setTrocaSenha] = useState(null) // { id, nome, senha }
+  const [salvandoU, setSalvandoU] = useState(false)
 
   async function carregar() {
     try {
@@ -34,6 +38,10 @@ export default function Configuracoes() {
       if (u.error) throw u.error
       setUsuarios(u.data)
       setSouAdmin(Boolean(eu.data))
+      if (eu.data) {
+        const r = await supabase.functions.invoke('equipe', { body: { acao: 'logins' } })
+        if (r.data?.logins) setLogins(r.data.logins)
+      }
     } catch (e) { setErro(e.message) }
   }
   useEffect(() => { carregar() }, [])
@@ -67,6 +75,28 @@ export default function Configuracoes() {
     const { error } = await supabase.from('perfis').update({ papel }).eq('id', u.id)
     if (error) setErro(error.message); else { aviso('Permissão atualizada'); carregar() }
   }
+  async function equipe(body) {
+    setErro(''); setMsg(''); setSalvandoU(true)
+    const { data, error } = await supabase.functions.invoke('equipe', { body })
+    setSalvandoU(false)
+    let m = data?.erro
+    if (!m && error) { try { m = (await error.context.json()).erro } catch { m = error.message } }
+    if (m) { setErro(m); return false }
+    return true
+  }
+  async function criarUsuario() {
+    if (await equipe({ acao: 'criar', ...novoU })) { setMsg(`Acesso de ${novoU.nome} criado. Login: ${novoU.email}`); setNovoU(null); carregar() }
+  }
+  async function salvarSenhaDe() {
+    if (await equipe({ acao: 'senha', id: trocaSenha.id, senha: trocaSenha.senha })) { setMsg(`Senha de ${trocaSenha.nome} trocada.`); setTrocaSenha(null) }
+  }
+  async function trocarMinhaSenha(senha) {
+    setErro(''); setMsg('')
+    if (!senha || senha.length < 6) return setErro('A senha precisa ter pelo menos 6 caracteres.')
+    const { error } = await supabase.auth.updateUser({ password: senha })
+    if (error) setErro(error.message); else setMsg('Sua senha foi trocada.')
+  }
+
   async function fazerBackup() {
     setErro(''); setBackup('Preparando…')
     try { const r = await baixarBackup(setBackup); setBackup(`Pronto: ${r.arquivo} (${r.linhas.toLocaleString('pt-BR')} linhas)`) } catch (e) { setBackup(''); setErro(e.message) }
@@ -110,11 +140,12 @@ export default function Configuracoes() {
         <div className="card">
           <div className="card-head"><div><h2>Usuários e permissões</h2><div className="card-sub">Cada pessoa entra com o próprio e-mail e senha.</div></div></div>
           <table>
-            <thead><tr><th>Nome</th><th>Permissão</th></tr></thead>
+            <thead><tr><th>Nome</th>{souAdmin && <th>Login</th>}<th>Permissão</th>{souAdmin && <th></th>}</tr></thead>
             <tbody>
               {usuarios.map((u) => (
                 <tr key={u.id}>
                   <td><b style={{ fontWeight: 600 }}>{u.nome || '—'}</b></td>
+                  {souAdmin && <td className="muted">{logins[u.id] || '—'}</td>}
                   <td>
                     {souAdmin ? (
                       <select className="input input-sm" style={{ width: 170, textAlign: 'left' }} value={u.papel} onChange={(e) => mudarPapel(u, e.target.value)} aria-label="Permissão">
@@ -122,13 +153,18 @@ export default function Configuracoes() {
                       </select>
                     ) : PAPEIS.find((p) => p.v === u.papel)?.l}
                   </td>
+                  {souAdmin && <td style={{ textAlign: 'right' }}><button className="btn btn-sm" onClick={() => setTrocaSenha({ id: u.id, nome: u.nome, senha: '' })}>Trocar senha</button></td>}
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="preview" style={{ marginTop: 14 }}>
-            <b>Para cadastrar alguém:</b> no Supabase, abra <b>Authentication → Users → Add user → Create new user</b>, informe o e-mail e uma senha e marque <b>Auto Confirm User</b>. A pessoa aparece aqui como Operador.
-          </div>
+          {souAdmin && (
+            <div className="actions" style={{ marginTop: 14 }}>
+              <button className="btn btn-dark" onClick={() => setNovoU({ nome: '', email: '', senha: '', papel: 'operador' })}>+ Novo usuário</button>
+            </div>
+          )}
+          <MinhaSenha onTrocar={trocarMinhaSenha} />
+</div>
         </div>
       </section>
 
@@ -147,6 +183,39 @@ export default function Configuracoes() {
         {backup && <p className="card-sub" style={{ margin: 0 }}>{backup}</p>}
         <p className="footnote" style={{ marginTop: 8 }}>Guarde no OneDrive. No plano grátis do Supabase não há backup automático — faça pelo menos uma vez por semana.</p>
       </section>
+      {novoU && (
+        <div className="modal-bg" onClick={() => !salvandoU && setNovoU(null)}>
+          <div className="modal" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head"><div><div className="eyebrow">Equipe</div><h2>Novo usuário</h2></div></div>
+            <label className="field"><span>Nome</span><input className="input" value={novoU.nome} onChange={(e) => setNovoU({ ...novoU, nome: e.target.value })} placeholder="Ex.: Sabrina" autoFocus /></label>
+            <label className="field"><span>Login (e-mail)</span><input className="input" type="email" value={novoU.email} onChange={(e) => setNovoU({ ...novoU, email: e.target.value })} placeholder="sabrina@dbaesse.app" />
+              <small className="muted">Pode ser um login interno (não precisa existir como e-mail).</small></label>
+            <label className="field"><span>Senha inicial</span><input className="input" type="text" autoComplete="new-password" value={novoU.senha} onChange={(e) => setNovoU({ ...novoU, senha: e.target.value })} placeholder="mínimo 6 caracteres" /></label>
+            <label className="field"><span>Permissão</span>
+              <select className="input" value={novoU.papel} onChange={(e) => setNovoU({ ...novoU, papel: e.target.value })}>
+                {PAPEIS.map((p) => <option key={p.v} value={p.v}>{p.l} — {p.d}</option>)}
+              </select></label>
+            {erro && <p className="form-error">{erro}</p>}
+            <div className="actions" style={{ justifyContent: 'flex-end' }}>
+              <button className="btn" onClick={() => setNovoU(null)} disabled={salvandoU}>Cancelar</button>
+              <button className="btn btn-dark" onClick={criarUsuario} disabled={salvandoU}>{salvandoU ? 'Criando…' : 'Criar acesso'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {trocaSenha && (
+        <div className="modal-bg" onClick={() => !salvandoU && setTrocaSenha(null)}>
+          <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head"><div><div className="eyebrow">Equipe</div><h2>Nova senha · {trocaSenha.nome}</h2></div></div>
+            <label className="field"><span>Nova senha</span><input className="input" type="text" autoComplete="new-password" value={trocaSenha.senha} onChange={(e) => setTrocaSenha({ ...trocaSenha, senha: e.target.value })} placeholder="mínimo 6 caracteres" autoFocus /></label>
+            {erro && <p className="form-error">{erro}</p>}
+            <div className="actions" style={{ justifyContent: 'flex-end' }}>
+              <button className="btn" onClick={() => setTrocaSenha(null)} disabled={salvandoU}>Cancelar</button>
+              <button className="btn btn-dark" onClick={salvarSenhaDe} disabled={salvandoU}>{salvandoU ? 'Salvando…' : 'Salvar senha'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -195,6 +264,19 @@ function ListaEditor({ lista, onSalvar }) {
         <button className="link-btn" onClick={() => set({ despesas: [...f.despesas, { nome: '', pct: 0, rs: 0 }] })}>+ despesa</button>
         <span className="card-sub" style={{ margin: 0 }}>Despesas: {somaPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% do preço</span>
       </div>
+    </div>
+  )
+}
+
+function MinhaSenha({ onTrocar }) {
+  const [aberto, setAberto] = useState(false)
+  const [senha, setSenha] = useState('')
+  if (!aberto) return <div style={{ marginTop: 12 }}><button className="btn btn-sm" onClick={() => setAberto(true)}>Trocar minha senha</button></div>
+  return (
+    <div className="actions" style={{ marginTop: 12 }}>
+      <input className="input" style={{ flex: 1 }} type="password" autoComplete="new-password" placeholder="Nova senha (mín. 6)" value={senha} onChange={(e) => setSenha(e.target.value)} />
+      <button className="btn btn-dark" onClick={async () => { await onTrocar(senha); setSenha(''); setAberto(false) }}>Salvar</button>
+      <button className="btn" onClick={() => setAberto(false)}>Cancelar</button>
     </div>
   )
 }
