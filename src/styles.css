@@ -1598,3 +1598,8 @@ tr.com-edit td { background: var(--surface-2); vertical-align: middle; }
 .desenho-card.sem .desenho-quadro.vazio span { color: #C25E1B; font-weight: 600; }
 .btn-laranja { background: #E8772E; border-color: #E8772E; color: #fff; }
 .btn-laranja:hover { background: #CF6620; border-color: #CF6620; }
+/* documento da venda */
+.doc-escolha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.doc-escolha > span { font-weight: 700; font-size: 13px; letter-spacing: .02em; }
+.doc-escolha small { color: var(--muted); font-size: 12px; }
+.ped-sub.doc-consumidor { color: #C25E1B; }

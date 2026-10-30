@@ -6,7 +6,7 @@ import { soDigitos } from '../lib/format.js'
 import Icon from './Icon.jsx'
 import { CANAIS, TIPOS_PARCEIRO, salvarParceiro } from '../lib/parceiros.js'
 
-export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo }) {
+export default function ParceiroForm({ parceiro, tipoInicial, consumidorInicial = false, onFechar, onSalvo }) {
   const editando = Boolean(parceiro)
   const [f, setF] = useState(() => ({
     nome: parceiro?.nome || '',
@@ -31,6 +31,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     desconto_par: parceiro?.desconto_par ? String(parceiro.desconto_par).replace('.', ',') : '',
     observacoes: parceiro?.observacoes || '',
     ativo: parceiro?.ativo ?? true,
+    consumidor_final: parceiro ? Boolean(parceiro.consumidor_final) : consumidorInicial,
   }))
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
@@ -99,7 +100,8 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
     e.preventDefault()
     setErro('')
     if (f.uf && !/^[A-Za-z]{2}$/.test(f.uf.trim())) return setErro('UF com 2 letras (ex.: MG).')
-    const errEnd = conferirEndereco(f)
+    if (f.consumidor_final && !f.telefone.trim()) return setErro('Informe o telefone / WhatsApp da sacoleira.')
+    const errEnd = f.consumidor_final ? null : conferirEndereco(f)
     if (errEnd) return setErro(errEnd)
     setSalvando(true)
     try {
@@ -134,6 +136,29 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
           </div>
         </div>
 
+        {f.tipos.includes('cliente') && (
+          <div className="segmented" role="tablist" aria-label="Tipo de cliente">
+            <button type="button" role="tab" aria-selected={!f.consumidor_final} className={!f.consumidor_final ? 'on' : ''} onClick={() => setF({ ...f, consumidor_final: false })}>Empresa · NF-e</button>
+            <button type="button" role="tab" aria-selected={f.consumidor_final} className={f.consumidor_final ? 'on' : ''} onClick={() => setF({ ...f, consumidor_final: true })}>Sacoleira · consumidor final</button>
+          </div>
+        )}
+
+        {f.consumidor_final ? (
+          <div className="form-grid">
+            <label className="field span-2"><span>Nome *</span><input required value={f.nome} onChange={set('nome')} placeholder="Nome da sacoleira" autoFocus /></label>
+            <label className="field"><span>Telefone / WhatsApp *</span><input value={f.telefone} onChange={set('telefone')} placeholder="(37) 99999-0000" inputMode="tel" /></label>
+            <label className="field"><span>CPF (opcional)</span><input value={f.documento} onChange={set('documento')} inputMode="numeric" placeholder="000.000.000-00" /></label>
+            <label className="field"><span>Cidade (opcional)</span><input name="erp-cidade" autoComplete="off" value={f.cidade} onChange={set('cidade')} /></label>
+            <label className="field"><span>UF</span><input value={f.uf} onChange={set('uf')} maxLength={2} placeholder="MG" /></label>
+            <label className="field">
+              <span>Polo / grupo</span>
+              <input value={f.grupo} onChange={set('grupo')} placeholder="Ex.: Fartura" list="grupos-parceiro" />
+              <datalist id="grupos-parceiro"><option value="Fartura" /></datalist>
+            </label>
+            <label className="field span-2"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Preferências, como prefere receber…" /></label>
+            <p className="footnote span-3" style={{ margin: 0 }}>Cadastro rápido de consumidor final (pessoa física): só nome e telefone são obrigatórios.</p>
+          </div>
+        ) : (
         <div className="form-grid">
           <div className="field span-2">
             <span>CNPJ / CPF</span>
@@ -202,6 +227,7 @@ export default function ParceiroForm({ parceiro, tipoInicial, onFechar, onSalvo 
           </label>
           <label className="field span-2"><span>Observações</span><input value={f.observacoes} onChange={set('observacoes')} placeholder="Prazo combinado, preferências, transportadora…" /></label>
         </div>
+        )}
 
         {souAdmin && condCarregada && (
           <div className="condicao-especial">

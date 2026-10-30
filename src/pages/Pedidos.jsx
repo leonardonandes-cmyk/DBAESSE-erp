@@ -8,8 +8,8 @@ import NovoPedido from '../components/NovoPedido.jsx'
 import PedidoDetalhe from '../components/PedidoDetalhe.jsx'
 import { listarSaldos, saldoPorSku } from '../lib/estoque.js'
 import { brl, brlCurto, dataBR, inteiro, numeroPedido } from '../lib/format.js'
-import { listarParceiros } from '../lib/parceiros.js'
-import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, totaisPedido } from '../lib/pedidos.js'
+import { DOCUMENTOS, listarParceiros } from '../lib/parceiros.js'
+import { ABERTOS, STATUS_PEDIDO, atrasado, listarPedidos, marcarNotaEmitida, totaisPedido } from '../lib/pedidos.js'
 import { listarCores, listarProdutos } from '../lib/produtos.js'
 
 const programado = (p) => p.status === 'producao' || (p.programacoes?.length > 0 && ABERTOS.includes(p.status))
@@ -21,6 +21,7 @@ const FILTROS = [
   { id: 'separacao', label: 'Separação', teste: (p) => p.status === 'separacao' },
   { id: 'atrasados', label: 'Atrasados', teste: atrasado, tom: 'bad' },
   { id: 'faturados', label: 'Faturados', teste: (p) => p.status === 'faturado' },
+  { id: 'notas', label: 'Notas a emitir', teste: (p) => ['faturado', 'entregue'].includes(p.status) && !p.nota_emitida, tom: 'warn' },
   { id: 'entregues', label: 'Entregues', teste: (p) => p.status === 'entregue' },
   { id: 'cancelados', label: 'Cancelados', teste: (p) => p.status === 'cancelado' },
   { id: 'todos', label: 'Todos', teste: () => true },
@@ -187,12 +188,21 @@ export default function Pedidos() {
                         <span className={`pill ${st.tom}`}>{st.label}</span>
                         {late && <span className="pill bad" style={{ marginLeft: 6 }}>Atrasado</span>}
                         {prog && p.status !== 'producao' && ABERTOS.includes(p.status) && <small className="ped-sub">programado</small>}
+                        <small className={`ped-sub doc-${p.documento || 'nfe'}`}>{DOCUMENTOS[p.documento || 'nfe']}{['faturado', 'entregue'].includes(p.status) ? (p.nota_emitida ? ` · nota ${p.nota_numero || 'emitida'}` : ' · nota pendente') : ''}</small>
                       </td>
                       <td className="r" style={{ color: late ? 'var(--bad)' : 'var(--muted)', fontWeight: late ? 600 : 400 }}>{dataBR(p.previsao)}</td>
                       <td className="r">
                         <div className="ped-acoes" onClick={(e) => e.stopPropagation()}>
                           <button type="button" className="btn btn-sm" title="Visualizar, imprimir, PDF ou enviar no WhatsApp" onClick={abrirCom(p, true)}>Imprimir · Enviar</button>
                           {!FECHADO.includes(p.status) && !p.estoque_baixado && <button type="button" className="btn btn-sm" onClick={() => setCorrigir(p)}>Editar</button>}
+                          {['faturado', 'entregue'].includes(p.status) && !p.nota_emitida && (
+                            <button type="button" className="btn btn-sm btn-dark" title="Marcar que a nota já foi emitida (UpSeller)"
+                              onClick={async () => {
+                                const n = window.prompt(`Nota de ${numeroPedido(p.numero)} (${DOCUMENTOS[p.documento || 'nfe']}) emitida. Número da nota (opcional):`, '')
+                                if (n === null) return
+                                try { await marcarNotaEmitida(p.id, n); await carregar() } catch (e) { alert(e.message) }
+                              }}>Nota emitida</button>
+                          )}
                         </div>
                       </td>
                     </tr>

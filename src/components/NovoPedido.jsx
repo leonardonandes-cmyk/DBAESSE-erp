@@ -8,6 +8,7 @@ import { programacaoDoPedido, sincronizarProgramacao } from '../lib/mapas.js'
 import ProdutoCelula, { FotoProduto } from './FotoProduto.jsx'
 import SeletorGrade from './SeletorGrade.jsx'
 import ParceiroForm from './ParceiroForm.jsx'
+import { DOCUMENTOS, documentoPadrao } from '../lib/parceiros.js'
 import { brl } from '../lib/format.js'
 import { CANAIS, enderecoCompleto, lembrarTransportadora } from '../lib/parceiros.js'
 import { atualizarPedido, carregarItens, criarPedido } from '../lib/pedidos.js'
@@ -35,8 +36,8 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
     [parceiros, novos]
   )
   const [f, setF] = useState(() => (pedido
-    ? { vendedora: pedido.vendedora ?? '', parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status, transportadora_id: pedido.transportadora_id || '', frete_por: pedido.frete_por || 'cliente' }
-    : { parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento', transportadora_id: '', frete_por: 'cliente' }))
+    ? { vendedora: pedido.vendedora ?? '', parceiro_id: pedido.parceiro_id || '', canal: pedido.canal || 'Atacado', lista: pedido.lista || 'atacado', previsao: pedido.previsao || '', observacoes: pedido.observacoes || '', endereco_entrega: pedido.endereco_entrega || '', desconto: pedido.desconto || '', status: pedido.status, transportadora_id: pedido.transportadora_id || '', frete_por: pedido.frete_por || 'cliente', documento: pedido.documento || 'nfe' }
+    : { parceiro_id: '', canal: 'Atacado', lista: 'atacado', previsao: '', observacoes: '', endereco_entrega: '', desconto: '', status: 'orcamento', transportadora_id: '', frete_por: 'cliente', documento: 'nfe' }))
   const [outroEndereco, setOutroEndereco] = useState(Boolean(pedido?.endereco_entrega))
   const [listas, setListas] = useState([])
   useEffect(() => { listarListas().then(setListas).catch(() => {}) }, [])
@@ -69,7 +70,7 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
     let novo = { ...f, [k]: v }
     if (k === 'parceiro_id') {
       const c = clientes.find((x) => x.id === v)
-      novo = { ...novo, canal: c?.canal || f.canal, endereco_entrega: '', transportadora_id: c?.transportadora_id || '' }
+      novo = { ...novo, canal: c?.canal || f.canal, endereco_entrega: '', transportadora_id: c?.transportadora_id || '', documento: documentoPadrao(c) }
       setOutroEndereco(false)
       novo.lista = listaSugerida(c, novo.canal)
     }
@@ -226,9 +227,19 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
           <button type="button" className="btn icon-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
         </div>
 
+        <div className="doc-escolha">
+          <span>Documento da venda</span>
+          <div className="segmented" role="tablist" aria-label="Documento">
+            {Object.entries(DOCUMENTOS).map(([k, l]) => (
+              <button type="button" key={k} role="tab" aria-selected={f.documento === k} className={f.documento === k ? 'on' : ''} onClick={() => setF((x) => ({ ...x, documento: k }))}>{l}</button>
+            ))}
+          </div>
+          <small>{f.documento === 'consumidor' ? 'Sacoleira / pessoa física — cadastro rápido (nome + telefone).' : 'Cliente com CNPJ — cadastro completo.'}</small>
+        </div>
+
         <div className="form-grid">
           <label className="field span-2">
-            <span style={{ display: 'flex', justifyContent: 'space-between' }}>Cliente <button type="button" className="link-btn" onClick={() => setCadastrar(true)}>+ Novo cliente</button></span>
+            <span style={{ display: 'flex', justifyContent: 'space-between' }}>Cliente <button type="button" className="link-btn" onClick={() => setCadastrar(true)}>{f.documento === 'consumidor' ? '+ Nova sacoleira' : '+ Novo cliente'}</button></span>
             <select className="input" value={f.parceiro_id} onChange={set('parceiro_id')}>
               <option value="">{clientes.length ? 'Escolha o cliente…' : 'Sem cliente (cadastre em Clientes)'}</option>
               {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}{c.cidade ? ` · ${c.cidade}` : ''}</option>)}
@@ -367,14 +378,14 @@ export default function NovoPedido({ produtos, cores, parceiros, saldos, pedido:
           onSalvo={(nova) => { setNovaTransp(false); if (!nova?.id) return; setNovos((n) => [nova, ...n]); setF((x) => ({ ...x, transportadora_id: nova.id })) }} />
       )}
       {cadastrar && (
-        <ParceiroForm tipoInicial="cliente" onFechar={() => setCadastrar(false)}
+        <ParceiroForm tipoInicial="cliente" consumidorInicial={f.documento === 'consumidor'} onFechar={() => setCadastrar(false)}
           onSalvo={(novo) => {
             setCadastrar(false)
             if (!novo?.id) return
             setNovos((n) => [novo, ...n])
             const canal = novo.canal || f.canal
             const lista = listaSugerida(novo, canal)
-            setF((x) => ({ ...x, parceiro_id: novo.id, canal, lista, endereco_entrega: '' }))
+            setF((x) => ({ ...x, parceiro_id: novo.id, canal, lista, endereco_entrega: '', documento: documentoPadrao(novo) }))
             setOutroEndereco(false)
             const l = listas.find((x) => x.codigo === lista)
             setItens((atual) => atual.map((i) => ({ ...i, preco_unit: precoCliente(i.produto, l, novo) })))

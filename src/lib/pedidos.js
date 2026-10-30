@@ -12,7 +12,7 @@ export const STATUS_PEDIDO = {
 export const FLUXO = ['orcamento', 'aprovado', 'producao', 'separacao', 'faturado', 'entregue']
 export const ABERTOS = ['orcamento', 'aprovado', 'producao', 'separacao']
 
-const CAMPOS = 'id,numero,canal,lista,grupo,vendedora,status,previsao,desconto,observacoes,endereco_entrega,transportadora_id,frete_por,transp:parceiros!pedidos_transportadora_id_fkey(nome,telefone),estoque_baixado,criado_em,separado_em,parceiro_id,parceiros!pedidos_parceiro_id_fkey(nome),pedido_itens(quantidade,preco_unit,sku_id,separado,skus(produto_id,cor_id)),programacoes(id,numero)'
+const CAMPOS = 'id,numero,canal,lista,grupo,vendedora,status,previsao,desconto,observacoes,endereco_entrega,transportadora_id,frete_por,transp:parceiros!pedidos_transportadora_id_fkey(nome,telefone),estoque_baixado,criado_em,separado_em,parceiro_id,parceiros!pedidos_parceiro_id_fkey(nome),pedido_itens(quantidade,preco_unit,sku_id,separado,skus(produto_id,cor_id)),programacoes(id,numero),documento,nota_emitida,nota_numero'
 
 export function totaisPedido(p) {
   const pares = (p.pedido_itens || []).reduce((t, i) => t + i.quantidade, 0)
@@ -43,11 +43,11 @@ export async function carregarItens(pedidoId) {
 // itens: [{ sku_id, quantidade, preco_unit }]
 // separado = true: pedido montado bipando os pares (app) — já nasce separado
 // vendedora: undefined = o banco escolhe pela modalidade · '' = ninguém · nome = quem vendeu
-export async function criarPedido({ parceiro_id, canal, lista, previsao, observacoes, endereco_entrega, desconto, status, itens, separado = false, vendedora, transportadora_id, frete_por }) {
+export async function criarPedido({ parceiro_id, canal, lista, previsao, observacoes, endereco_entrega, desconto, status, itens, separado = false, vendedora, transportadora_id, frete_por, documento }) {
   if (!itens.length) throw new Error('Adicione pelo menos um item ao pedido.')
   const { data: ped, error } = await supabase
     .from('pedidos')
-    .insert({ parceiro_id: parceiro_id || null, canal, lista: lista || null, previsao: previsao || null, observacoes: observacoes || null, endereco_entrega: endereco_entrega?.trim() || null, desconto: Number(desconto) || 0, status: status || 'orcamento', separado_em: separado ? new Date().toISOString() : null, transportadora_id: transportadora_id || null, frete_por: frete_por || null, ...(vendedora !== undefined ? { vendedora } : {}) })
+    .insert({ parceiro_id: parceiro_id || null, canal, lista: lista || null, previsao: previsao || null, observacoes: observacoes || null, endereco_entrega: endereco_entrega?.trim() || null, desconto: Number(desconto) || 0, status: status || 'orcamento', separado_em: separado ? new Date().toISOString() : null, transportadora_id: transportadora_id || null, frete_por: frete_por || null, documento: documento || 'nfe', ...(vendedora !== undefined ? { vendedora } : {}) })
     .select('id,numero')
     .single()
   if (error) throw error
@@ -63,7 +63,7 @@ export async function criarPedido({ parceiro_id, canal, lista, previsao, observa
 
 // Corrigir um pedido ainda aberto: cabeçalho + itens (grade, preço, cliente, lista).
 // Mantém o que já foi separado no app (até a nova quantidade).
-export async function atualizarPedido(pedidoId, { parceiro_id, canal, lista, previsao, observacoes, endereco_entrega, desconto, status, itens, vendedora, transportadora_id, frete_por }) {
+export async function atualizarPedido(pedidoId, { parceiro_id, canal, lista, previsao, observacoes, endereco_entrega, desconto, status, itens, vendedora, transportadora_id, frete_por, documento }) {
   if (!itens.length) throw new Error('O pedido precisa ter pelo menos um item.')
   const { data: atual, error: e0 } = await supabase.from('pedidos').select('status,estoque_baixado').eq('id', pedidoId).single()
   if (e0) throw e0
@@ -72,6 +72,7 @@ export async function atualizarPedido(pedidoId, { parceiro_id, canal, lista, pre
   if (e1) throw e1
   const sep = Object.fromEntries(antigos.map((i) => [i.sku_id, Number(i.separado) || 0]))
   const campos = { parceiro_id: parceiro_id || null, canal, lista: lista || null, previsao: previsao || null, observacoes: observacoes || null, endereco_entrega: endereco_entrega?.trim() || null, desconto: Number(desconto) || 0, transportadora_id: transportadora_id || null, frete_por: frete_por || null }
+  if (documento) campos.documento = documento
   if (vendedora !== undefined) campos.vendedora = vendedora
   if (status && atual.status === 'orcamento') campos.status = status
   const { error: e2 } = await supabase.from('pedidos').update(campos).eq('id', pedidoId)
@@ -126,4 +127,10 @@ export async function separarItem(pedidoId, skuId, delta = 1) {
     throw e
   }
   return data
+}
+
+// "Notas a emitir": marca a nota como emitida (no UpSeller, por enquanto) com o número
+export async function marcarNotaEmitida(pedidoId, numero, emitida = true) {
+  const { error } = await supabase.from('pedidos').update({ nota_emitida: emitida, nota_numero: emitida ? (numero?.trim() || null) : null }).eq('id', pedidoId)
+  if (error) throw error
 }

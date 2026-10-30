@@ -12,7 +12,7 @@ export const CANAIS = ['Atacado', 'Variado', 'Drop', 'Shopee', 'TikTok Shop', 'M
 export async function listarParceiros() {
   return todas(() => supabase
     .from('parceiros')
-    .select('id,nome,razao_social,inscricao_estadual,contato,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,grupo,condicao_especial,desconto_par,transportadora_id,observacoes,ativo')
+    .select('id,nome,razao_social,inscricao_estadual,contato,tipos,documento,telefone,email,cep,endereco,numero,complemento,bairro,cidade,uf,canal,lista,grupo,condicao_especial,desconto_par,transportadora_id,observacoes,ativo,consumidor_final')
     .order('nome').order('id'))
 }
 
@@ -42,6 +42,7 @@ export async function salvarParceiro(dados, id) {
     grupo: dados.grupo?.trim() || null,
     observacoes: dados.observacoes?.trim() || null,
     ativo: dados.ativo ?? true,
+    ...(dados.consumidor_final !== undefined ? { consumidor_final: Boolean(dados.consumidor_final) } : {}),
   }
   const q = id
     ? supabase.from('parceiros').update(linha).eq('id', id).select().single()
@@ -73,6 +74,11 @@ export const EXIGE_CADASTRO = ['Atacado', 'Variado', 'Drop']
 export function pendenciasCadastro(p) {
   if (!p) return ['cliente']
   const v = (k) => String(p[k] || '').trim()
+  if (p.consumidor_final) return v('telefone') ? [] : ['telefone'] // sacoleira: cadastro rápido
   return [['documento', 'CPF/CNPJ'], ['telefone', 'telefone'], ['cep', 'CEP'], ['endereco', 'rua'], ['numero', 'número'], ['bairro', 'bairro'], ['cidade', 'cidade'], ['uf', 'UF']]
     .filter(([k]) => !v(k)).map(([, r]) => r)
 }
+
+// Documento fiscal do pedido (faturamento ainda fora do ERP — vira a lista "Notas a emitir")
+export const DOCUMENTOS = { nfe: 'NF-e', consumidor: 'Consumidor final' }
+export const documentoPadrao = (cliente) => (cliente?.consumidor_final ? 'consumidor' : 'nfe')
