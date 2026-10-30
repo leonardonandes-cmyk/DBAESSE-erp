@@ -23,14 +23,18 @@ Deno.serve(async (req) => {
     const senhaOk = (s: string) => typeof s === 'string' && s.length >= 6
 
     if (b.acao === 'criar') {
-      const email = String(b.email || '').trim().toLowerCase()
+      const usuario = String(b.usuario || '').trim().toLowerCase().replace(/\s+/g, '')
+      const email = String(b.email || '').trim().toLowerCase() || `calcadosdbaesse+${usuario}@gmail.com`
       const nome = String(b.nome || '').trim()
       const papel = ['admin', 'gestor', 'operador'].includes(b.papel) ? b.papel : 'operador'
-      if (!email.includes('@') || !nome) return json({ erro: 'Informe nome e login (e-mail).' }, 400)
+      if (!nome || !/^[a-z0-9._-]{2,}$/.test(usuario)) return json({ erro: 'Informe nome e usuário (só letras/números, sem espaço).' }, 400)
+      if (!email.includes('@')) return json({ erro: 'E-mail inválido.' }, 400)
+      const { data: ja } = await admin.from('perfis').select('id').ilike('usuario', usuario).maybeSingle()
+      if (ja) return json({ erro: 'Esse usuário já existe.' }, 400)
       if (!senhaOk(b.senha)) return json({ erro: 'A senha precisa ter pelo menos 6 caracteres.' }, 400)
       const { data, error } = await admin.auth.admin.createUser({ email, password: b.senha, email_confirm: true, user_metadata: { nome } })
-      if (error) return json({ erro: /already|registered|exists/i.test(error.message) ? 'Esse login já existe.' : error.message }, 400)
-      await admin.from('perfis').upsert({ id: data.user.id, empresa_id: eu.empresa_id, nome, papel })
+      if (error) return json({ erro: /already|registered|exists/i.test(error.message) ? 'Esse e-mail já está em uso.' : error.message }, 400)
+      await admin.from('perfis').upsert({ id: data.user.id, empresa_id: eu.empresa_id, nome, papel, usuario, trocar_senha: true })
       return json({ ok: true })
     }
 
@@ -40,6 +44,26 @@ Deno.serve(async (req) => {
       if (!alvo || alvo.empresa_id !== eu.empresa_id) return json({ erro: 'Usuário não encontrado.' }, 404)
       const { error } = await admin.auth.admin.updateUserById(b.id, { password: b.senha })
       if (error) return json({ erro: error.message }, 400)
+      if (b.id !== quem.user.id) await admin.from('perfis').update({ trocar_senha: true }).eq('id', b.id)
+      return json({ ok: true })
+    }
+
+    if (b.acao === 'dados') {
+      const usuario = String(b.usuario || '').trim().toLowerCase().replace(/\s+/g, '')
+      const email = String(b.email || '').trim().toLowerCase()
+      const { data: alvo } = await admin.from('perfis').select('empresa_id').eq('id', b.id).maybeSingle()
+      if (!alvo || alvo.empresa_id !== eu.empresa_id) return json({ erro: 'Usuário não encontrado.' }, 404)
+      if (usuario) {
+        if (!/^[a-z0-9._-]{2,}$/.test(usuario)) return json({ erro: 'Usuário: só letras/números, sem espaço.' }, 400)
+        const { data: ja } = await admin.from('perfis').select('id').ilike('usuario', usuario).neq('id', b.id).maybeSingle()
+        if (ja) return json({ erro: 'Esse usuário já existe.' }, 400)
+        await admin.from('perfis').update({ usuario }).eq('id', b.id)
+      }
+      if (email) {
+        if (!email.includes('@')) return json({ erro: 'E-mail inválido.' }, 400)
+        const { error } = await admin.auth.admin.updateUserById(b.id, { email, email_confirm: true })
+        if (error) return json({ erro: /already|registered|exists/i.test(error.message) ? 'Esse e-mail já está em uso.' : error.message }, 400)
+      }
       return json({ ok: true })
     }
 

@@ -29,7 +29,7 @@ export default function Configuracoes() {
     try {
       const [s, u, eu, ls] = await Promise.all([
         listarSetores(),
-        supabase.from('perfis').select('id,nome,papel,criado_em').order('criado_em'),
+        supabase.from('perfis').select('id,nome,papel,usuario,trocar_senha,criado_em').order('criado_em'),
         supabase.rpc('sou_admin'),
         listarListas(),
       ])
@@ -85,7 +85,7 @@ export default function Configuracoes() {
     return true
   }
   async function criarUsuario() {
-    if (await equipe({ acao: 'criar', ...novoU })) { setMsg(`Acesso de ${novoU.nome} criado. Login: ${novoU.email}`); setNovoU(null); carregar() }
+    if (await equipe({ acao: 'criar', ...novoU })) { setMsg(`Acesso de ${novoU.nome} criado. Usuário: ${novoU.usuario}. No 1º acesso o sistema pede para criar a senha dela.`); setNovoU(null); carregar() }
   }
   async function salvarSenhaDe() {
     if (await equipe({ acao: 'senha', id: trocaSenha.id, senha: trocaSenha.senha })) { setMsg(`Senha de ${trocaSenha.nome} trocada.`); setTrocaSenha(null) }
@@ -138,14 +138,14 @@ export default function Configuracoes() {
         </div>
 
         <div className="card">
-          <div className="card-head"><div><h2>Usuários e permissões</h2><div className="card-sub">Cada pessoa entra com o próprio e-mail e senha.</div></div></div>
+          <div className="card-head"><div><h2>Usuários e permissões</h2><div className="card-sub">Cada pessoa entra com o próprio usuário e senha. "Esqueci a senha" da equipe chega no calcadosdbaesse@gmail.com.</div></div></div>
           <table>
-            <thead><tr><th>Nome</th>{souAdmin && <th>Login</th>}<th>Permissão</th>{souAdmin && <th></th>}</tr></thead>
+            <thead><tr><th>Nome</th><th>Usuário</th><th>Permissão</th>{souAdmin && <th></th>}</tr></thead>
             <tbody>
               {usuarios.map((u) => (
                 <tr key={u.id}>
                   <td><b style={{ fontWeight: 600 }}>{u.nome || '—'}</b></td>
-                  {souAdmin && <td className="muted">{logins[u.id] || '—'}</td>}
+                  <td><b style={{ fontWeight: 600 }}>{u.usuario || '—'}</b>{u.trocar_senha && <span className="pill" style={{ marginLeft: 8 }}>aguardando 1º acesso</span>}</td>
                   <td>
                     {souAdmin ? (
                       <select className="input input-sm" style={{ width: 170, textAlign: 'left' }} value={u.papel} onChange={(e) => mudarPapel(u, e.target.value)} aria-label="Permissão">
@@ -160,10 +160,9 @@ export default function Configuracoes() {
           </table>
           {souAdmin && (
             <div className="actions" style={{ marginTop: 14 }}>
-              <button className="btn btn-dark" onClick={() => setNovoU({ nome: '', email: '', senha: '', papel: 'operador' })}>+ Novo usuário</button>
+              <button className="btn btn-dark" onClick={() => setNovoU({ nome: '', usuario: '', senha: '', papel: 'operador' })}>+ Novo usuário</button>
             </div>
           )}
-          <MinhaSenha onTrocar={trocarMinhaSenha} />
         </div>
       </section>
 
@@ -187,9 +186,10 @@ export default function Configuracoes() {
           <div className="modal" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-head"><div><div className="eyebrow">Equipe</div><h2>Novo usuário</h2></div></div>
             <label className="field"><span>Nome</span><input className="input" value={novoU.nome} onChange={(e) => setNovoU({ ...novoU, nome: e.target.value })} placeholder="Ex.: Sabrina" autoFocus /></label>
-            <label className="field"><span>Login (e-mail)</span><input className="input" type="email" value={novoU.email} onChange={(e) => setNovoU({ ...novoU, email: e.target.value })} placeholder="sabrina@dbaesse.app" />
-              <small className="muted">Pode ser um login interno (não precisa existir como e-mail).</small></label>
-            <label className="field"><span>Senha inicial</span><input className="input" type="text" autoComplete="new-password" value={novoU.senha} onChange={(e) => setNovoU({ ...novoU, senha: e.target.value })} placeholder="mínimo 6 caracteres" /></label>
+            <label className="field"><span>Usuário (para entrar)</span><input className="input" autoCapitalize="none" spellCheck={false} value={novoU.usuario} onChange={(e) => setNovoU({ ...novoU, usuario: e.target.value.toLowerCase().replace(/\s+/g, '') })} placeholder="sabrina" />
+              <small className="muted">"Esqueci a senha" chega no calcadosdbaesse@gmail.com.</small></label>
+            <label className="field"><span>Senha provisória</span><input className="input" type="text" autoComplete="new-password" value={novoU.senha} onChange={(e) => setNovoU({ ...novoU, senha: e.target.value })} placeholder="mínimo 6 caracteres" />
+              <small className="muted">No 1º acesso ela troca por uma senha só dela.</small></label>
             <label className="field"><span>Permissão</span>
               <select className="input" value={novoU.papel} onChange={(e) => setNovoU({ ...novoU, papel: e.target.value })}>
                 {PAPEIS.map((p) => <option key={p.v} value={p.v}>{p.l} — {p.d}</option>)}
@@ -267,15 +267,3 @@ function ListaEditor({ lista, onSalvar }) {
   )
 }
 
-function MinhaSenha({ onTrocar }) {
-  const [aberto, setAberto] = useState(false)
-  const [senha, setSenha] = useState('')
-  if (!aberto) return <div style={{ marginTop: 12 }}><button className="btn btn-sm" onClick={() => setAberto(true)}>Trocar minha senha</button></div>
-  return (
-    <div className="actions" style={{ marginTop: 12 }}>
-      <input className="input" style={{ flex: 1 }} type="password" autoComplete="new-password" placeholder="Nova senha (mín. 6)" value={senha} onChange={(e) => setSenha(e.target.value)} />
-      <button className="btn btn-dark" onClick={async () => { await onTrocar(senha); setSenha(''); setAberto(false) }}>Salvar</button>
-      <button className="btn" onClick={() => setAberto(false)}>Cancelar</button>
-    </div>
-  )
-}

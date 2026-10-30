@@ -3,6 +3,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import Icon from './components/Icon.jsx'
 import { supabase } from './lib/supabase.js'
 import Login from './pages/Login.jsx'
+import NovaSenha from './components/NovaSenha.jsx'
 import Painel from './pages/Painel.jsx'
 import Produtos from './pages/Produtos.jsx'
 import Producao from './pages/Producao.jsx'
@@ -61,6 +62,7 @@ export default function App() {
   const [perfil, setPerfil] = useState(null)
   const [souDono, setSouDono] = useState(false)
   const [mais, setMais] = useState(false)
+  const [novaSenha, setNovaSenha] = useState(false) // '' | 'recuperar' | 'manual'
 
   // Grade: Enter pula para o próximo número (em qualquer tela). No último, vai para o botão de confirmar.
   useEffect(() => {
@@ -80,13 +82,13 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSessao(data.session))
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSessao(s))
+    const { data } = supabase.auth.onAuthStateChange((ev, s) => { setSessao(s); if (ev === 'PASSWORD_RECOVERY') setNovaSenha('recuperar') })
     return () => data.subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
     if (!sessao) { setPerfil(null); return }
-    supabase.from('perfis').select('nome,papel,empresas(nome)').eq('id', sessao.user.id).maybeSingle()
+    supabase.from('perfis').select('nome,papel,usuario,trocar_senha,empresas(nome)').eq('id', sessao.user.id).maybeSingle()
       .then(({ data }) => setPerfil(data || { papel: 'operador' }))
     supabase.rpc('sou_dono').then(({ data }) => setSouDono(Boolean(data)))
   }, [sessao])
@@ -94,6 +96,10 @@ export default function App() {
   if (sessao === undefined) return null
   if (!sessao) return <Login />
   if (!perfil) return null
+  if (novaSenha || perfil.trocar_senha) {
+    return <NovaSenha motivo={novaSenha || 'primeiro'} podeCancelar={novaSenha === 'manual'}
+      onFim={() => { setNovaSenha(false); setPerfil({ ...perfil, trocar_senha: false }) }} />
+  }
   const vendedora = perfil.papel === 'operador'
   const pode = (m) => (!m.soDono || souDono) && (!vendedora || TELAS_VENDEDORA.includes(m.to))
 
@@ -130,6 +136,7 @@ export default function App() {
             <b>{EMPRESA.usuario}</b>
             <span>{EMPRESA.papel} · {EMPRESA.nome}</span>
           </div>
+          <button onClick={() => setNovaSenha('manual')} title="Trocar minha senha">Senha</button>
           <button onClick={() => supabase.auth.signOut()}>Sair</button>
         </div>
       </aside>
@@ -137,7 +144,10 @@ export default function App() {
       <main className="main">
         <div className="mobile-top">
           <div className="brand-word">{EMPRESA.nome}</div>
-          <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
+          <div className="actions">
+            <button className="btn" onClick={() => setNovaSenha('manual')}>Senha</button>
+            <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button>
+          </div>
         </div>
         {vendedora ? (
           <Routes>
