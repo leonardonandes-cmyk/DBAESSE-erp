@@ -148,7 +148,7 @@ export function zplColetiva({ ref, tipo, cor, grade, codigo, quantidade = 1 }) {
 }
 
 // ROMANEIO DE ENVIO (ao faturar, um por volume). FOCO: NOME DO CLIENTE → CIDADE - ESTADO, bem grandes.
-// Rodapé pequeno: pares · volume i/N · código de conferência.
+// Rodapé: VOLUME i/N (um pouco maior) · pares (bem menor) · código de conferência.
 export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes }) {
   const codigo = `${t(pedido)}-V${volume}`
   const nome = cima(cliente)
@@ -160,10 +160,10 @@ export function zplVolume({ cliente, cidade, uf, pedido, pares, volume, volumes 
     T(40, 40, hN, hN - 10, nome, { bw: 1120, linhas: 2, esp: 14 }),
     T(40, 40 + hN * 2 + 14 + 40, hL, hL - 6, local, { bw: 1120 }),
     B(30, 640, 1140, 3, 3),
-    T(40, 676, 44, 42, `PARES: ${pares}`),
-    T(380, 676, 44, 42, `VOLUME: ${volume}/${volumes}`),
-    BAR(790, 662, 80, 2, codigo),
-    T(780, 748, 26, 26, codigo, { bw: 400, al: 'C' }),
+    T(40, 664, 72, 66, `VOLUME ${volume}/${volumes}`),
+    T(610, 690, 32, 30, `${pares} PARES`),
+    BAR(830, 662, 80, 2, codigo),
+    T(810, 748, 26, 26, codigo, { bw: 370, al: 'C' }),
     '^XZ',
   ].filter(Boolean).join('\n')
 }
