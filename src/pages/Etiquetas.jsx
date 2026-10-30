@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import SeletorGrade from '../components/SeletorGrade.jsx'
+import RomaneioAvulso from '../components/RomaneioAvulso.jsx'
 import { FotoProduto } from '../components/FotoProduto.jsx'
 import { desenhoDoTipo, listarCores, listarProdutos } from '../lib/produtos.js'
 import {
@@ -103,7 +104,7 @@ export default function Etiquetas() {
       )}
 
       <div className="segmented" role="tablist" style={{ marginBottom: 16 }}>
-        {[['unitaria', 'Unitária · por par'], ['coletiva', 'Coletiva · por caixa']].map(([k, l]) => (
+        {[['unitaria', 'Unitária · por par'], ['coletiva', 'Coletiva · por caixa'], ['romaneio', 'Romaneio de envio']].map(([k, l]) => (
           <button key={k} role="tab" aria-selected={aba === k} className={aba === k ? 'on' : ''} onClick={() => trocarAba(k)}>{l}</button>
         ))}
       </div>
@@ -111,6 +112,8 @@ export default function Etiquetas() {
       {erro && <p className="form-error" role="alert">{erro}</p>}
       {msg && <p className="pill ok" role="status" style={{ display: 'inline-block', marginBottom: 12 }}>{msg}</p>}
 
+      {aba === 'romaneio' ? <RomaneioAvulso /> : (
+      <>
       <section className="etq-grid">
         <div className="card">
           <div className="card-head"><div>
@@ -165,6 +168,8 @@ export default function Etiquetas() {
           </table>
         )}
       </section>
+      </>
+      )}
     </>
   )
 }
